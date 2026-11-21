@@ -78,12 +78,9 @@ DashboardCard {
                     Layout.preferredWidth: 1
                     implicitHeight: 40
                     buttonRadius: 20
-                    containerColor: tool.modelData.primary ? Appearance.colors.colPrimary :
-                                                             Appearance.colors.colSurfaceContainerHigh
+                    containerColor: tool.modelData.primary ? Appearance.colors.colPrimary : Appearance.colors.colSurfaceContainerHigh
                     rippleColor: Appearance.colors.colOnPrimary
-                    stateLayerColor: tool.modelData.primary ? Appearance.colors.colOnPrimary :
-                                                              Appearance.colors.colOnLayer1
-                    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
+                    stateLayerColor: tool.modelData.primary ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                     downAction: () => {
@@ -106,15 +103,13 @@ DashboardCard {
                         MaterialSymbol {
                             text: tool.modelData.icon
                             iconSize: 18
-                            color: tool.modelData.primary ? Appearance.colors.colOnPrimary :
-                                                            Appearance.colors.colOnLayer1
+                            color: tool.modelData.primary ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
                         }
 
                         StyledText {
                             text: tool.modelData.label
                             font.weight: Font.Medium
-                            color: tool.modelData.primary ? Appearance.colors.colOnPrimary :
-                                                            Appearance.colors.colOnLayer1
+                            color: tool.modelData.primary ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
                         }
 
                         Item {

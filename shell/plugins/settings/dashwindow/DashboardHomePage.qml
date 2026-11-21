@@ -32,12 +32,10 @@ Item {
     property date selectedDate: new Date()
 
     readonly property int firstDay: Qt.locale().firstDayOfWeek % 7
-    readonly property int daysInViewMonth: new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1,
-                                                    0).getDate()
+    readonly property int daysInViewMonth: new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate()
     readonly property int viewOffset: (viewMonth.getDay() - firstDay + 7) % 7
     readonly property int calendarRows: Math.ceil((viewOffset + daysInViewMonth) / 7)
-    readonly property bool viewingCurrentMonth: viewMonth.getFullYear() === root.now.getFullYear()
-                                                && viewMonth.getMonth() === root.now.getMonth()
+    readonly property bool viewingCurrentMonth: viewMonth.getFullYear() === root.now.getFullYear() && viewMonth.getMonth() === root.now.getMonth()
     property var todoService: null
 
     readonly property var todoList: root.todoService ? root.todoService.list : []
@@ -48,14 +46,12 @@ Item {
     readonly property string gpuLabel: {
         if (SystemIdentityService.gpuModelName !== "")
             return SystemIdentityService.gpuModelName;
-        return SystemMonitorService.selectedGpuId !== "" ? String(SystemMonitorService.selectedGpu.name
-                                                                  || "") : "";
+        return SystemMonitorService.selectedGpuId !== "" ? String(SystemMonitorService.selectedGpu.name || "") : "";
     }
     // Derived rather than inlined at the label: the interpolated expression is
     // long enough that qmlformat wraps the template literal onto a second
     // source line, and the card then renders the count as "0/\n0".
-    readonly property string taskProgressText: (root.todoList.length - root.pendingTasks) + "/"
-                                               + root.todoList.length
+    readonly property string taskProgressText: (root.todoList.length - root.pendingTasks) + "/" + root.todoList.length
 
     readonly property var rootDisk: Format.rootDisk(SystemMonitorService.disks)
 
@@ -75,17 +71,14 @@ Item {
     // on a desktop) out of the row instead of rendering a dead ring.
     readonly property var gaugeModel: [
         {
-            "ratio": Format.isNumber(SystemMonitorService.cpu.usagePercent)
-                     ? SystemMonitorService.cpu.usagePercent / 100 : 0,
+            "ratio": Format.isNumber(SystemMonitorService.cpu.usagePercent) ? SystemMonitorService.cpu.usagePercent / 100 : 0,
             "icon": "memory",
             "accent": Appearance.colors.colPrimary,
-            "label": root.cpuTemperature > 0 ? I18n.tr("CPU") + " · " + Math.round(root.cpuTemperature)
-                                               + "°C" : I18n.tr("CPU"),
+            "label": root.cpuTemperature > 0 ? I18n.tr("CPU") + " · " + Math.round(root.cpuTemperature) + "°C" : I18n.tr("CPU"),
             "show": true
         },
         {
-            "ratio": Format.isNumber(SystemMonitorService.memory.usagePercent)
-                     ? SystemMonitorService.memory.usagePercent / 100 : 0,
+            "ratio": Format.isNumber(SystemMonitorService.memory.usagePercent) ? SystemMonitorService.memory.usagePercent / 100 : 0,
             "icon": "developer_board",
             "accent": Appearance.colors.colTertiary,
             "label": I18n.tr("RAM") + " · " + Format.bytes(SystemMonitorService.memory.usedBytes),
@@ -101,17 +94,13 @@ Item {
         {
             "ratio": PowerService.present ? PowerService.percentage / 100 : 0,
             "icon": PowerService.charging ? "battery_charging_full" : "battery_full",
-            "accent": PowerService.discharging && PowerService.percentage < 20 ? Appearance.colors.colError :
-                                                                                 Appearance.colors.colPrimary,
+            "accent": PowerService.discharging && PowerService.percentage < 20 ? Appearance.colors.colError : Appearance.colors.colPrimary,
             "label": PowerService.charging ? I18n.tr("Charging") : I18n.tr("Battery"),
             "show": PowerService.present
         }
     ]
 
-    readonly property real cpuTemperature: Format.isNumber(
-                                               SystemMonitorService.cpu.packageTemperatureCelsius)
-                                           ? SystemMonitorService.cpu.packageTemperatureCelsius :
-                                             SystemMonitorService.cpu.temperatureCelsius
+    readonly property real cpuTemperature: Format.isNumber(SystemMonitorService.cpu.packageTemperatureCelsius) ? SystemMonitorService.cpu.packageTemperatureCelsius : SystemMonitorService.cpu.temperatureCelsius
 
     // sysmon network is a per-interface map; sum it into one up/down rate.
     readonly property var net: SystemMonitorService.network || ({})
@@ -158,8 +147,7 @@ Item {
     }
 
     function sameDay(a, b) {
-        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate()
-                === b.getDate();
+        return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
     }
 
     component InfoTile: RowLayout {
@@ -412,7 +400,6 @@ Item {
                                     containerColor: Qt.rgba(0, 0, 0, 0.45)
                                     hoverStateLayerColor: Qt.rgba(1, 1, 1, 0.3)
                                     pressedStateLayerColor: Qt.rgba(1, 1, 1, 0.3)
-                                    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                     downAction: () => Qt.callLater(() => flip.flip())
@@ -461,11 +448,8 @@ Item {
                                             buttonRadius: 18
                                             containerColor: Appearance.colors.colPrimary
                                             stateLayerColor: Appearance.colors.colOnPrimary
-                                            stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
-                                            hoverStateLayerOpacity:
-                                                Appearance.interaction.hoverStateLayerOpacity
-                                            pressedStateLayerOpacity:
-                                                Appearance.interaction.pressedStateLayerOpacity
+                                            hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
+                                            pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                             downAction: () => Qt.callLater(() => flip.flip())
 
                                             contentItem: Item {
@@ -543,10 +527,8 @@ Item {
                                         buttonRadius: 19
                                         containerColor: Qt.rgba(1, 1, 1, 0.12)
                                         stateLayerColor: Appearance.colors.colOnLayer1
-                                        stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                         hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
-                                        pressedStateLayerOpacity:
-                                            Appearance.interaction.pressedStateLayerOpacity
+                                        pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                         downAction: () => avatarPicker.openAt(avatarPicker.picturesDir)
 
                                         contentItem: RowLayout {
@@ -677,8 +659,7 @@ Item {
                             Layout.preferredWidth: 1
                             icon: "network_speed"
                             label: I18n.tr("Network")
-                            value: "↓ " + Format.bytesPerSecond(root.netDownBytes) + "   ↑ "
-                                   + Format.bytesPerSecond(root.netUpBytes)
+                            value: "↓ " + Format.bytesPerSecond(root.netDownBytes) + "   ↑ " + Format.bytesPerSecond(root.netUpBytes)
                             accent: Appearance.colors.colSecondaryContainer
                             onAccent: Appearance.colors.colOnSecondaryContainer
                         }
@@ -688,8 +669,7 @@ Item {
                             Layout.preferredWidth: 1
                             icon: "thermostat"
                             label: I18n.tr("CPU temp")
-                            value: root.cpuTemperature > 0 ? Math.round(root.cpuTemperature) + " °C" : Format.unavailable(
-                                                                 )
+                            value: root.cpuTemperature > 0 ? Math.round(root.cpuTemperature) + " °C" : Format.unavailable()
                             accent: Appearance.colors.colSecondaryContainer
                             onAccent: Appearance.colors.colOnSecondaryContainer
                         }
@@ -699,8 +679,7 @@ Item {
                             Layout.preferredWidth: 1
                             icon: "memory"
                             label: I18n.tr("Memory")
-                            value: Format.bytes(SystemMonitorService.memory.usedBytes) + " / " + Format.bytes(
-                                       SystemMonitorService.memory.totalBytes)
+                            value: Format.bytes(SystemMonitorService.memory.usedBytes) + " / " + Format.bytes(SystemMonitorService.memory.totalBytes)
                             accent: Appearance.colors.colSecondaryContainer
                             onAccent: Appearance.colors.colOnSecondaryContainer
                         }
@@ -710,8 +689,7 @@ Item {
                             Layout.preferredWidth: 1
                             icon: "hard_drive"
                             label: I18n.tr("Disk")
-                            value: Format.bytes(root.rootDisk.usedBytes) + " / " + Format.bytes(
-                                       root.rootDisk.totalBytes)
+                            value: Format.bytes(root.rootDisk.usedBytes) + " / " + Format.bytes(root.rootDisk.totalBytes)
 
                             accent: Appearance.colors.colSecondaryContainer
                             onAccent: Appearance.colors.colOnSecondaryContainer
@@ -760,14 +738,12 @@ Item {
                             }
 
                             RippleButton {
-                                visible: !root.viewingCurrentMonth || !root.sameDay(root.selectedDate,
-                                                                                    root.now)
+                                visible: !root.viewingCurrentMonth || !root.sameDay(root.selectedDate, root.now)
                                 implicitHeight: 34
                                 horizontalPadding: 16
                                 buttonRadius: 17
                                 containerColor: Appearance.colors.colPrimaryContainer
                                 stateLayerColor: Appearance.colors.colOnPrimaryContainer
-                                stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                 downAction: () => {
@@ -838,7 +814,6 @@ Item {
                                     buttonRadius: 18
                                     containerColor: "transparent"
                                     stateLayerColor: Appearance.colors.colOnLayer1
-                                    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                     downAction: () => root.shiftMonth(modelData.delta)
@@ -872,8 +847,7 @@ Item {
 
                                     Layout.fillWidth: true
                                     horizontalAlignment: Text.AlignHCenter
-                                    text: Qt.locale().dayName((root.firstDay + index) % 7,
-                                                              Locale.ShortFormat).charAt(0).toUpperCase()
+                                    text: Qt.locale().dayName((root.firstDay + index) % 7, Locale.ShortFormat).charAt(0).toUpperCase()
                                     // 15 matches the day numbers below and upstream's
                                     // `small`; bodyLarge rounds down to 14.
                                     font.pixelSize: NexusStyle.font.bodyMedium
@@ -890,16 +864,11 @@ Item {
 
                                     required property int index
 
-                                    readonly property date cellDate: new Date(root.viewMonth.getFullYear(),
-                                                                              root.viewMonth.getMonth(), 1
-                                                                              - root.viewOffset + index)
-                                    readonly property bool inMonth: cellDate.getMonth()
-                                                                    === root.viewMonth.getMonth()
+                                    readonly property date cellDate: new Date(root.viewMonth.getFullYear(), root.viewMonth.getMonth(), 1 - root.viewOffset + index)
+                                    readonly property bool inMonth: cellDate.getMonth() === root.viewMonth.getMonth()
                                     readonly property bool isToday: root.sameDay(cellDate, root.now)
-                                    readonly property bool isSelected: root.sameDay(cellDate,
-                                                                                    root.selectedDate)
-                                    readonly property bool isWeekend: cellDate.getDay() === 0
-                                                                      || cellDate.getDay() === 6
+                                    readonly property bool isSelected: root.sameDay(cellDate, root.selectedDate)
+                                    readonly property bool isWeekend: cellDate.getDay() === 0 || cellDate.getDay() === 6
 
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
@@ -911,10 +880,7 @@ Item {
                                         height: width
                                         radius: width / 2
                                         visible: dayCell.inMonth
-                                        color: dayCell.isSelected ? Appearance.colors.colPrimary :
-                                                                    dayMouse.containsMouse
-                                                                    ? Appearance.colors.colLayer1Hover :
-                                                                      "transparent"
+                                        color: dayCell.isSelected ? Appearance.colors.colPrimary : dayMouse.containsMouse ? Appearance.colors.colLayer1Hover : "transparent"
                                         border.width: dayCell.isToday && !dayCell.isSelected ? 1.5 : 0
                                         border.color: Appearance.colors.colPrimary
 
@@ -929,14 +895,8 @@ Item {
                                             text: dayCell.cellDate.getDate()
                                             // 对齐上游 end4-pC 实际渲染值 15，跳过 0.85 缩放
                                             font.pixelSize: NexusStyle.font.bodyMedium
-                                            font.weight: dayCell.isSelected || dayCell.isToday ? Font.Bold :
-                                                                                                 Font.Normal
-                                            color: dayCell.isSelected ? Appearance.colors.colOnPrimary :
-                                                                        dayCell.isToday
-                                                                        ? Appearance.colors.colPrimary :
-                                                                          dayCell.isWeekend
-                                                                          ? Appearance.colors.colTertiary :
-                                                                            Appearance.colors.colOnLayer1
+                                            font.weight: dayCell.isSelected || dayCell.isToday ? Font.Bold : Font.Normal
+                                            color: dayCell.isSelected ? Appearance.colors.colOnPrimary : dayCell.isToday ? Appearance.colors.colPrimary : dayCell.isWeekend ? Appearance.colors.colTertiary : Appearance.colors.colOnLayer1
                                         }
                                     }
 
@@ -1050,9 +1010,7 @@ Item {
                                 }
 
                                 StyledText {
-                                    text: WeatherService.hasValidData ? Math.round(
-                                                                            WeatherService.currentTemperatureC)
-                                                                        + "°C" : "--"
+                                    text: WeatherService.hasValidData ? Math.round(WeatherService.currentTemperatureC) + "°C" : "--"
                                     font.pixelSize: NexusStyle.font.headlineMedium
                                     font.weight: Font.DemiBold
                                     color: Appearance.colors.colPrimary
@@ -1086,8 +1044,7 @@ Item {
 
                             MaterialShapeWrappedMaterialSymbol {
                                 wrappedShape: MaterialShapeCanvas.Shape.Clover4Leaf
-                                text: root.pendingTasks === 0 && root.todoList.length > 0 ? "celebration" :
-                                                                                            "checklist"
+                                text: root.pendingTasks === 0 && root.todoList.length > 0 ? "celebration" : "checklist"
 
                                 iconSize: 26
                                 fill: 1
@@ -1107,12 +1064,7 @@ Item {
                                 }
 
                                 StyledText {
-                                    text: root.todoList.length === 0 ? I18n.tr("Nothing to do") :
-                                                                       root.pendingTasks === 0 ? I18n.tr(
-                                                                                                     "All done") :
-                                                                                                 root.pendingTasks
-                                                                                                 + " " + I18n.tr(
-                                                                                                     "left")
+                                    text: root.todoList.length === 0 ? I18n.tr("Nothing to do") : root.pendingTasks === 0 ? I18n.tr("All done") : root.pendingTasks + " " + I18n.tr("left")
                                     font.pixelSize: NexusStyle.font.bodySmall
                                     color: Appearance.colors.colOnLayer1
                                     opacity: 0.75
@@ -1141,9 +1093,7 @@ Item {
                                 height: parent.height
                                 radius: 4
                                 color: Appearance.colors.colSecondary
-                                width: root.todoList.length === 0 ? 0 : parent.width * (root.todoList.length
-                                                                                        - root.pendingTasks)
-                                                                    / root.todoList.length
+                                width: root.todoList.length === 0 ? 0 : parent.width * (root.todoList.length - root.pendingTasks) / root.todoList.length
 
                                 Behavior on width {
                                     NumberAnimation {
@@ -1170,10 +1120,10 @@ Item {
                             }
 
                             model: root.todoList.map((t, i) => ({
-                                "content": t.content,
-                                "done": t.done,
-                                "origIndex": i
-                            }))
+                                        "content": t.content,
+                                        "done": t.done,
+                                        "origIndex": i
+                                    }))
 
                             delegate: RippleButton {
                                 id: taskDelegate
@@ -1185,7 +1135,6 @@ Item {
                                 buttonRadius: 20
                                 containerColor: Qt.rgba(1, 1, 1, taskDelegate.modelData.done ? 0.05 : 0.1)
                                 stateLayerColor: Appearance.colors.colOnLayer1
-                                stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                 downAction: () => {
@@ -1218,8 +1167,7 @@ Item {
                                             implicitWidth: 24
                                             implicitHeight: 24
                                             radius: 12
-                                            color: taskDelegate.modelData.done
-                                                   ? Appearance.colors.colSecondary : "transparent"
+                                            color: taskDelegate.modelData.done ? Appearance.colors.colSecondary : "transparent"
                                             border.width: taskDelegate.modelData.done ? 0 : 2
                                             border.color: Appearance.colors.colOnLayer1
 
@@ -1248,11 +1196,8 @@ Item {
                                             Layout.rightMargin: 6
                                             containerColor: "transparent"
                                             stateLayerColor: Appearance.colors.colOnLayer1
-                                            stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
-                                            hoverStateLayerOpacity:
-                                                Appearance.interaction.hoverStateLayerOpacity
-                                            pressedStateLayerOpacity:
-                                                Appearance.interaction.pressedStateLayerOpacity
+                                            hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
+                                            pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                             downAction: () => {
                                                 const index = taskDelegate.modelData.origIndex;
                                                 Qt.callLater(() => root.todoService.deleteItem(index));

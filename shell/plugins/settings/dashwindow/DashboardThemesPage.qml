@@ -316,7 +316,6 @@ Item {
                                 containerColor: PersonalizationConfig.isMatugenTemplateEnabled(templateToggle.modelData.id) ? Appearance.colors.colSecondary : Appearance.colors.colSurfaceContainerHigh
                                 rippleColor: Appearance.colors.colOnLayer1
                                 stateLayerColor: Appearance.colors.colOnLayer1
-                                stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                                 pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                                 downAction: () => {

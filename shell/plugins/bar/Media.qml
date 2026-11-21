@@ -44,6 +44,12 @@ Item {
     // BarGroup's group chrome keys off this, not Item.visible: `visible` is
     // effective visibility, so a collapsed group would mask the widget forever.
     readonly property bool barWidgetVisible: root.shouldShow
+    // Probe surface (scripts/dev/probe-bar.sh): the D1 fill contract — the
+    // material row must never paint wider than the widget's clamped box.
+    readonly property bool probeMediaSurface: true
+    readonly property real probeRowImplicitWidth: materialRow.implicitWidth
+    readonly property real probeRowAssignedWidth: materialRow.width
+    readonly property real probeWidgetWidth: root.width
     readonly property color mediaContainer: M3Palette.pillContainer("media")
     readonly property color mediaInk: root.contentColorOverridden ? root.contentColor : M3Palette.pillInk("media")
     readonly property color playContainer: root.isPlaying ? M3Palette.primary : M3Palette.surfaceContainerLow
@@ -56,6 +62,12 @@ Item {
     readonly property color transparentActive: ColorUtils.applyAlpha(root.mediaInk, 0.22)
 
     visible: root.shouldShow
+    // D1: the pill content must respect the widget's clamped width. When a
+    // compressed lane squeezes the widget below its implicit width the
+    // material cluster used to keep its full implicit width centered on the
+    // shrunken box (no fill, no elide, no clip), bleeding text out of both
+    // pill ends. Clip is the last-resort guard for transient polish states.
+    clip: true
 
     readonly property bool artDownloaded: artworkResolver.ready
     readonly property string displayedArtFilePath: artworkResolver.ready ? artworkResolver.displaySource : ""
@@ -298,10 +310,14 @@ Item {
         id: materialRow
         active: !root.vertical && root.isMaterial
         visible: active
-        anchors.centerIn: parent
+        // Fill (not centerIn): the row adapts to the widget's clamped width
+        // and the fillWidth texts elide into whatever space is left, matching
+        // the non-material branch's contract. iNiR's formula stays the single
+        // width authority (implicitWidth is unaffected by the assigned width).
+        anchors.fill: parent
         sourceComponent: RowLayout {
             id: innerRow
-            anchors.centerIn: parent
+            anchors.fill: parent
             spacing: 6
 
             // No player
@@ -365,6 +381,7 @@ Item {
                             font.pixelSize: NexusStyle.font.bodySmall
                             color: root.mediaInk
                             elide: Text.ElideRight
+                            Layout.fillWidth: true
                             Layout.maximumWidth: 120
                         }
 
@@ -375,6 +392,7 @@ Item {
                             opacity: 0.7
                             elide: Text.ElideRight
                             Layout.rightMargin: 8
+                            Layout.fillWidth: true
                             Layout.maximumWidth: 120
                             text: SystemIdentityService.distroName
                         }
@@ -436,6 +454,7 @@ Item {
                             font.pixelSize: NexusStyle.font.bodySmall
                             color: root.mediaInk
                             elide: Text.ElideRight
+                            Layout.fillWidth: true
                             Layout.maximumWidth: 120
                             animateChange: true
                         }
@@ -448,6 +467,7 @@ Item {
                             font.weight: titleOnly ? Font.Medium : Font.Normal
                             color: titleOnly ? root.mediaInk : (root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.7) : ColorUtils.readableSubtext(root.mediaInk, root.mediaContainer, 0.72))
                             elide: Text.ElideRight
+                            Layout.fillWidth: true
                             Layout.maximumWidth: 120
                             animateChange: true
                         }

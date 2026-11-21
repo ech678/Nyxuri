@@ -243,9 +243,13 @@ Singleton {
         readonly property int rippleDuration: 700
         readonly property real rippleOpacity: 0.22
         readonly property int stateLayerTransitionDuration: Animations.durations.expressiveFastEffects
+        // D0 state-layer contract (M3 / caelestia tokens): hover 8%, focus
+        // 10%, press 10% (was 0.12, aligned 2026-11-21), drag 16%, selected
+        // 10%.
         readonly property real hoverStateLayerOpacity: 0.08
         readonly property real focusStateLayerOpacity: 0.10
-        readonly property real pressedStateLayerOpacity: 0.12
+        readonly property real pressedStateLayerOpacity: 0.10
+        readonly property real dragStateLayerOpacity: 0.16
         readonly property real selectedStateLayerOpacity: 0.10
         readonly property int rippleEasing: Easing.OutCubic
     }

@@ -6,24 +6,12 @@
 
 ## 未修复 BUG
 
-- [ ] **Media 胶囊两行文字溢出（2026-11-21 诊断，归 D1）**：material 分支
-  `materialRow/innerRow` `anchors.centerIn` 自取 implicitWidth，`Layout.maximumWidth: 120`
-  不参与布局 implicitWidth 求值（Qt 布局行为），整簇居中在超宽坐标上溢出 ≤300px 部件，
-  根 Item 无 clip。修法：宽度公式对齐 iNiR barM3 原件（clamp 对 material 生效）+ clip 兜底。
-- [ ] **岛水平时钟不居中（2026-11-21 诊断，归 D1）**：`DiIdle` 贴右排布（头像左锚 +
-  rightSideRow 右锚），时钟簇无居中约束；pill 144px 宽度下限导致内容窄时中间留洞；
-  未读 Revealer 宽度动画推移时钟。修法：三段式重排（头像左/时钟 centerIn/状态图标右）。
-- [ ] **DiIdle 通知铃铛突兀（2026-11-21 诊断，归 D1）**：与 SystemIcons 通知槽、岛通知面
-  三重职责重复；Revealer 宽度抖动；颜色硬编码不走 pill ink 体系（end4 原版 DiIdle 无此件，
-  未读默认 8px 圆点在 SystemIcons 组末尾）。修法：处决，未读归 SystemIcons 通知槽。
-- [ ] **托盘箭头 hover 浅色近黑（2026-11-21 诊断，归 D0）**：三层叠加——
-  `RippleButton.colBackgroundToggledHover` 是普通属性非别名（赋值永不到达 StateLayer，
-  死 API）；`hoverOpacity` 默认链把 StateLayer 健全默认 0.08 覆盖为 1（hover 全不透明
-  填充 `colOnSurface` = 近黑）；目标 token `secondaryContainerHover` 本身是 90% 深混语义。
-  修法：D0 状态层契约落地（死属性修复 + opacity 不覆盖 + hover=8% 浸染）。
-- [ ] **下架件与孤儿**：`NetworkSpeed*`/`Weather*`/`DocktoPanel`/
-  `LeftSidebarButton` 等依赖 iNiR 单例名的部件仍未接线；`Resources`/`ClockWidget`/
-  `BatteryIndicator` 已随 B8.2 基件整抄解冻并进选装集。清单见
+（D1 快修四件已于 2026-11-21 修复，见下方已修复段；当前无未修复登记。）
+
+- [ ] **下架件与孤儿**：`NetworkSpeed*`/`DocktoPanel`/`LeftSidebarButton`
+  等依赖 iNiR 单例名的部件仍未接线；`Resources`/`ClockWidget`/
+  `BatteryIndicator` 已随 B8.2 基件整抄解冻并进选装集；Weather 三件与
+  Visualizer 已随 D1 解冻进选装集。清单见
   [shell/plugins/bar/PARKED.md](../../shell/plugins/bar/PARKED.md)。
 
 ## 基础设施缺口（快速上线时跳过，回来先做这些）
@@ -32,6 +20,29 @@
 
 ## 已修复
 
+- [x] **D1 快修四件 + 托盘箭头（2026-11-21，D0 状态层契约一并落地）**：
+  - **Media 胶囊溢出（根因修正）**：复刻实验证明 `Layout.maximumWidth` *确实*参与
+    布局 implicitWidth 求值（224px 钳制正常）；真正的溢出机制是**压缩态/lane 挤压把部件
+    压到比 implicitWidth 窄时，material 分支（centerIn + 无 fillWidth + 无 clip）不收缩
+    不省略，整簇按原宽居中两侧出血**——非 material 分支（anchors.fill + fillWidth +
+    elide）天生免疫。修法：material Loader 改 `anchors.fill` + 四个文本 `fillWidth` +
+    保留 120 帽 + 根 Item `clip` 兜底；iNiR 钳制公式不动，默认 min/max 保持 160/300
+    （作者拍板不做 100/280）。
+  - **岛水平时钟不居中**：DiIdle 三段式重排——头像左锚 / 时钟簇 `centerIn` /
+    状态图标右锚；`computedIdleWidth` 三段合计（含右缘 10px）继续喂
+    `di.idleTextContentWidth`；probe 断言 `clockCenterX == faceWidth/2`。
+  - **DiIdle 通知铃铛处决**：未读 Revealer 块删除；未读唯一归宿 = SystemIcons 通知槽
+    （默认 8px 圆点、`showUnreadCount` 可配）。副作用：`systemIconsElsewhere=false`
+    时 idle 面无未读指示——end4 原版同答案，DiNotifs 实时通知仍在，属已接受边界。
+  - **托盘箭头 hover 近黑（D0 交互反馈合一落地）**：`RippleButton` 四个状态层透明度
+    默认直取 `Appearance.interaction`（hover 8/focus 10/press 10/selected 10），
+    删除 `stateLayerOpacity:1` 隐形压制链（全库 26 处手动绕行赋值一并清除）；
+    `colBackgroundToggled/ToggledHover` 死属性激活为真背景填充（toggled 换底色 +
+    状态层墨色照常叠加）；press 0.12→0.10、新增 drag 0.16 对齐契约；
+    bar 私有 end4 枚举 StateLayer + StateOverlay 退役，ui/ M3 StateLayer 补 `dragged`
+    态成为唯一正典，Workspaces 内联消费。全库 25 处
+    `stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity` 手动绕行赋值
+    随属性删除一并清除。
 - [x] **竖向 bar 与外边距（B9.4/B9.5，2026-11-14）**：`bar.position` 的 left/right 不再是
   死键——`bar.edge` 成为唯一真相，新增 `VerticalBarContent.qml`（end4 整抄剪裁，纵向三
   lane）、独立 `barVerticalThickness`、`barEdgeMargin`/`barSideMargin` 外边距与纯几何

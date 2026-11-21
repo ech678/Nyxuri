@@ -72,11 +72,9 @@ DashboardCard {
                     leftPadding: 16
                     rightPadding: 16
                     buttonRadius: 22
-                    containerColor: option.selected ? Appearance.colors.colTertiary :
-                                                      Appearance.colors.colSurfaceContainerHigh
+                    containerColor: option.selected ? Appearance.colors.colTertiary : Appearance.colors.colSurfaceContainerHigh
                     rippleColor: Appearance.colors.colOnTertiary
                     stateLayerColor: Appearance.colors.colOnTertiary
-                    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                     downAction: () => {
@@ -106,16 +104,14 @@ DashboardCard {
                                 text: option.modelData.icon ?? ""
                                 iconSize: 18
                                 fill: option.selected ? 1 : 0
-                                color: option.selected ? Appearance.colors.colOnTertiary :
-                                                         Appearance.colors.colOnLayer1
+                                color: option.selected ? Appearance.colors.colOnTertiary : Appearance.colors.colOnLayer1
                             }
 
                             StyledText {
                                 Layout.fillWidth: true
                                 text: option.modelData.label ?? ""
                                 font.weight: Font.Medium
-                                color: option.selected ? Appearance.colors.colOnTertiary :
-                                                         Appearance.colors.colOnLayer1
+                                color: option.selected ? Appearance.colors.colOnTertiary : Appearance.colors.colOnLayer1
                                 elide: Text.ElideRight
                                 horizontalAlignment: Text.AlignHCenter
                             }

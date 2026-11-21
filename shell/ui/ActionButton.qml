@@ -21,7 +21,7 @@ RippleButton {
     stateLayerColor: root.filled ? Appearance.colors.colPrimaryHover : Appearance.colors.colPrimary
     hoverStateLayerColor: root.filled ? Appearance.colors.colPrimaryHover : Appearance.colors.colPrimary
     pressedStateLayerColor: root.filled ? Appearance.colors.colPrimaryActive : Appearance.colors.colPrimary
-    stateLayerOpacity: root.filled ? 1 : Appearance.interaction.hoverStateLayerOpacity
+    hoverStateLayerOpacity: root.filled ? 1 : Appearance.interaction.hoverStateLayerOpacity
     pressedStateLayerOpacity: root.filled ? 1 : Appearance.interaction.pressedStateLayerOpacity
     focusStateLayerOpacity: root.filled ? 1 : Appearance.interaction.focusStateLayerOpacity
     focusPolicy: Qt.StrongFocus
@@ -55,9 +55,6 @@ RippleButton {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
-
         }
-
     }
-
 }

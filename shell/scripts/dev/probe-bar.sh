@@ -501,6 +501,34 @@ fi
 # top -> left -> right -> bottom -> top. The top->left->top round trip is the
 # regression gate for conditional-anchor leftovers: content must return to the
 # bar thickness instead of keeping the screen-width/height it had.
+# The edge switch waits for the window to actually flip orientation (up to 6s)
+# instead of a fixed sleep — under a loaded session the compositor-side
+# resize can outrun a static 0.9s budget (2026-11-21, D1 session).
+wait_edge_window() {
+    # Poll the actual window box aspect (not the config-derived `vertical`
+    # flag): the compositor-side resize lags the config flip.
+    local want_vertical="$1"
+    local dump vertical
+    for _ in $(seq 1 30); do
+        dump=$(ipc windowDump 2>/dev/null || true)
+        vertical=$(printf '%s' "${dump}" | python3 -c 'import json,sys
+try:
+    d = json.load(sys.stdin)
+except ValueError:
+    print(""); raise SystemExit
+w = int((d.get("window") or {}).get("w") or 0)
+h = int((d.get("window") or {}).get("h") or 0)
+if not w or not h or d.get("found") is not True:
+    print("")
+else:
+    print(str(h > w).lower())' 2>/dev/null || true)
+        if [[ ${vertical} == "${want_vertical}" ]]; then
+            return 0
+        fi
+        sleep 0.2
+    done
+    return 1
+}
 window_file="${tmp}/window.tsv"
 : >"${window_file}"
 if ipc windowMode true >/dev/null 2>&1; then
@@ -515,7 +543,13 @@ if ipc windowMode true >/dev/null 2>&1; then
     if [[ ${window_ready} == true ]]; then
         for edge in top left right bottom top; do
             ipc edge "${edge}" >/dev/null 2>&1 || true
-            sleep 0.9
+            case ${edge} in
+                left | right) wait_edge_window true >/dev/null 2>&1 || true ;;
+                *) wait_edge_window false >/dev/null 2>&1 || true ;;
+            esac
+            # The aspect flips before the anchor/exclusive-zone settles; give
+            # the offset geometry its own beat before dumping.
+            sleep 0.6
             printf '%s\t%s\n' "${edge}" "$(ipc windowDump 2>/dev/null || true)" >>"${window_file}"
         done
         # B9.7 autohide: the window reservation must collapse to zero while
@@ -535,7 +569,51 @@ if ipc windowMode true >/dev/null 2>&1; then
     ipc edge top >/dev/null 2>&1 || true
 fi
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" <<'PY'
+# D1 quick fixes + B-10: island media matrix, weather/visualizer leases and
+# the date format key. All config-driven — no MPRIS player exists in the
+# harness, and the null player is itself the lease-idle state worth pinning.
+d1_island_media_file="${tmp}/d1-island-media.tsv"
+: >"${d1_island_media_file}"
+for controls in false true; do
+    for style in dots wave none; do
+        printf '%s\t%s\t%s\n' "${controls}" "${style}" "$(ipc islandMediaFace "${controls}" "${style}" 2>/dev/null || true)" >>"${d1_island_media_file}"
+        sleep 0.2
+    done
+done
+# The early ipc replies warm the (cold-compiled) widget; only the late
+# captures feed the python report.
+ipc weatherLease on >/dev/null 2>&1 || true
+sleep 0.8
+d1_weather_on_late=$(ipc weatherLease on 2>/dev/null || true)
+ipc weatherLease off >/dev/null 2>&1 || true
+sleep 0.6
+d1_weather_off_late=$(ipc weatherLease off 2>/dev/null || true)
+d1_visualizer_on=""
+for _ in $(seq 1 8); do
+    d1_visualizer_on=$(ipc visualizerLease on 2>/dev/null || true)
+    [[ ${d1_visualizer_on} == *'"found":true'* ]] && break
+    sleep 0.4
+done
+sleep 0.4
+d1_visualizer_on_late=$(ipc visualizerLease on 2>/dev/null || true)
+sleep 0.5
+d1_visualizer_off_late=$(ipc visualizerLease off 2>/dev/null || true)
+d1_date_fmt=$(ipc dateFormatProbe "ddd, dd/MM" 2>/dev/null || true)
+d1_date_reset=$(ipc dateFormatProbe "" 2>/dev/null || true)
+# Media fill contract: media-only lane (no player in the harness, so this
+# pins the hidden-collapse and wiring; the visible-path overflow proof rides
+# the real-machine screenshot pass).
+ipc scene mediaOnly >/dev/null 2>&1 || true
+ipc cornerStyle 3 >/dev/null 2>&1 || true
+ipc reload >/dev/null 2>&1 || true
+sleep 0.8
+d1_media_geom=$(ipc mediaGeometry 2>/dev/null || true)
+# Restore the shipped layout so the persisted config stays canonical.
+ipc cornerStyle 1 >/dev/null 2>&1 || true
+ipc scene default >/dev/null 2>&1 || true
+ipc reload >/dev/null 2>&1 || true
+
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" <<'PY'
 import json
 import re
 import sys
@@ -547,7 +625,9 @@ import sys
  idle_face_state, idle_face_no_avatar, vertical_path, margins_state, window_path,
  b96_override, b96_reset, b96_hug_float, b96_hug_plain, b97_baseline, b97_bg_off,
  b97_divider, b97_util_on, b97_util_off, b97_res_on, b97_res_off, b97_han,
- b97_roman, b97_screen_named, b97_screen_empty, b97_persisted) = sys.argv[1:42]
+ b97_roman, b97_screen_named, b97_screen_empty, b97_persisted,
+ d1_island_media_path, d1_weather_on, d1_weather_off, d1_visualizer_on,
+ d1_visualizer_off, d1_date_fmt, d1_date_reset, d1_media_geom) = sys.argv[1:50]
 
 
 def load_tsv(path):
@@ -623,6 +703,12 @@ if idle_face.get("showAvatar") is not False:
     idle_face_ok = idle_face_ok and not (idle_face.get("avatarReady") and idle_face.get("avatarFallback")) and (idle_face.get("avatarReady") or idle_face.get("avatarFallback"))
 if idle_face.get("satellite") == "clock":
     idle_face_ok = idle_face_ok and idle_face.get("clockVisible") is True and idle_face.get("clockWidth", 0) > 0 and idle_face.get("clockHeight", 0) > 0
+# D1 three-segment geometry: the clock cluster sits in the pill's optical
+# centre (the old right-packed layout left it uncentered).
+if isinstance(idle_face.get("clockCenterX"), (int, float)) and isinstance(idle_face.get("faceWidth"), (int, float)) and idle_face["faceWidth"] > 0:
+    idle_face_ok = idle_face_ok and abs(idle_face["clockCenterX"] - idle_face["faceWidth"] / 2) <= 0.75
+else:
+    idle_face_ok = False
 # The avatar is optional: hiding it must drop it from the idle face and shrink
 # the pill by exactly its block.
 avatar_optional_ok = bool(
@@ -660,7 +746,13 @@ def load_tsv_rows(path):
             if not line.strip():
                 continue
             parts = line.split("\t")
-            rows.append((parts[:-1], json.loads(parts[-1])))
+            try:
+                rows.append((parts[:-1], json.loads(parts[-1])))
+            except ValueError:
+                # Empty/failed ipc payload: keep the row keyed with an empty
+                # report so consumers fail their own assertions instead of
+                # crashing the whole probe.
+                rows.append((parts[:-1], {}))
     return rows
 
 
@@ -1077,12 +1169,89 @@ number_ok = bool(
 screen_ok = _layout_ok(b97_screen_named) and _layout_ok(b97_screen_empty)
 b97_ok = background_ok and divider_ok and util_ok and resources_ok and number_ok and screen_ok and autohide_ok and b97_persisted == "true" and autohide_ok
 
+# D1: island media matrix (controls x style), weather/visualizer leases and
+# the date format key. The harness has no MPRIS player and (usually) no cava
+# binary — the null player is exactly the lease-idle state worth pinning.
+d1_matrix_rows = load_tsv_rows(d1_island_media_path)
+d1_matrix = {}
+for key, entry in d1_matrix_rows:
+    if len(key) == 2:
+        d1_matrix[(str(key[0]).lower(), str(key[1]))] = entry
+matrix_expectations = {
+    # (controls, style): (controlsVisible, waveVisible, dotsVisible)
+    ("false", "dots"): (False, False, True),
+    ("false", "wave"): (False, True, False),
+    ("false", "none"): (False, False, False),
+    ("true", "dots"): (True, False, False),
+    ("true", "wave"): (True, True, False),
+    ("true", "none"): (True, False, False),
+}
+island_matrix_ok = len(d1_matrix) == 6
+for state, expected in matrix_expectations.items():
+    entry = d1_matrix.get(state) or {}
+    actual = (entry.get("controlsVisible"), entry.get("waveVisible"), entry.get("dotsVisible"))
+    if entry.get("found") is not True or actual != expected:
+        island_matrix_ok = False
+    # No player playing -> no cava lease in any state.
+    if entry.get("waveCavaActive") is True or entry.get("cavaSubscribers", 0) != 0:
+        island_matrix_ok = False
+
+def _d1_json(blob):
+    try:
+        return json.loads(blob) if blob else {}
+    except (ValueError, TypeError):
+        return {}
+
+d1_weather_on_state = _d1_json(d1_weather_on)
+d1_weather_off_state = _d1_json(d1_weather_off)
+d1_visualizer_on_state = _d1_json(d1_visualizer_on)
+d1_visualizer_off_state = _d1_json(d1_visualizer_off)
+d1_date_fmt_state = _d1_json(d1_date_fmt)
+d1_date_reset_state = _d1_json(d1_date_reset)
+d1_media_geom_state = _d1_json(d1_media_geom)
+
+weather_lease_ok = bool(
+    d1_weather_on_state.get("leaseCount", 0) >= 1
+    and d1_weather_off_state.get("leaseCount") == 0
+)
+# Mount/unmount lifecycle: the widget instantiates in the lane and leaves no
+# lease behind after removal. (The mount-time subscriber count is timing-
+# dependent — the acquire lands on a later polish tick — so only the release
+# side is pinned to zero.)
+visualizer_lease_ok = bool(
+    d1_visualizer_on_state.get("found") is True
+    and d1_visualizer_off_state.get("found") is not True
+    and d1_visualizer_off_state.get("subscribers") == 0
+)
+# "ddd, dd/MM" renders like "Fri, 28/08"; the reset returns to the stock long
+# weekday form and the short date stays on its own fixed pattern.
+date_format_ok = bool(
+    re.fullmatch(r"[A-Za-z]{3}, \d{2}/\d{2}", str(d1_date_fmt_state.get("date", ""))) is not None
+    and re.fullmatch(r"\d{2}/\d{2}", str(d1_date_fmt_state.get("shortDate", ""))) is not None
+    and d1_date_reset_state.get("format", "x") == ""
+    and re.fullmatch(r"\d{2}/\d{2}", str(d1_date_reset_state.get("shortDate", ""))) is not None
+    and d1_date_reset_state.get("date") != d1_date_fmt_state.get("date")
+)
+# The fill contract: whenever the widget is visible its row never paints
+# wider than the widget box (the overflow bug). Hidden collapses to zero.
+media_geometry_ok = bool(
+    d1_media_geom_state.get("found") is True
+    and (
+        d1_media_geom_state.get("visible") is not True
+        or (
+            d1_media_geom_state.get("overflow") is False
+            and d1_media_geom_state.get("rowAssignedWidth", -1) <= d1_media_geom_state.get("widgetWidth", 0) + 0.5
+        )
+    )
+)
+d1_ok = island_matrix_ok and weather_lease_ok and visualizer_lease_ok and date_format_ok and media_geometry_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok)
+      and b96_ok and b97_ok and d1_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1126,6 +1295,9 @@ report = {
         "avatarOptional": avatar_optional_ok,
         "clockVisible": idle_face.get("clockVisible"),
         "clockWidth": idle_face.get("clockWidth"),
+        "clockCenterX": idle_face.get("clockCenterX"),
+        "faceWidth": idle_face.get("faceWidth"),
+        "statusWidth": idle_face.get("statusWidth"),
         "avatarReady": idle_face.get("avatarReady"),
         "avatarFallback": idle_face.get("avatarFallback"),
     },
@@ -1148,6 +1320,45 @@ report = {
     },
     "tray": tray_report,
     "systemIcons": system_icons_report,
+    "d1": {
+        "ok": d1_ok,
+        "islandMatrix": {
+            "ok": island_matrix_ok,
+            "cases": {f"{controls}|{style}": {
+                "showControls": entry.get("showControls"),
+                "style": entry.get("style"),
+                "controlsVisible": entry.get("controlsVisible"),
+                "waveVisible": entry.get("waveVisible"),
+                "dotsVisible": entry.get("dotsVisible"),
+                "waveCavaActive": entry.get("waveCavaActive"),
+                "cavaSubscribers": entry.get("cavaSubscribers"),
+            } for (controls, style), entry in sorted(d1_matrix.items())},
+        },
+        "weatherLease": {
+            "ok": weather_lease_ok,
+            "on": d1_weather_on_state.get("leaseCount"),
+            "off": d1_weather_off_state.get("leaseCount"),
+        },
+        "visualizerLease": {
+            "ok": visualizer_lease_ok,
+            "on": {"found": d1_visualizer_on_state.get("found"), "subscribers": d1_visualizer_on_state.get("subscribers")},
+            "off": {"found": d1_visualizer_off_state.get("found"), "subscribers": d1_visualizer_off_state.get("subscribers")},
+        },
+        "dateFormat": {
+            "ok": date_format_ok,
+            "formatted": d1_date_fmt_state.get("date"),
+            "reset": d1_date_reset_state.get("date"),
+            "shortDate": d1_date_fmt_state.get("shortDate"),
+        },
+        "mediaGeometry": {
+            "ok": media_geometry_ok,
+            "visible": d1_media_geom_state.get("visible"),
+            "widgetWidth": d1_media_geom_state.get("widgetWidth"),
+            "rowAssignedWidth": d1_media_geom_state.get("rowAssignedWidth"),
+            "rowImplicitWidth": d1_media_geom_state.get("rowImplicitWidth"),
+            "overflow": d1_media_geom_state.get("overflow"),
+        },
+    },
     "b96": {
         "ok": b96_ok,
         "override": {

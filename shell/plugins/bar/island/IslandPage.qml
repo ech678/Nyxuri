@@ -111,12 +111,28 @@ Item {
                 }
 
                 PreferenceSelect {
-                    last: true
                     label: I18n.tr("Satellite")
                     model: PersonalizationConfig.islandSatelliteOptions
                     currentValue: PersonalizationConfig.islandSatellite
                     inputRegionService: PopupInputRegionService
                     onSelected: value => PersonalizationConfig.setIslandSatellite(String(value))
+                }
+
+                // B-10: the island media face's end4 control set.
+                PreferenceToggle {
+                    first: true
+                    text: I18n.tr("Show media controls")
+                    checked: PersonalizationConfig.islandShowMediaControls
+                    onToggled: PersonalizationConfig.setIslandShowMediaControls(checked)
+                }
+
+                PreferenceSelect {
+                    last: true
+                    label: I18n.tr("Visualizer")
+                    model: PersonalizationConfig.islandVisualizerStyleOptions
+                    currentValue: PersonalizationConfig.islandVisualizerStyle
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => PersonalizationConfig.setIslandVisualizerStyle(String(value))
                 }
 
                 // Keyboard indicators (iNiR panel/popup split)

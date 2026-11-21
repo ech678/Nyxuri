@@ -890,8 +890,9 @@ class TestIslandPageRebuild(unittest.TestCase):
         for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect",
                      "PreferenceAction", "ConnectedRect"):
             self.assertIn(atom, source, f"IslandPage must use the atom: {atom}")
-        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 1,
-                         "the satellite select is the only select row left on the island page")
+        # B-10 adds the visualizer-style select next to the satellite select.
+        self.assertEqual(source.count("inputRegionService: PopupInputRegionService"), 2,
+                         "the satellite and visualizer selects are the island page's select rows")
 
     def test_recording_surface_is_parked(self):
         """Timer/Recording are parked until their services exist. The page must

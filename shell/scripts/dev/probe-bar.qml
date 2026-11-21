@@ -49,6 +49,39 @@ ShellRoot {
             active: !probeRoot.windowMode && PersonalizationConfig.ready && !probeRoot.reloading
             source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/" + (probeRoot.probeVertical ? "VerticalBarContent.qml" : "BarContent.qml") : ""
         }
+
+        // D1 B-10: the island media face probed with a stub host — the real
+        // face needs an MPRIS player, but its control matrix (controls ×
+        // visualizer style, cava lease) is config-driven and evaluates with
+        // a null player. Hidden, but instantiated on demand so bindings run.
+        Item {
+            id: islandMediaStub
+            // opacity (not visible:false): an invisible parent freezes the
+            // children's visible bindings at creation values, which would
+            // wreck the control matrix the stub exists to measure.
+            opacity: 0
+            width: 220
+            height: 32
+            property real pillHeight: 32
+            property bool isMaterial: PersonalizationConfig.barIsMaterial
+            property var activePlayer: null
+            property bool mediaTrackInfoVisible: false
+            property real mediaTextContentWidth: 0
+
+            Loader {
+                id: islandMediaLoader
+                anchors.fill: parent
+                active: false
+                // setSource carries the required `di` property — a plain
+                // source string cannot initialize required properties.
+                Component.onCompleted: {
+                    if (probeRoot.probeShell !== "")
+                        setSource("file://" + probeRoot.probeShell + "/plugins/bar/DiMedia.qml", {
+                            "di": islandMediaStub
+                        });
+                }
+            }
+        }
     }
 
     Loader {
@@ -99,6 +132,38 @@ ShellRoot {
         const kids = node.children ?? [];
         for (let i = 0; i < kids.length; i += 1) {
             const found = probeRoot.findIdleFace(kids[i]);
+            if (found)
+                return found;
+        }
+        return null;
+    }
+
+    // D1: duck-typed walks for the media widget (bar lane) and the island's
+    // media face (island internals) — both identified by their probe markers.
+    function findMediaWidget(node): var {
+        if (!node)
+            return null;
+        if (node.probeMediaSurface === true)
+            return node;
+        const kids = node.children ?? [];
+        for (let i = 0; i < kids.length; i += 1) {
+            const found = probeRoot.findMediaWidget(kids[i]);
+            if (found)
+                return found;
+        }
+        return null;
+    }
+
+    // D1: the bar Visualizer, identified by its own public props (no probe
+    // marker needed on the widget itself).
+    function findVisualizerWidget(node): var {
+        if (!node)
+            return null;
+        if (node.sharedPoints !== undefined && node.barCount !== undefined)
+            return node;
+        const kids = node.children ?? [];
+        for (let i = 0; i < kids.length; i += 1) {
+            const found = probeRoot.findVisualizerWidget(kids[i]);
             if (found)
                 return found;
         }
@@ -562,7 +627,99 @@ ShellRoot {
                 "clockWidth": face && face.probeClockFace ? face.probeClockFace.implicitWidth : 0,
                 "clockHeight": face && face.probeClockFace ? face.probeClockFace.implicitHeight : 0,
                 "avatarReady": face ? face.probeAvatarReady : false,
-                "avatarFallback": face ? face.probeAvatarFallback : false
+                "avatarFallback": face ? face.probeAvatarFallback : false,
+                // D1 three-segment geometry: the clock cluster sits in the
+                // pill's optical centre, status cluster right-anchored.
+                "clockCenterX": face ? face.probeClockCenterX : null,
+                "faceWidth": face ? face.probeFaceWidth : null,
+                "statusWidth": face ? face.probeStatusWidth : null
+            });
+        }
+
+        // D1 quick-fix validation: the media widget's material row must never
+        // paint wider than the widget's clamped box (the overflow bug).
+        function mediaGeometry(): string {
+            const widget = probeRoot.findMediaWidget(barLoader.item);
+            if (!widget)
+                return JSON.stringify({
+                    "found": false
+                });
+            return JSON.stringify({
+                "found": true,
+                "visible": widget.barWidgetVisible,
+                "widgetWidth": widget.probeWidgetWidth,
+                "rowImplicitWidth": widget.probeRowImplicitWidth,
+                "rowAssignedWidth": widget.probeRowAssignedWidth,
+                "overflow": widget.probeRowAssignedWidth > widget.probeWidgetWidth + 0.5
+            });
+        }
+
+        // D1 B-10: the island media face control matrix (controls x style),
+        // probed through the stub host above (no MPRIS player in the harness;
+        // the matrix is config-driven and a null player is exactly the
+        // no-lease state worth pinning).
+        function islandMediaFace(showControls: string, style: string): string {
+            PersonalizationConfig.setIslandShowMediaControls(showControls === "true" || showControls === true);
+            PersonalizationConfig.setIslandVisualizerStyle(String(style));
+            islandMediaLoader.active = true;
+            const face = islandMediaLoader.item;
+            return JSON.stringify({
+                "found": face !== null && face !== undefined,
+                "showControls": PersonalizationConfig.islandShowMediaControls,
+                "style": PersonalizationConfig.islandVisualizerStyle,
+                "controlsVisible": face ? face.probeControlsVisible : null,
+                "waveVisible": face ? face.probeWaveVisible : null,
+                "dotsVisible": face ? face.probeDotsVisible : null,
+                "waveCavaActive": face ? face.probeWaveCavaActive : null,
+                "cavaSubscribers": IslandVisualizerService.subscribers
+            });
+        }
+
+        // D1: weather wiring — the widget holds a WeatherService lease while
+        // it is in a lane and releases it on removal; no data renders "--".
+        function weatherLease(mode: string): string {
+            if (mode === "on")
+                PersonalizationConfig.setBarLayouts(["weather"], [], []);
+            else
+                PersonalizationConfig.setBarLayouts([], [], []);
+            return JSON.stringify({
+                "mode": mode,
+                "leaseCount": WeatherService.leaseCount,
+                "hasData": WeatherService.hasValidData
+            });
+        }
+
+        // D1: the visualizer widget mounts in a lane without acquiring the
+        // cava lease — the process is play-gated, so a playerless harness
+        // pins exactly the idle-discipline half (play-lease proof rides the
+        // real-machine pass).
+        function visualizerLease(mode: string): string {
+            try {
+                if (mode === "on")
+                    PersonalizationConfig.setBarLayouts(["visualizer"], [], []);
+                else
+                    PersonalizationConfig.setBarLayouts([], [], []);
+                const widget = probeRoot.findVisualizerWidget(barLoader.item);
+                return JSON.stringify({
+                    "mode": mode,
+                    "found": widget !== null,
+                    "subscribers": IslandVisualizerService.subscribers
+                });
+            } catch (e) {
+                return JSON.stringify({
+                    "mode": mode,
+                    "error": String(e)
+                });
+            }
+        }
+
+        // D1: `time.dateFormat` — the long date form follows the key.
+        function dateFormatProbe(fmt: string): string {
+            PersonalizationConfig.setTimeDateFormat(String(fmt));
+            return JSON.stringify({
+                "format": PersonalizationConfig.timeDateFormat,
+                "date": DateTime.date,
+                "shortDate": DateTime.shortDate
             });
         }
 

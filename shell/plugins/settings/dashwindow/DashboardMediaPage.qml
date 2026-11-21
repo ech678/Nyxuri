@@ -40,10 +40,8 @@ Item {
     // missing from PATH the page renders fine with an empty wave.
     property bool pageActive: false
     property var mediaState: null
-    readonly property bool hasShuffle: (root.player ? root.player.shuffleSupported ?? false : false) && (
-                                           root.player ? root.player.canControl ?? false : false)
-    readonly property bool hasLoop: (root.player ? root.player.loopSupported ?? false : false) && (
-                                        root.player ? root.player.canControl ?? false : false)
+    readonly property bool hasShuffle: (root.player ? root.player.shuffleSupported ?? false : false) && (root.player ? root.player.canControl ?? false : false)
+    readonly property bool hasLoop: (root.player ? root.player.loopSupported ?? false : false) && (root.player ? root.player.canControl ?? false : false)
     readonly property bool canSeek: root.player ? root.player.canSeek ?? false : false
 
     readonly property color fg: root.scheme.colOnLayer0
@@ -53,9 +51,7 @@ Item {
 
     property string shownTitle: ""
     property string shownArtist: ""
-    readonly property string trackKey: (root.player ? root.player.trackTitle ?? "" : "") + "|" + (root.player
-                                                                                                  ? root.player.trackArtist
-                                                                                                    ?? "" : "")
+    readonly property string trackKey: (root.player ? root.player.trackTitle ?? "" : "") + "|" + (root.player ? root.player.trackArtist ?? "" : "")
 
     function seekBy(seconds) {
         if (!root.player || !root.canSeek)
@@ -350,8 +346,7 @@ Item {
                             enabled: root.canSeek
                             from: 0
                             to: 1
-                            value: root.player && root.player.length > 0 ? (root.player.position ?? 0)
-                                                                           / root.player.length : 0
+                            value: root.player && root.player.length > 0 ? (root.player.position ?? 0) / root.player.length : 0
                             highlightColor: root.scheme.colPrimary
                             trackColor: root.scheme.colSecondaryContainer
                             handleColor: root.scheme.colPrimary
@@ -359,9 +354,7 @@ Item {
                             // indicator would read "0"/"1"; show the time the
                             // handle is sitting on instead.
                             usePercentTooltip: false
-                            tooltipContent: root.formatTime(seekSlider.value * (root.player
-                                                                                && root.player.length > 0
-                                                                                ? root.player.length : 0))
+                            tooltipContent: root.formatTime(seekSlider.value * (root.player && root.player.length > 0 ? root.player.length : 0))
                             // QtQuick's moved() carries no argument, unlike the
                             // MaterialSlider this replaced.
                             onMoved: {
@@ -373,8 +366,7 @@ Item {
                         StyledText {
                             Layout.preferredWidth: 44
                             horizontalAlignment: Text.AlignLeft
-                            text: "-" + root.formatTime((root.player ? root.player.length ?? 0 : 0) - (
-                                                            root.player ? root.player.position ?? 0 : 0))
+                            text: "-" + root.formatTime((root.player ? root.player.length ?? 0 : 0) - (root.player ? root.player.position ?? 0 : 0))
                             font.pixelSize: NexusStyle.font.bodySmall
                             color: root.fg
                         }
@@ -393,7 +385,6 @@ Item {
                             containerColor: "transparent"
                             rippleColor: root.fg
                             stateLayerColor: root.fg
-                            stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                             downAction: () => {
@@ -424,7 +415,6 @@ Item {
                             containerColor: "transparent"
                             rippleColor: root.fg
                             stateLayerColor: root.fg
-                            stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                             downAction: () => root.previousTrack()
@@ -447,7 +437,6 @@ Item {
                             containerColor: root.scheme.colPrimary
                             rippleColor: root.scheme.colOnPrimary
                             stateLayerColor: root.scheme.colOnPrimary
-                            stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                             downAction: () => {
@@ -473,7 +462,6 @@ Item {
                             containerColor: "transparent"
                             rippleColor: root.fg
                             stateLayerColor: root.fg
-                            stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                             downAction: () => {
@@ -505,7 +493,6 @@ Item {
                             containerColor: "transparent"
                             rippleColor: root.fg
                             stateLayerColor: root.fg
-                            stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                             pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                             downAction: () => {

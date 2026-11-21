@@ -32,8 +32,11 @@ Singleton {
     // Like time, but keeps :ss when the shell is locked — bar clocks stay
     // minute-precision in normal use.
     readonly property string timeDisplay: GlobalStates.screenLocked ? Qt.formatDateTime(clock.date, UiPreferences.useTwelveHourClock ? "hh:mm:ss AP" : "HH:mm:ss") : root.time
+    // D1: `time.dateFormat` is a user key (iNiR semantics) — a Qt format
+    // string that overrides the long date form, e.g. "ddd, dd/MM" renders
+    // "Fri, 28/08". Empty falls back to the stock form.
     readonly property string shortDate: Qt.formatDateTime(clock.date, "dd/MM")
-    readonly property string date: Qt.formatDateTime(clock.date, "dddd, dd/MM")
+    readonly property string date: Qt.formatDateTime(clock.date, Config.options?.time?.dateFormat ?? "dddd, dd/MM")
     readonly property string longDate: root.date
     readonly property string collapsedCalendarFormat: Qt.formatDateTime(clock.date, "dd MMMM yyyy")
     property string uptime: "0h, 0m"

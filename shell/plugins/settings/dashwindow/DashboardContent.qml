@@ -52,8 +52,7 @@ Item {
     // animates the outgoing cards out while the incoming ones fly in, and
     // flipping the whole surface at the start of that overlap makes the
     // crossfade read as a colour glitch.
-    readonly property bool mediaVisible: mediaState.active && root.currentPage === root.mediaPage
-                                         && root.pendingPage === root.mediaPage
+    readonly property bool mediaVisible: mediaState.active && root.currentPage === root.mediaPage && root.pendingPage === root.mediaPage
 
     // The resolved palette, in the same shape end4-pC passes to its media page:
     // either the cover-derived scheme or a plain Appearance.colors. Both expose
@@ -67,21 +66,17 @@ Item {
     // hover state comes from the layer rather than the secondary container).
     readonly property QtObject ui: QtObject {
         readonly property color surface: root.mediaColors.colLayer1
-        readonly property color toolbar: root.mediaVisible ? root.mediaColors.colLayer1 :
-                                                             Appearance.m3colors.m3surfaceContainer
+        readonly property color toolbar: root.mediaVisible ? root.mediaColors.colLayer1 : Appearance.m3colors.m3surfaceContainer
 
         readonly property color fgSurface: root.mediaColors.colOnLayer1
         readonly property color subtext: root.mediaColors.colSubtext
-        readonly property color hover: root.mediaVisible ? root.mediaColors.colSecondaryContainerHover :
-                                                           Appearance.colors.colLayer1Hover
+        readonly property color hover: root.mediaVisible ? root.mediaColors.colSecondaryContainerHover : Appearance.colors.colLayer1Hover
         readonly property color accent: root.mediaColors.colPrimary
         readonly property color accentHover: root.mediaColors.colPrimaryHover
         readonly property color accentActive: root.mediaColors.colPrimaryActive
         readonly property color fgAccent: root.mediaColors.colOnPrimary
-        readonly property color container: root.mediaVisible ? root.mediaColors.colSecondaryContainer :
-                                                               Appearance.colors.colPrimaryContainer
-        readonly property color fgContainer: root.mediaVisible ? root.mediaColors.colOnSecondaryContainer :
-                                                                 Appearance.colors.colOnPrimaryContainer
+        readonly property color container: root.mediaVisible ? root.mediaColors.colSecondaryContainer : Appearance.colors.colPrimaryContainer
+        readonly property color fgContainer: root.mediaVisible ? root.mediaColors.colOnSecondaryContainer : Appearance.colors.colOnPrimaryContainer
     }
 
     DashboardMediaState {
@@ -122,21 +117,20 @@ Item {
     // IPC target) address pages by id. nyxuri route ids are accepted as aliases
     // so a route id like "theme" still lands somewhere sensible.
     readonly property var pageAliases: ({
-                                            "wallpaper": "wallpapers",
-                                            "preset": "themes",
-                                            "account": "settings",
-                                            "general": "settings",
-                                            "theme": "themes",
-                                            "bar.island": "settings",
-                                            "advanced": "settings",
-                                            "shell": "settings"
-                                        })
+            "wallpaper": "wallpapers",
+            "preset": "themes",
+            "account": "settings",
+            "general": "settings",
+            "theme": "themes",
+            "bar.island": "settings",
+            "advanced": "settings",
+            "shell": "settings"
+        })
 
     readonly property string currentRouteId: pageNames[currentPage] ? pageNames[currentPage].id : "home"
 
     function closeChildWindows() {
-        if (root.homeImplemented && homeLoader.item && typeof homeLoader.item.closeChildWindows
-                === "function")
+        if (root.homeImplemented && homeLoader.item && typeof homeLoader.item.closeChildWindows === "function")
             homeLoader.item.closeChildWindows();
     }
 
@@ -156,22 +150,20 @@ Item {
     // UserCard) instead of end4-pC's themed icon lookup, so the pill keeps its
     // 22px slot without depending on an icon theme shipping distro logos.
     readonly property var distroGlyphs: ({
-                                             "arch": "󰣇",
-                                             "archlinux": "󰣇",
-                                             "endeavouros": "",
-                                             "manjaro": "",
-                                             "fedora": "",
-                                             "ubuntu": "",
-                                             "debian": "",
-                                             "opensuse": "",
-                                             "nixos": "",
-                                             "gentoo": "",
-                                             "void": ""
-                                         })
+            "arch": "󰣇",
+            "archlinux": "󰣇",
+            "endeavouros": "",
+            "manjaro": "",
+            "fedora": "",
+            "ubuntu": "",
+            "debian": "",
+            "opensuse": "",
+            "nixos": "",
+            "gentoo": "",
+            "void": ""
+        })
 
-    readonly property string distroGlyph: root.distroGlyphs[String(SystemIdentityService.distroId
-                                                                   || "").toLowerCase()] || ""
-
+    readonly property string distroGlyph: root.distroGlyphs[String(SystemIdentityService.distroId || "").toLowerCase()] || ""
 
     function goToPage(index) {
         if (index === currentPage || switchTimer.running)
@@ -376,7 +368,6 @@ Item {
                         // default, which over a transparent container floods the
                         // button and swallows the label. Use the M3 hover/focus/
                         // pressed opacities like the rest of the shell.
-                        stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                         hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                         focusStateLayerOpacity: Appearance.interaction.focusStateLayerOpacity
                         pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -440,7 +431,6 @@ Item {
                         implicitHeight: 44
                         buttonRadius: 22
                         containerColor: "transparent"
-                        stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                         hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                         focusStateLayerOpacity: Appearance.interaction.focusStateLayerOpacity
                         pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -493,7 +483,6 @@ Item {
                     implicitHeight: 44
                     buttonRadius: height / 2
                     containerColor: root.ui.surface
-                    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     focusStateLayerOpacity: Appearance.interaction.focusStateLayerOpacity
                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -522,8 +511,7 @@ Item {
                                 id: badgeText
 
                                 anchors.centerIn: parent
-                                text: NotificationService.list.length > 9 ? "9+" :
-                                                                            NotificationService.list.length
+                                text: NotificationService.list.length > 9 ? "9+" : NotificationService.list.length
                                 font.pixelSize: NexusStyle.font.labelSmall
                                 font.weight: Font.Bold
                                 color: Appearance.colors.colOnError

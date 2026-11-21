@@ -311,11 +311,15 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("PreferenceSlider {", style_popup)
         self.assertIn("bar-style-editor-catcher", style_popup)
         for name in ("ConfigSlider.qml", "StyledSlider.qml", "OptionalMaterialSymbol.qml",
-                     "WorkspacesAlt.qml", "Colorizer.qml", "StateOverlay.qml",
+                     "WorkspacesAlt.qml", "Colorizer.qml",
                      "FadeLoader.qml", "StyledRectangle.qml", "ButtonMouseArea.qml",
-                     "Box.qml", "Pill.qml", "Circle.qml", "StateLayer.qml",
+                     "Box.qml", "Pill.qml", "Circle.qml",
                      "MaskMultiEffect.qml"):
             self.assertIn("Fork & Trim: end4-pC", read_bar_file(name), f"{name} fork header")
+        # D0: the end4 enum StateLayer and its StateOverlay wrapper were folded
+        # into ui/StateLayer.qml (M3 contract carrier); neither may come back.
+        self.assertFalse(os.path.exists(os.path.join(BAR_DIR, "StateLayer.qml")), "end4 enum StateLayer must stay retired")
+        self.assertFalse(os.path.exists(os.path.join(BAR_DIR, "StateOverlay.qml")), "StateOverlay must stay retired")
 
     def test_divisor_contracts(self):
         content = read_bar_file("Divisor.qml")

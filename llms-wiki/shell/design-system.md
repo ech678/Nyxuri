@@ -3,9 +3,9 @@
 > 本页是全 Shell 表面的设计契约唯一权威：字号、圆角、间距、色彩角色、动效、交互反馈、
 > 出生律，以及从参考树借件的方法论（抄件宪章）。数值基准 1:1 取自
 > `references/caelestia/plugin/src/Caelestia/Config/tokens.hpp`（= Material 3 官方 dp 值）。
-> 实施状态：契约值已钉；**字号一张表（D-1）已于 2026-11-21 落地**（映射见 Type Scale
-> 节，门禁 `tests/shell/test_type_scale.py`）；交互反馈合一进行中（见
-> [shell/ROADMAP](../../shell/ROADMAP.md) D0）。运行行为以源码为准，本页管「应该是什么」；
+> 实施状态：契约值已钉；**字号一张表（D-1）与状态层合一均已落地（2026-11-21）**
+> （门禁 `tests/shell/test_type_scale.py` 与 `tests/shell/test_d1_design_unification.py`）；
+> 剩余清账见本页末节。运行行为以源码为准，本页管「应该是什么」；
 > 阶段与验收归 ROADMAP。
 
 ## 抄件宪章（怎么抄）
@@ -156,10 +156,12 @@ bar 的 end4 `elementMove*` 家族（200/320/400）映射入上述档位。出�
 - ~~**字号四套并存**~~ **已清（2026-11-21，D-1 落地）**：NexusStyle 升格 commons
   全库唯一 type scale；Typography 与 `Appearance.font` 阶梯删除；字面 `pixelSize`
   275 处全迁移（映射见 Type Scale 节）；门禁 `tests/shell/test_type_scale.py`。
-- **两份 StateLayer**：`plugins/bar/StateLayer.qml`（end4 枚举版）与 `ui/StateLayer.qml`
-  （M3 版）合一；`RippleButton.colBackgroundToggledHover/Toggled` 死属性修复，
-  `hoverOpacity` 默认链不得覆盖 0.08。
-- **tooltip 双套**（`M3ToolTip`/`PopupToolTip`）合一。
+- ~~**两份 StateLayer**~~ **已清（2026-11-21，随 D1）**：bar 私有 end4 枚举版与
+  StateOverlay 退役，`ui/StateLayer.qml` 补 `dragged` 态为唯一正典；
+  `RippleButton.colBackgroundToggledHover/Toggled` 死属性激活、
+  `hoverOpacity` 默认链直取本页 8%/10%/10%/16%；门禁
+  `tests/shell/test_d1_design_unification.py`。
+- **tooltip 双套**（`M3ToolTip`/`PopupToolTip`）合一（D5）。
 - **ui/ 单域控件归位**：quicksettings 专用群（QuickToggle* 等 15 个）、dock 的
   `AttachedEdgeCurve`、lock 的 `PlayPauseButton`/`RippleEffect`、settings 的
   ThinReadOnlySlider 群——归唯一消费单元或升格真共享，二选一。

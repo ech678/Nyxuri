@@ -1,3 +1,11 @@
+// Fork & Trim: end4-pC modules/ii/bar/WeatherPopup.qml (D1 weather wiring)
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// D1: rebound from the never-existing iNiR `Weather` singleton to
+// WeatherService. Values format from the backend's SI fields; sunrise/sunset
+// and chance-of-rain come from the first daily/hourly forecast entries.
+// Missing data renders dashes, never fake numbers.
+
 import qs.services
 import QtQuick
 import QtQuick.Layouts
@@ -6,6 +14,17 @@ import qs.ui
 
 StyledPopup {
     id: root
+
+    readonly property var todayDaily: WeatherService.hasValidData && WeatherService.dailyForecast.length > 0 ? WeatherService.dailyForecast[0] : null
+    readonly property var nowHourly: WeatherService.hasValidData && WeatherService.hourlyForecast.length > 0 ? WeatherService.hourlyForecast[0] : null
+    readonly property string tempText: WeatherService.hasValidData ? (Math.round(WeatherService.currentTemperatureC) + "°") : "--°"
+
+    function epochToClock(seconds): string {
+        if (!seconds || isNaN(seconds))
+            return "--:--";
+        const d = new Date(seconds * 1000);
+        return Qt.formatDateTime(d, "HH:mm");
+    }
 
     ColumnLayout {
         id: mainLayout
@@ -26,8 +45,14 @@ StyledPopup {
             bottomRightRadius: Appearance.rounding.normal
 
             gradient: Gradient {
-                GradientStop { position: 0.0; color: Appearance.colors.colPrimaryContainer }
-                GradientStop { position: 1.0; color: Appearance.colors.colSurfaceContainerLow }
+                GradientStop {
+                    position: 0.0
+                    color: Appearance.colors.colPrimaryContainer
+                }
+                GradientStop {
+                    position: 1.0
+                    color: Appearance.colors.colSurfaceContainerLow
+                }
             }
 
             Item {
@@ -41,15 +66,15 @@ StyledPopup {
                     spacing: -2
 
                     StyledText {
-                        visible: Weather.showVisibleCity
-                        text: Weather.visibleCity
+                        visible: WeatherService.locationName.length > 0
+                        text: WeatherService.locationName
                         font.pixelSize: NexusStyle.font.bodyLarge
                         font.weight: Font.DemiBold
                         color: Appearance.colors.colOnLayer0
                     }
 
                     StyledText {
-                        text: Weather.data?.description ?? "Cloudy"
+                        text: WeatherService.hasValidData ? WeatherService.currentWeatherText : Translation.tr("No data")
                         font.pixelSize: NexusStyle.font.bodySmall
                         color: Appearance.colors.colOnLayer0
                         opacity: 0.6
@@ -63,7 +88,7 @@ StyledPopup {
                     spacing: 4
 
                     StyledText {
-                        text: Weather.data?.temp ?? "3"
+                        text: root.tempText
                         font.pixelSize: NexusStyle.font.displayMedium
                         font.weight: Font.Light
                         color: Appearance.colors.colOnLayer0
@@ -74,8 +99,8 @@ StyledPopup {
                     anchors.right: parent.right
                     anchors.top: parent.top
                     anchors.topMargin: -3
-                    shape: MaterialShape.Shape.Sunny
-                    text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+                    shape: MaterialShapeCanvas.Shape.Sunny
+                    text: WeatherService.hasValidData ? WeatherService.currentIconName : "cloud"
                     iconSize: 40
                     implicitSize: 64
                     color: Qt.alpha(Appearance.colors.colOnLayer0, 0.15)
@@ -98,7 +123,7 @@ StyledPopup {
                             color: Appearance.colors.colPrimary
                         }
                         StyledText {
-                            text: Weather.data?.sunrise ?? "07:34 AM"
+                            text: root.todayDaily ? root.epochToClock(root.todayDaily.sunrise) : "--:--"
                             font.pixelSize: NexusStyle.font.labelSmall
                             color: Appearance.colors.colOnLayer0
                             opacity: 0.8
@@ -114,7 +139,7 @@ StyledPopup {
                             color: Appearance.colors.colPrimary
                         }
                         StyledText {
-                            text: Weather.data?.sunset ?? "05:21 PM"
+                            text: root.todayDaily ? root.epochToClock(root.todayDaily.sunset) : "--:--"
                             font.pixelSize: NexusStyle.font.labelSmall
                             color: Appearance.colors.colOnLayer0
                             opacity: 0.8
@@ -139,32 +164,32 @@ StyledPopup {
             WeatherCard {
                 title: Translation.tr("Rain?")
                 symbol: "rainy"
-                value: Weather.data?.cr ?? "24%"
+                value: root.nowHourly ? `${Math.round(root.nowHourly.precipitationProbability)}%` : "--"
             }
             WeatherCard {
                 title: Translation.tr("Wind")
                 symbol: "air"
-                value: `${Weather.data?.wind ?? "1.2 km/h"}`
+                value: WeatherService.hasValidData ? `${(WeatherService.currentWindSpeedMs * 3.6).toFixed(1)} km/h` : "--"
             }
             WeatherCard {
                 title: Translation.tr("Precipitation")
                 symbol: "rainy_light"
-                value: Weather.data?.precip ?? "10%"
+                value: root.nowHourly ? `${root.nowHourly.precipitationMm.toFixed(1)} mm` : "--"
             }
             WeatherCard {
                 title: Translation.tr("Humidity")
                 symbol: "humidity_low"
-                value: Weather.data?.humidity ?? "65%"
+                value: WeatherService.hasValidData ? `${Math.round(WeatherService.currentRelativeHumidity)}%` : "--"
             }
             WeatherCard {
                 title: Translation.tr("Visibility")
                 symbol: "visibility"
-                value: Weather.data?.visib ?? "10 km"
+                value: WeatherService.hasValidData ? `${(WeatherService.currentVisibilityM / 1000).toFixed(1)} km` : "--"
             }
             WeatherCard {
                 title: Translation.tr("Pressure")
                 symbol: "readiness_score"
-                value: Weather.data?.press ?? "720 hpa"
+                value: WeatherService.hasValidData ? `${Math.round(WeatherService.currentPressureHpa)} hPa` : "--"
             }
         }
     }

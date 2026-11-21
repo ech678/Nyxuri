@@ -298,6 +298,28 @@ Singleton {
             "icon": "block"
         }
     ]
+    // B-10: the island media face unfreezes the end4 control set — playback
+    // buttons plus a visualizer style. end4 defaults: controls off, dots;
+    // cava runs only while the media face is visible and playing.
+    property bool islandShowMediaControls: false
+    property string islandVisualizerStyle: "dots"
+    readonly property var islandVisualizerStyleOptions: [
+        {
+            "value": "dots",
+            "label": I18n.tr("Dots"),
+            "icon": "more_horiz"
+        },
+        {
+            "value": "wave",
+            "label": I18n.tr("Wave"),
+            "icon": "show_chart"
+        },
+        {
+            "value": "none",
+            "label": I18n.tr("None"),
+            "icon": "block"
+        }
+    ]
     // B3-1 one-shot marker: seed the middle lane with the island exactly once.
     property bool islandLayoutMigrated: false
     property string barPosition: "top"
@@ -527,7 +549,7 @@ Singleton {
     // B9.7 re-added `utilButtons` (end4 keeps it addable; its seven slots are
     // wired to real toggles), which had been stripped from the whitelist and
     // made the whole widget unreachable.
-    readonly property var barComponentIds: ["workspaces", "activeWindow", "media", "tray", "quickSettings", "island", "divisor", "clock", "systemMonitor", "battery", "systemIcons", "launcherButton", "powerButton", "utilButtons"]
+    readonly property var barComponentIds: ["workspaces", "activeWindow", "media", "tray", "quickSettings", "island", "divisor", "clock", "systemMonitor", "battery", "systemIcons", "launcherButton", "powerButton", "utilButtons", "weather", "visualizer"]
     readonly property var defaultBarLeadingComponents: ["launcherButton", "workspaces", "activeWindow"]
     readonly property var defaultBarTrailingComponents: ["tray", "quickSettings", "systemIcons", "powerButton"]
     readonly property var barComponentOptions: [({
@@ -582,6 +604,14 @@ Singleton {
                 "value": "utilButtons",
                 "label": I18n.tr("Utility buttons"),
                 "icon": "widgets"
+            }), ({
+                "value": "weather",
+                "label": I18n.tr("Weather"),
+                "icon": "partly_cloudy_day"
+            }), ({
+                "value": "visualizer",
+                "label": I18n.tr("Audio visualizer"),
+                "icon": "graphic_eq"
             })]
     readonly property var quickSettingsComponentIds: ["network", "bluetooth", "brightness", "volume", "microphone", "battery", "settings", "power"]
     readonly property var defaultQuickSettingsComponents: root.quickSettingsComponentIds.slice()
@@ -668,6 +698,9 @@ Singleton {
     // Idle-face avatar is optional: the identity circle can be hidden while the
     // satellite clock/weather and status icons stay.
     property bool islandShowAvatar: true
+    // D1: iNiR `time.dateFormat` — user-owned Qt format pattern for the long
+    // date form ("Fri, 28/08" = "ddd, dd/MM"). Empty keeps the stock form.
+    property string timeDateFormat: ""
     property bool barShowValues: true
     property bool barShowNames: false
 
@@ -1386,6 +1419,14 @@ Singleton {
         setValue("islandSatellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
     }
 
+    function setIslandShowMediaControls(value) {
+        setValue("islandShowMediaControls", value === true);
+    }
+
+    function setIslandVisualizerStyle(value) {
+        setValue("islandVisualizerStyle", normalizedOption(root.islandVisualizerStyleOptions, value, "dots"));
+    }
+
     function setIslandShowAvatar(value) {
         setValue("islandShowAvatar", value === true);
     }
@@ -1947,6 +1988,10 @@ Singleton {
         setValue("islandHideDate", !!value);
     }
 
+    function setTimeDateFormat(value) {
+        setValue("timeDateFormat", String(value || "").trim());
+    }
+
     function setHorizontalClockFontSize(value, persist) {
         const next = root.normalizedBoundedInt(value, 22, 16, 28);
         if (root.horizontalClockFontSize === next) {
@@ -2075,6 +2120,9 @@ Singleton {
                     "tiledColumnSpan": root.parallaxTiledColumnSpan
                 }
             },
+            "time": {
+                "dateFormat": root.timeDateFormat
+            },
             "theme": {
                 "matugenScheme": root.matugenScheme,
                 "matugenTemplates": root.normalizedMatugenTemplates(root.matugenTemplates),
@@ -2123,6 +2171,8 @@ Singleton {
                 "layoutMigrated": root.islandLayoutMigrated,
                 "hideDate": root.islandHideDate,
                 "showAvatar": root.islandShowAvatar,
+                "showMediaControls": root.islandShowMediaControls,
+                "visualizerStyle": root.islandVisualizerStyle,
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
                     "axes": root.cloneMap(root.horizontalClockAxes),
@@ -2336,6 +2386,12 @@ Singleton {
         root.islandLayoutMigrated = island.layoutMigrated === true;
         root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
         root.islandShowAvatar = typeof island.showAvatar === "boolean" ? island.showAvatar : true;
+        root.islandShowMediaControls = typeof island.showMediaControls === "boolean" ? island.showMediaControls : false;
+        root.islandVisualizerStyle = normalizedOption(root.islandVisualizerStyleOptions, island.visualizerStyle, "dots");
+        // D1: `time.dateFormat` (iNiR key shape) — a Qt format pattern for the
+        // long date form; empty keeps the stock "dddd, dd/MM".
+        const timeSection = configSection(source.time);
+        root.timeDateFormat = typeof timeSection.dateFormat === "string" ? timeSection.dateFormat : "";
         // iNiR keyboardIndicators block; the old island.capsLockOsd/numLockOsd
         // pair migrates to popup.caps/num so an existing choice is not lost.
         root.keyboardShowPopup = typeof keyboard.showPopup === "boolean" ? keyboard.showPopup : true;

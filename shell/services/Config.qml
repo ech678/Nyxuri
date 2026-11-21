@@ -17,6 +17,12 @@ Singleton {
             }
         }
 
+        readonly property QtObject time: QtObject {
+            // D1: iNiR `time.dateFormat` — user-owned Qt format pattern for
+            // the long date form; empty keeps the stock form.
+            readonly property string dateFormat: PersonalizationConfig.timeDateFormat
+        }
+
         readonly property QtObject battery: QtObject {
             readonly property int low: 20
             readonly property int critical: 10

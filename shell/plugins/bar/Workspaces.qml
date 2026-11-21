@@ -274,14 +274,16 @@ ButtonMouseArea {
             z: 3
             index: root.containsMouse ? root.hoverIndex : root.workspaceIndexInGroup
             color: "transparent"
-            StateOverlay {
-                id: hoverOverlay
+            // D0: the end4 StateOverlay (four stacked enum StateLayers) folded
+            // into the single M3 StateLayer — one layer at a time, `dragged`
+            // carries the old always-on 16% indicator tint.
+            StateLayer {
                 anchors.fill: interactionIndicator.indicatorRectangle
-                radius: root.activeWorkspaceSize / 2
-                hover: root.containsMouse
-                press: root.containsPress
-                drag: true // There are too many layers so we need to force this to be a lil more opaque
-                contentColor: Appearance.colors.colPrimary
+                layerRadius: root.activeWorkspaceSize / 2
+                hovered: root.containsMouse
+                pressed: root.containsPress
+                dragged: true
+                color: Appearance.colors.colPrimary
             }
         }
 

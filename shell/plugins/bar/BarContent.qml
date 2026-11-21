@@ -81,6 +81,7 @@ Item {
             "systemMonitor": "./Resources.qml",
             "resources": "./Resources.qml",
             "weather": "./WeatherBar.qml",
+            "visualizer": "./Visualizer.qml",
             "battery": "./BatteryIndicator.qml",
             "batteryIndicator": "./BatteryIndicator.qml",
             "systemIcons": "./SystemIcons.qml",

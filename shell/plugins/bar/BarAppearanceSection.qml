@@ -205,4 +205,22 @@ ColumnLayout {
         stepSize: 2
         onMoved: value => PersonalizationConfig.setBarVerticalThickness(Math.round(value))
     }
+
+    // Clock
+    PreferenceHeader {
+        text: I18n.tr("Clock")
+    }
+
+    // D1: iNiR `time.dateFormat` — a Qt format pattern for the long date
+    // form, so "Fri, 28/08" is reachable via "ddd, dd/MM". Empty keeps the
+    // stock "dddd, dd/MM" shape.
+    PreferenceInput {
+        first: true
+        last: true
+        label: I18n.tr("Date format")
+        subtext: I18n.tr("Qt date pattern, e.g. ddd, dd/MM")
+        placeholderText: "dddd, dd/MM"
+        value: PersonalizationConfig.timeDateFormat
+        onEditingFinished: value => PersonalizationConfig.setTimeDateFormat(value)
+    }
 }

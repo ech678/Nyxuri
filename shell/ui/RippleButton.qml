@@ -22,8 +22,12 @@ Button {
     property alias colBackground: root.containerColor
     property alias colRipple: root.rippleColor
     property alias colBackgroundHover: root.hoverStateLayerColor
+    // Toggled trio (D0): these used to be plain properties whose assignments
+    // never reached the background — the tray-arrow hover bug. They are live
+    // now: toggled swaps the background fill (and the ripple), the state layer
+    // keeps painting its own ink states on top.
     property color colBackgroundToggled: root.containerColor
-    property color colBackgroundToggledHover: root.hoverStateLayerColor
+    property color colBackgroundToggledHover: root.colBackgroundToggled
     property color colRippleToggled: root.rippleColor
     property bool stateLayerEnabled: true
     property color stateLayerColor: Appearance.colors.colOnSurface
@@ -32,11 +36,16 @@ Button {
     property color pressedStateLayerColor: root.stateLayerColor
     property color selectedStateLayerColor: root.stateLayerColor
     property bool selectedStateLayerEnabled: false
-    property real stateLayerOpacity: 1
-    property real selectedStateLayerOpacity: 1
-    property real hoverStateLayerOpacity: root.stateLayerOpacity
-    property real pressedStateLayerOpacity: 1
-    property real focusStateLayerOpacity: 1
+    // D0 state-layer contract: every opacity defaults to the M3 values in
+    // Appearance.interaction (hover 8% / focus 10% / press 10% / selected
+    // 10%) instead of the old `stateLayerOpacity: 1` chain that silently
+    // defeated them — full-opacity ink fills (the near-black tray-arrow
+    // hover) were the default escape. Consumers that want a solid
+    // pre-mixed fill set the colors *and* the opacities explicitly.
+    property real selectedStateLayerOpacity: Appearance.interaction.selectedStateLayerOpacity
+    property real hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
+    property real pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
+    property real focusStateLayerOpacity: Appearance.interaction.focusStateLayerOpacity
     property bool pointerPressActive: false
     readonly property bool pointerHovered: pointerArea.containsMouse
     readonly property real buttonEffectiveRadius: root.down ? root.buttonRadiusPressed : root.buttonRadius
@@ -68,7 +77,6 @@ Button {
         const action = root.releaseAction;
         if (action)
             action(null);
-
     }
 
     MouseArea {
@@ -79,49 +87,45 @@ Button {
         hoverEnabled: true
         cursorShape: root.pointingHandCursor ? Qt.PointingHandCursor : Qt.ArrowCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        onPressed: (event) => {
+        onPressed: event => {
             if (event.button === Qt.RightButton) {
                 if (root.altAction)
                     root.altAction(event);
 
-                return ;
+                return;
             }
             if (event.button === Qt.MiddleButton) {
                 if (root.middleClickAction)
                     root.middleClickAction(event);
 
-                return ;
+                return;
             }
             root.pointerPressActive = true;
             root.down = true;
             root.beginRipple(event.x, event.y);
             if (root.downAction)
                 root.downAction(event);
-
         }
-        onReleased: (event) => {
+        onReleased: event => {
             root.down = false;
             root.pointerPressActive = false;
             if (event.button === Qt.LeftButton)
                 root.finishRipple();
-
         }
-        onClicked: (event) => {
+        onClicked: event => {
             if (event.button === Qt.LeftButton)
                 root.clicked();
-
         }
-        onDoubleClicked: (event) => {
+        onDoubleClicked: event => {
             if (event.button === Qt.LeftButton && root.doubleClickAction)
                 root.doubleClickAction(event);
-
         }
         onCanceled: {
             root.down = false;
             root.pointerPressActive = false;
             root.finishRipple();
         }
-        onWheel: (wheel) => {
+        onWheel: wheel => {
             if (root.wheelAction) {
                 root.wheelAction(wheel);
             } else {
@@ -134,7 +138,7 @@ Button {
         id: surface
 
         radius: root.buttonEffectiveRadius
-        color: root.containerColor
+        color: root.toggled ? (root.pointerHovered ? root.colBackgroundToggledHover : root.colBackgroundToggled) : root.containerColor
         clip: true
 
         Item {
@@ -170,10 +174,9 @@ Button {
 
             anchors.fill: parent
             z: 2
-            color: root.rippleColor
+            color: root.toggled ? root.colRippleToggled : root.rippleColor
             shapeRadius: root.buttonEffectiveRadius
         }
-
     }
 
     contentItem: Text {
@@ -183,5 +186,4 @@ Button {
         font.pixelSize: NexusStyle.font.bodySmall
         verticalAlignment: Text.AlignVCenter
     }
-
 }

@@ -27,17 +27,17 @@ DashboardCard {
     // catalog gains later still renders — it just falls back to a neutral
     // glyph and an empty detail line rather than disappearing from the picker.
     readonly property var decoration: ({
-                                           "default": {
-                                               "detail": I18n.tr("Full overlay panel"),
-                                               "icon": "settings_panorama",
-                                               "shape": MaterialShapeCanvas.Shape.Cookie9Sided
-                                           },
-                                           "dashboard": {
-                                               "detail": I18n.tr("Floating window with cards"),
-                                               "icon": "dashboard",
-                                               "shape": MaterialShapeCanvas.Shape.SoftBurst
-                                           }
-                                       })
+            "default": {
+                "detail": I18n.tr("Full overlay panel"),
+                "icon": "settings_panorama",
+                "shape": MaterialShapeCanvas.Shape.Cookie9Sided
+            },
+            "dashboard": {
+                "detail": I18n.tr("Floating window with cards"),
+                "icon": "dashboard",
+                "shape": MaterialShapeCanvas.Shape.SoftBurst
+            }
+        })
 
     tint: Appearance.colors.colLayer1
 
@@ -98,13 +98,9 @@ DashboardCard {
                     Layout.fillHeight: true
                     Layout.preferredWidth: 1
                     buttonRadius: Appearance.rounding.large
-                    containerColor: option.selected ? Appearance.colors.colPrimary :
-                                                      Appearance.colors.colSecondaryContainer
-                    rippleColor: option.selected ? Appearance.colors.colOnPrimary :
-                                                   Appearance.colors.colOnSecondaryContainer
-                    stateLayerColor: option.selected ? Appearance.colors.colOnPrimary :
-                                                       Appearance.colors.colOnSecondaryContainer
-                    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
+                    containerColor: option.selected ? Appearance.colors.colPrimary : Appearance.colors.colSecondaryContainer
+                    rippleColor: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
+                    stateLayerColor: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                     // Deferred: writing the style mid-click rebuilds the whole
@@ -135,10 +131,8 @@ DashboardCard {
                             iconSize: 32
                             fill: 1
                             padding: 15
-                            color: option.selected ? Appearance.colors.colOnPrimary :
-                                                     Appearance.colors.colPrimary
-                            colSymbol: option.selected ? Appearance.colors.colPrimary :
-                                                         Appearance.colors.colOnPrimary
+                            color: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colPrimary
+                            colSymbol: option.selected ? Appearance.colors.colPrimary : Appearance.colors.colOnPrimary
                         }
 
                         StyledText {
@@ -146,8 +140,7 @@ DashboardCard {
                             text: option.modelData.label ?? ""
                             font.pixelSize: NexusStyle.font.titleLarge
                             font.weight: Font.DemiBold
-                            color: option.selected ? Appearance.colors.colOnPrimary :
-                                                     Appearance.colors.colOnSecondaryContainer
+                            color: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                         }
 
                         StyledText {
@@ -156,8 +149,7 @@ DashboardCard {
                             wrapMode: Text.WordWrap
                             text: option.decor.detail ?? ""
                             font.pixelSize: NexusStyle.font.bodyMedium
-                            color: option.selected ? Appearance.colors.colOnPrimary :
-                                                     Appearance.colors.colOnSecondaryContainer
+                            color: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                             opacity: 0.8
                         }
 

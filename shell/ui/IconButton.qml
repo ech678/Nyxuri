@@ -19,45 +19,19 @@ RippleButton {
     property real iconSize: Metrics.iconM
     property real iconFill: selected ? 1 : 0
     property real iconRotation: 0
-    property color iconColor: root.variant === "filled" ? Appearance.colors.colOnPrimary : root.variant
-                                                          === "tonal"
-                                                          ? Appearance.colors.colOnSecondaryContainer :
-                                                            Appearance.colors.colOnSurfaceVariant
-    property color selectedIconColor: root.variant === "filled" ? Appearance.colors.colOnPrimary :
-                                                                  root.variant === "tonal"
-                                                                  ? Appearance.colors.colOnSecondaryContainer :
-                                                                    Appearance.colors.colPrimary
-    property color normalContainerColor: root.variant === "filled" ? Appearance.colors.colPrimary :
-                                                                     root.variant === "tonal"
-                                                                     ? Appearance.colors.colSecondaryContainer :
-                                                                       "transparent"
-    property color selectedContainerColor: root.variant === "standard" || root.variant === "outlined"
-                                           ? "transparent" : root.normalContainerColor
-    property color normalHoverStateLayerColor: root.variant === "filled" ? Appearance.colors.colPrimaryHover :
-                                                                           root.variant === "tonal"
-                                                                           ? Appearance.colors.colSecondaryContainerHover :
-                                                                             Appearance.applyAlpha(
-                                                                                 root.iconColor, 0.08)
-    property color normalPressedStateLayerColor: root.variant === "filled"
-                                                 ? Appearance.colors.colPrimaryActive : root.variant
-                                                   === "tonal"
-                                                   ? Appearance.colors.colSecondaryContainerActive :
-                                                     Appearance.applyAlpha(root.iconColor, 0.12)
-    property color selectedHoverStateLayerColor: root.variant === "standard" || root.variant === "outlined"
-                                                 ? Appearance.applyAlpha(root.selectedIconColor, 0.08) :
-                                                   root.normalHoverStateLayerColor
-    property color selectedPressedStateLayerColor: root.variant === "standard" || root.variant === "outlined"
-                                                   ? Appearance.applyAlpha(root.selectedIconColor, 0.12) :
-                                                     root.normalPressedStateLayerColor
+    property color iconColor: root.variant === "filled" ? Appearance.colors.colOnPrimary : root.variant === "tonal" ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnSurfaceVariant
+    property color selectedIconColor: root.variant === "filled" ? Appearance.colors.colOnPrimary : root.variant === "tonal" ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colPrimary
+    property color normalContainerColor: root.variant === "filled" ? Appearance.colors.colPrimary : root.variant === "tonal" ? Appearance.colors.colSecondaryContainer : "transparent"
+    property color selectedContainerColor: root.variant === "standard" || root.variant === "outlined" ? "transparent" : root.normalContainerColor
+    property color normalHoverStateLayerColor: root.variant === "filled" ? Appearance.colors.colPrimaryHover : root.variant === "tonal" ? Appearance.colors.colSecondaryContainerHover : Appearance.applyAlpha(root.iconColor, 0.08)
+    property color normalPressedStateLayerColor: root.variant === "filled" ? Appearance.colors.colPrimaryActive : root.variant === "tonal" ? Appearance.colors.colSecondaryContainerActive : Appearance.applyAlpha(root.iconColor, 0.12)
+    property color selectedHoverStateLayerColor: root.variant === "standard" || root.variant === "outlined" ? Appearance.applyAlpha(root.selectedIconColor, 0.08) : root.normalHoverStateLayerColor
+    property color selectedPressedStateLayerColor: root.variant === "standard" || root.variant === "outlined" ? Appearance.applyAlpha(root.selectedIconColor, 0.12) : root.normalPressedStateLayerColor
     property color outlineColor: Appearance.colors.colOutline
     readonly property alias iconItem: iconGlyph
-    readonly property color effectiveContainerColor: root.selected ? root.selectedContainerColor :
-                                                                     root.normalContainerColor
-    readonly property color effectiveHoverStateLayerColor: root.selected ? root.selectedHoverStateLayerColor :
-                                                                           root.normalHoverStateLayerColor
-    readonly property color effectivePressedStateLayerColor: root.selected
-                                                             ? root.selectedPressedStateLayerColor :
-                                                               root.normalPressedStateLayerColor
+    readonly property color effectiveContainerColor: root.selected ? root.selectedContainerColor : root.normalContainerColor
+    readonly property color effectiveHoverStateLayerColor: root.selected ? root.selectedHoverStateLayerColor : root.normalHoverStateLayerColor
+    readonly property color effectivePressedStateLayerColor: root.selected ? root.selectedPressedStateLayerColor : root.normalPressedStateLayerColor
 
     implicitWidth: root.controlSize
     implicitHeight: root.controlSize
@@ -71,7 +45,7 @@ RippleButton {
     hoverStateLayerColor: root.effectiveHoverStateLayerColor
     focusStateLayerColor: root.effectiveHoverStateLayerColor
     pressedStateLayerColor: root.effectivePressedStateLayerColor
-    stateLayerOpacity: 1
+    hoverStateLayerOpacity: 1
     focusStateLayerOpacity: 1
     pressedStateLayerOpacity: 1
     focusPolicy: Qt.StrongFocus
@@ -86,8 +60,7 @@ RippleButton {
 
     StyledToolTip {
         text: root.effectiveTooltipText
-        extraVisibleCondition: root.showTooltip && (root.pointerHovered || root.visualFocus
-                                                    || disabledHover.hovered)
+        extraVisibleCondition: root.showTooltip && (root.pointerHovered || root.visualFocus || disabledHover.hovered)
     }
 
     backgroundContent: Rectangle {

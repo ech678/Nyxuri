@@ -95,6 +95,40 @@ class IslandEnd4FacesContractTest(unittest.TestCase):
         self.assertNotIn("RecordingService", content)
         self.assertNotIn("stopRecording", content)
 
+    def test_di_idle_three_segments_and_bell_retired(self):
+        """D1: three-segment idle face (avatar left / clock centered / status
+        right) and the notification bell is gone — unread belongs to the
+        SystemIcons notification slot, the Revealer jitter died with it."""
+        content = read_end4("DiIdle.qml")
+        # The bell (unrevealed Revealer + notifications glyph + unread count)
+        # must not come back.
+        self.assertNotIn('"notifications"', content)
+        self.assertNotIn("NotificationService.unread", content)
+        self.assertNotIn("requestSidebarToggle(\"dashboard\")", content)
+        # Three segments: avatar left-anchored, satellite centered, status
+        # icons right-anchored.
+        self.assertIn("id: statusIconsRow", content)
+        self.assertIn("anchors.centerIn: parent", content)
+        self.assertIn("sourceComponent: PersonalizationConfig.islandSatellite", content)
+        # The idle width contract still feeds the island host.
+        self.assertIn("di.idleTextContentWidth", content)
+
+    def test_di_media_b10_control_set(self):
+        """B-10: the island media face carries the end4 control set — playback
+        buttons behind islandShowMediaControls, visualizerStyle dots/wave/none,
+        and the wave holds its cava lease only while playing."""
+        content = read_end4("DiMedia.qml")
+        self.assertIn("PersonalizationConfig.islandShowMediaControls", content)
+        self.assertIn("PersonalizationConfig.islandVisualizerStyle", content)
+        self.assertIn("id: mediaControlsRow", content)
+        self.assertIn("WaveVisualizer", content)
+        self.assertIn("visualizerStyle === \"wave\"", content)
+        self.assertIn("visualizerStyle === \"dots\"", content)
+        # Lease: the wave's CavaProcess is active only while visible+playing.
+        self.assertIn("active: visualizerCanvas.visible && (di.activePlayer?.isPlaying ?? false)", content)
+        # end4 visibility chain: dots yield to the controls, none shows none.
+        self.assertIn("visible: !diMediaRoot.showMediaControls && diMediaRoot.visualizerStyle === \"dots\"", content)
+
 
 if __name__ == "__main__":
     unittest.main()

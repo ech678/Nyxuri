@@ -1432,3 +1432,73 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   `b97`、`logErrors: []`；`check.sh` 绿。
 - **未验证（作者）**：Screens 段多屏实机选择、autoHide 滑出手感、space 分隔条
   宽度视觉、utilButtons 七槽实机点击、Resources 五表盘视觉。
+
+## D1 Bar 收尾与快修包（2026-11-21）
+
+- **D0 尾巴·交互反馈合一（随 D1 落地）**：`ui/StateLayer.qml` 补 `dragged` 态
+  （press 10% > drag 16% > hover 8% > focus 10% 单层互斥）成为全库唯一状态层；
+  bar 私有 end4 枚举 `StateLayer.qml` 与唯一消费者 `StateOverlay.qml` 退役，
+  Workspaces 内联消费 ui/ 版（`dragged: true` 承接原 16% 常驻指示 tint）。
+  `RippleButton`：`colBackgroundToggled/ToggledHover/colRippleToggled` 死属性
+  激活（toggled 换背景填充 + ripple 色，墨色状态层照常叠加——托盘箭头 hover
+  近黑的三层根因收口）；`stateLayerOpacity:1` 隐形压制链删除，四个透明度默认
+  直取 `Appearance.interaction`（hover .08/focus .10/press .10/selected .10，
+  press 由 0.12 对齐契约 0.10，新增 drag .16）；全库 25 处
+  `stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity` 手动绕行
+  赋值随属性删除清除（IconButton/ActionButton 显式补 `hoverStateLayerOpacity`，
+  保留预混色×全不透明体制）。教训两条：**qs IpcHandler 带参函数必须类型标注**
+  （裸参静默返回空）；**`visible:false` 父项会冻结子树 visible 绑定的后续求值**
+  （探针 stub 改 `opacity:0`）。
+- **快修① Media 溢出（根因修正）**：隔离复刻（真 StyledText + 精确结构，活会话
+  qs）证明 `Layout.maximumWidth` **参与**布局 implicitWidth 求值（224px 钳制
+  正常），known-issues 原诊断机制有误；真机制是 lane 压缩把部件指配宽压到
+  implicitWidth 之下时 material 分支（`centerIn` + 无 fillWidth + 无 clip）既不
+  收缩也不省略、整簇按原宽居中两侧出血（非 material 分支 anchors.fill+fillWidth
+  天生免疫）。修法：material Loader `anchors.fill` + 四文本 `Layout.fillWidth`
+  （保留 120 帽）+ 根 Item `clip` 兜底；iNiR 钳制公式与默认 160/300 不动
+  （作者拍板「media 就原大小」）。
+- **快修②③ DiIdle 一次动刀**：铃铛处决（未读 Revealer 块删除，未读唯一归宿
+  SystemIcons 通知槽；接受边界：无 systemIcons 布局时 idle 面无未读指示）+
+  三段式重排（头像左锚/时钟簇 centerIn/状态图标右锚；`computedIdleWidth` 三段
+  合计喂 `di.idleTextContentWidth`）。修完曾撞「Type DiIdle unavailable」——根因
+  是根对象上两个 `Component.onCompleted`（天气租约 + 宽度喂给）报 Property
+  value set multiple times，合并收口。probe 钉死 `clockCenterX == faceWidth/2`
+  （实测 93.07 = 186.14/2）。
+- **B-10 岛媒体面解冻**：`PersonalizationConfig.islandShowMediaControls`（默认
+  false）+ `islandVisualizerStyle`（dots/wave/none，默认 dots，end4 默认态），
+  IslandPage 新增 toggle+select；DiMedia 按 end4 原件补 mediaControlsRow 三按钮、
+  WaveVisualizer（60/50 宽、blur Canvas，已在 ui/）与 dots 可见性链（dots 让位
+  controls、none 全无）；wave 的 `CavaProcess` 仅在 wave 选中且播放时 active
+  （`IslandVisualizerService` 单进程租约），生命周期审计要求实例级
+  `Component.onDestruction` 显式收口。probe stub 走 `Loader.setSource(url, {di})`
+  （required 属性无法用 source 字符串初始化）。
+- **天气接线**：WeatherBar/Popup 换绑 `WeatherService`（`allocateLeaseId`+acquire/
+  release 消费租约模式，不建 `Weather` 转发别名；`Icons.getWeatherIcon` 死引用
+  → `WeatherService.currentIconName`）；无数据降级 `--°`/cloud；日出日落取
+  dailyForecast[0]（epoch→HH:mm）、降雨概率与降水量取 hourlyForecast[0]、
+  能见度/气压/湿度/风取 current* 字段；`weather` 进 `barComponentIds/Options`
+  白名单。修 WeatherPopup `MaterialShape.Shape` 未定义（本树枚举在
+  `MaterialShapeCanvas.Shape`）。
+- **Visualizer 接线**：进白名单（barComponentIds/Options + getWidgetUrl）；
+  probe 断言 lane 挂载可实例化、移除后 `subscribers` 归零（挂载瞬间的订阅数
+  时序非确定，不钉）。
+- **`time.dateFormat`**：iNiR 语义——Qt 格式串覆盖长日期形态（"ddd, dd/MM" →
+  "Fri, 28/08"），空回退 `dddd, dd/MM`；`DateTime.date` 读 Config 桥
+  （`PersonalizationConfig.timeDateFormat` 持久化于 `time` 段），`shortDate`
+  保持固定 `dd/MM`；Bar 设置页 Appearance tab 新增 PreferenceInput。
+- **Xkb 结论**：niri IPC 有键盘布局数据面（`niri msg -j keyboard-layouts`，
+  B8.4 起 KeyboardLayoutService 消费进 SystemIcons 键盘槽）；独立部件同类
+  重复，登记不做（写回 ROADMAP D1）。
+- **probe 扩展**：`d1` 报告段（六态矩阵/天气租约/visualizer 租约/dateFormat/
+  mediaGeometry）+ idleFace 三段几何字段；`wait_edge_window`（轮询窗口盒宽高
+  比等翻转，修 2026-11-21 会话负载下窗口改尺寸 >0.9s 的预存时序失败——HEAD
+  对照坐实非 D1 回归）；load_tsv_rows 容错空 ipc 载荷。
+- **验证**：`tests/shell` 618 tests，仅 6 个 R 系失败为预存（HEAD stash 对照
+  同名同数）；`probe-bar.sh --session --json` 全绿（exit 0，`logErrors: []`）；
+  i18n 词条 8 条补齐（zh_CN）。新门禁
+  `tests/shell/test_d1_design_unification.py`（状态层合一/交互 token/Media fill
+  契约/天气接线/白名单/dateFormat）。
+- **未验证（作者）**：四快修实机过目（托盘箭头 hover 浅深两模式、DiIdle 三段、
+  铃铛不复活）、岛媒体面六态实机截图对照 end4 原图、天气有/无数据视觉、
+  visualizer 实机频谱（本机未装 cava）、dateFormat 实机切换、预存 ColorUtils
+  "undefined" 警告（Media material 无播放分支，HEAD 已有，另行立项）。

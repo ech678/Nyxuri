@@ -23,8 +23,7 @@ DashboardCard {
         if (!root.control)
             return;
         const stepSize = root.control.stepSize ?? 1;
-        const next = Math.max(root.control.from ?? -Infinity, Math.min(root.control.to ?? Infinity,
-                                                                       root.current + direction * stepSize));
+        const next = Math.max(root.control.from ?? -Infinity, Math.min(root.control.to ?? Infinity, root.current + direction * stepSize));
         Qt.callLater(() => root.control.set(next));
     }
 
@@ -86,7 +85,6 @@ DashboardCard {
                         buttonRadius: 20
                         containerColor: Appearance.colors.colSurfaceContainerHigh
                         stateLayerColor: Appearance.colors.colOnLayer1
-                        stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                         hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                         pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                         downAction: () => root.step(stepSlot.modelData)

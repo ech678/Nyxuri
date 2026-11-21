@@ -49,6 +49,7 @@
 | B9.5 外边距 | 待验收 | 0/12/24 三档截图与 exclusiveZone 跟随 |
 | B9.6 表现基线归零 | 待验收 | 四工作区样式、右键改色弹层、弹层令牌逐项过目 |
 | B9.7 设置清账 | 待验收 | 多屏选择、autoHide 手感、space 分隔条、utilButtons 七槽、Resources 五表盘 |
+| D1 Bar 收尾与快修包 | 待验收 | 四快修实机过目（托盘箭头 hover 浅深两模式、DiIdle 三段几何、铃铛不复活）、岛媒体面六态截图、天气有/无数据视觉、visualizer 实机频谱、dateFormat 实机切换 |
 | T3 M3/M4 设置页积木化 | 待验收 | 核心四页 + 全页面实机视觉过目 |
 | P4 主题契约/取色引擎 | 待验收 | 壁纸切换、深浅代调链路、模板 hooks 实机行为；镜像色板长期策略拍板 |
 | A1–A8 性能调查 | 待验收 | A6/A8 进行中；明细与各自剩余项见 [performance-plan](../llms-wiki/shell/performance-plan.md) |
@@ -68,39 +69,55 @@
   press 10%/drag 16%）、动效时长曲线、出生律、抄件宪章。
 - **字号一张表（D-1）**：NexusStyle 升格全局唯一 type scale；Typography 的 end4 阶梯与
   `Appearance.font` 双轨退役映射（逐键按最近值原则）；全库字面 `pixelSize` 清零。
-- **交互反馈合一**：两份 StateLayer（bar 私有 end4 版 / ui/ M3 版）合一；RippleButton
-  死属性（`colBackgroundToggledHover/Toggled` 非别名）与 `hoverOpacity` 覆盖修复
-  ——托盘箭头 hover 近黑 BUG 的根因收口。
+- **交互反馈合一**：**已落地（2026-11-21，随 D1）**——两份 StateLayer（bar 私有
+  end4 枚举版 + ui/ M3 版）合一：end4 枚举版与 StateOverlay 退役，ui/ 版补
+  `dragged` 态（press 10 > drag 16 > hover 8 > focus 10）成为唯一正典，
+  Workspaces 内联消费；`RippleButton.colBackgroundToggled/ToggledHover` 死属性
+  激活为真背景填充、`stateLayerOpacity:1` 隐形压制链删除（全库 25 处手动绕行
+  赋值一并清除，四个透明度默认直取 `Appearance.interaction`）；press 0.12→0.10
+  对齐契约。门禁 `tests/shell/test_d1_design_unification.py`。
 - 来源：caelestia tokens.hpp/appearanceconfig 数值 1:1；end4 motion 参数。
 - 验收：契约测试逐值钉死；字面字号/散落色值扫描门禁零残留；probe 全绿；
-  托盘 hover 色修复为首个落地验证（浅深两模式截图）。
+  托盘 hover 色修复为首个落地验证（浅深两模式截图归作者）。
 
-### D1 Bar 收尾与快修包
+### D1 Bar 收尾与快修包（2026-11-21 实现落地，机器证据齐，待作者实机验收）
 
-快修四件（根因已定位，登记见 known-issues）：
+快修四件（原诊断登记见 known-issues，已全部修复；Media 项根因经复刻实验修正）：
 
-- **Media 胶囊两行文字溢出**：material 分支宽度公式对齐 iNiR barM3 原件（clamp 对
-  material 生效，min 100/max 280）+ 根 Item clip 兜底。根因：`materialRow/innerRow`
-  `anchors.centerIn` 自取 implicitWidth，`Layout.maximumWidth` 不参与布局 implicitWidth
-  求值，整簇居中在超宽坐标上溢出。
-- **岛水平时钟不居中**：DiIdle 重排三段式（头像左锚 / 时钟簇 `centerIn` / 状态图标
-  右锚），消除 144px 宽度下限留洞与未读 Revealer 抖动推移。
-- **DiIdle 通知铃铛处决**：与 SystemIcons 通知槽、岛通知面三重职责重复；未读归
-  SystemIcons 通知槽（默认 8px 圆点，end4 口径 `showUnreadCount=false`）。
-- **托盘箭头 hover 色**：D0 契约落地验证项（死属性修复 + opacity 不覆盖 + 8% 浸染）。
+- **Media 胶囊两行文字溢出**：复刻实验证明 `Layout.maximumWidth` 参与布局
+  implicitWidth 求值，真正机制是 lane 压缩把部件压到比 implicitWidth 窄时
+  material 分支（centerIn + 无 fillWidth + 无 clip）不收缩省略。修法：material
+  Loader 改 `anchors.fill` + 文本 `fillWidth`（保留 120 帽）+ 根 Item `clip`；
+  iNiR 钳制公式不动，默认 min/max 维持 160/300（作者拍板不收窄）。
+- **岛水平时钟不居中**：DiIdle 三段式重排（头像左锚 / 时钟簇 `centerIn` /
+  状态图标右锚）；probe 钉死 `clockCenterX == faceWidth/2`。
+- **DiIdle 通知铃铛处决**：未读 Revealer 块删除；未读唯一归宿 SystemIcons 通知槽
+  （默认 8px 圆点、`showUnreadCount` 可配）。边界：`systemIconsElsewhere=false`
+  时 idle 面无未读指示（end4 同答案，DiNotifs 实时通知仍在）。
+- **托盘箭头 hover 色**：D0 交互反馈合一落地验证项（见 D0 节完成注记）。
 
 部件清账（原 B9.9，2026-11-15 截图审计遗留）：
 
-- **岛媒体面解冻（B-10）**：`showMediaControls` 三按钮 + `visualizerStyle`
-  dots/wave/none 回归；`WaveVisualizer.qml` cp 入库；cava 仅媒体面可见且播放时租约。
-- **天气接线**：WeatherBar/Popup/Card 剪裁接 `WeatherService`（不建转发别名），
-  `weather` 进白名单；无数据优雅降级。
-- **Visualizer 接线**进白名单，cava 可见性租约。
-- **Xkb 核实**：niri IPC 有无键盘布局数据面，结论写回本页；无则登记不做。
-- **`time.dateFormat` 可配键**（可达 "Fri, 28/08" 缩写）。
+- **岛媒体面解冻（B-10）**：已落地——`islandShowMediaControls` 三按钮 +
+  `islandVisualizerStyle` dots/wave/none（end4 默认 controls off/dots）；
+  `WaveVisualizer.qml` 已在 ui/（Dashboard 先行入库）；cava 经
+  `IslandVisualizerService` 单进程租约，wave 的 `CavaProcess` 仅在 wave 选中
+  且播放时 active。probe 六态矩阵断言全绿。
+- **天气接线**：已落地——WeatherBar/Popup 换绑 `WeatherService`（消费租约，
+  不建转发别名），`weather` 进白名单；无数据降级 `--°`；日出日落取
+  dailyForecast[0]、降雨概率/降水取 hourlyForecast[0]。
+- **Visualizer 接线**：已落地——进白名单，probe 断言 lane 挂载可实例化、
+  移除后零租约残留。
+- **Xkb 核实（结论）**：niri IPC **有**键盘布局数据面——`niri msg -j
+  keyboard-layouts` 自 B8.4 起由 `KeyboardLayoutService` 消费，经
+  `KeyboardIndicators` 落在 SystemIcons 键盘槽（布局码 + Caps/Num）。独立
+  Xkb 部件与该槽同类重复（P3 同类只留一个），**登记不做**。
+- **`time.dateFormat` 可配键**：已落地——iNiR 语义（Qt 格式串，默认空回退
+  `dddd, dd/MM`），持久化于 PersonalizationConfig `time` 段、经 Config 桥
+  暴露，Bar 设置页 Appearance tab 提供 "ddd, dd/MM" 提示的输入行。
 - 来源：end4 `DiMedia`/`WaveVisualizer`/`BarConfig`、本树 Weather 三件 fork、iNiR `DateTime`。
-- 验收：probe（controls×visualizer 六态、天气有无数据、visualizer 租约、dateFormat
-  随动、media 宽度钳制、DiIdle 三段几何）+ 实机截图对照 end4 原图；四快修逐项过目。
+- 验收：probe（controls×visualizer 六态、天气租约、visualizer 租约、dateFormat
+  随动、media 几何、DiIdle 三段几何）**全绿**；实机截图对照 end4 原图归作者。
 
 ### D2 SystemIcons QS 化（hover 展开 + 数据）
 

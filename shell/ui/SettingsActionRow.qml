@@ -21,7 +21,6 @@ RippleButton {
     stateLayerColor: Appearance.colors.colOnLayer2
     pressedStateLayerColor: Appearance.colors.colOnLayer2
     focusStateLayerColor: Appearance.colors.colOnLayer2
-    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
     focusStateLayerOpacity: Appearance.interaction.focusStateLayerOpacity
     focusPolicy: Qt.StrongFocus
@@ -44,12 +43,9 @@ RippleButton {
                 Layout.fillWidth: true
                 text: root.text
                 color: Appearance.colors.colOnSurface
-                font.family: root.description === ""
-                    ? Fonts.ui : Fonts.ui
-                font.pixelSize: root.description === ""
-                    ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium
-                font.weight: root.description === ""
-                    ? Font.Medium : Font.Normal
+                font.family: root.description === "" ? Fonts.ui : Fonts.ui
+                font.pixelSize: root.description === "" ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium
+                font.weight: root.description === "" ? Font.Medium : Font.Normal
                 elide: Text.ElideRight
             }
 

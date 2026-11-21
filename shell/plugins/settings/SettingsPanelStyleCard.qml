@@ -94,22 +94,17 @@ Rectangle {
 
                     required property var modelData
 
-                    readonly property bool selected: PersonalizationConfig.settingsPanelStyle
-                                                     === option.modelData.value
+                    readonly property bool selected: PersonalizationConfig.settingsPanelStyle === option.modelData.value
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.preferredWidth: 1
                     buttonRadius: Appearance.rounding.large
-                    containerColor: option.selected ? Appearance.colors.colPrimary :
-                                                      Appearance.colors.colSecondaryContainer
-                    rippleColor: option.selected ? Appearance.colors.colOnPrimary :
-                                                   Appearance.colors.colOnSecondaryContainer
-                    stateLayerColor: option.selected ? Appearance.colors.colOnPrimary :
-                                                       Appearance.colors.colOnSecondaryContainer
+                    containerColor: option.selected ? Appearance.colors.colPrimary : Appearance.colors.colSecondaryContainer
+                    rippleColor: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
+                    stateLayerColor: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                     // RippleButton defaults its state layer to full opacity, which
                     // over a filled container floods the card. Use the M3 values.
-                    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     focusStateLayerOpacity: Appearance.interaction.focusStateLayerOpacity
                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
@@ -134,17 +129,14 @@ Rectangle {
                             iconSize: 34
                             fill: 1
                             padding: 16
-                            color: option.selected ? Appearance.colors.colOnPrimary :
-                                                     Appearance.colors.colPrimary
-                            colSymbol: option.selected ? Appearance.colors.colPrimary :
-                                                         Appearance.colors.colOnPrimary
+                            color: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colPrimary
+                            colSymbol: option.selected ? Appearance.colors.colPrimary : Appearance.colors.colOnPrimary
                         }
 
                         Text {
                             Layout.alignment: Qt.AlignHCenter
                             text: option.modelData.name
-                            color: option.selected ? Appearance.colors.colOnPrimary :
-                                                     Appearance.colors.colOnSecondaryContainer
+                            color: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                             font.family: Fonts.ui
                             font.pixelSize: NexusStyle.font.titleMedium
                             font.weight: Font.DemiBold
@@ -155,8 +147,7 @@ Rectangle {
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.WordWrap
                             text: option.modelData.detail
-                            color: option.selected ? Appearance.colors.colOnPrimary :
-                                                     Appearance.colors.colOnSecondaryContainer
+                            color: option.selected ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSecondaryContainer
                             opacity: 0.8
                             font.family: Fonts.ui
                             font.pixelSize: NexusStyle.font.bodySmall

@@ -112,7 +112,6 @@ ColumnLayout {
                     containerColor: box.on ? box.modelData.accent : box.modelData.container
                     rippleColor: box.on ? box.modelData.onAccent : box.modelData.onContainer
                     stateLayerColor: box.on ? box.modelData.onAccent : box.modelData.onContainer
-                    stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
                     pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
                     onClicked: root.picked(box.modelData.id)

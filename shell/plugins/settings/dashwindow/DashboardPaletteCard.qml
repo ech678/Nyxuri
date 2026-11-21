@@ -34,17 +34,17 @@ DashboardCard {
     // Glyphs are upstream's own (DashboardSettingsCatalog, "interface:Palette
     // type"), so the rows read the same. `scheme-vibrant` exists only in nyxuri.
     readonly property var glyphs: ({
-                                       "auto": "auto_awesome",
-                                       "scheme-content": "image",
-                                       "scheme-expressive": "palette",
-                                       "scheme-fidelity": "equal",
-                                       "scheme-fruit-salad": "nutrition",
-                                       "scheme-monochrome": "invert_colors",
-                                       "scheme-neutral": "tonality",
-                                       "scheme-rainbow": "gradient",
-                                       "scheme-tonal-spot": "lens",
-                                       "scheme-vibrant": "color_lens"
-                                   })
+            "auto": "auto_awesome",
+            "scheme-content": "image",
+            "scheme-expressive": "palette",
+            "scheme-fidelity": "equal",
+            "scheme-fruit-salad": "nutrition",
+            "scheme-monochrome": "invert_colors",
+            "scheme-neutral": "tonality",
+            "scheme-rainbow": "gradient",
+            "scheme-tonal-spot": "lens",
+            "scheme-vibrant": "color_lens"
+        })
 
     // Per-scheme chroma multiplier applied to the live primary/secondary/tertiary
     // to preview what the scheme does. Generating the real palette for each of
@@ -52,17 +52,17 @@ DashboardCard {
     // relative character (vivid vs muted vs greyscale) is what a reader actually
     // needs to tell the options apart.
     readonly property var chroma: ({
-                                       "auto": 1,
-                                       "scheme-tonal-spot": 0.85,
-                                       "scheme-vibrant": 1.45,
-                                       "scheme-content": 1.1,
-                                       "scheme-expressive": 1.25,
-                                       "scheme-fidelity": 1.2,
-                                       "scheme-fruit-salad": 1.6,
-                                       "scheme-monochrome": 0,
-                                       "scheme-neutral": 0.25,
-                                       "scheme-rainbow": 1.35
-                                   })
+            "auto": 1,
+            "scheme-tonal-spot": 0.85,
+            "scheme-vibrant": 1.45,
+            "scheme-content": 1.1,
+            "scheme-expressive": 1.25,
+            "scheme-fidelity": 1.2,
+            "scheme-fruit-salad": 1.6,
+            "scheme-monochrome": 0,
+            "scheme-neutral": 0.25,
+            "scheme-rainbow": 1.35
+        })
 
     function previewColor(base, schemeValue) {
         const k = root.chroma[schemeValue] ?? 1;
@@ -76,8 +76,7 @@ DashboardCard {
 
     function previewDots(schemeValue) {
         const c = Appearance.colors;
-        return [root.previewColor(c.colPrimary, schemeValue), root.previewColor(c.colSecondary, schemeValue), root.previewColor(
-                    c.colTertiary, schemeValue)];
+        return [root.previewColor(c.colPrimary, schemeValue), root.previewColor(c.colSecondary, schemeValue), root.previewColor(c.colTertiary, schemeValue)];
     }
 
     tint: Appearance.colors.colSecondaryContainer
@@ -94,12 +93,9 @@ DashboardCard {
         leftPadding: 16
         rightPadding: 16
         buttonRadius: 14
-        containerColor: pill.selected ? Appearance.colors.colSecondary :
-                                        Appearance.colors.colSurfaceContainerHigh
+        containerColor: pill.selected ? Appearance.colors.colSecondary : Appearance.colors.colSurfaceContainerHigh
         rippleColor: Appearance.colors.colOnSecondaryContainer
-        stateLayerColor: pill.selected ? Appearance.colors.colOnSecondary :
-                                         Appearance.colors.colOnSecondaryContainer
-        stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
+        stateLayerColor: pill.selected ? Appearance.colors.colOnSecondary : Appearance.colors.colOnSecondaryContainer
         hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
         pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
         downAction: () => {
@@ -148,8 +144,7 @@ DashboardCard {
                     text: pill.option.label ?? ""
                     font.pixelSize: NexusStyle.font.bodyMedium
                     font.weight: Font.Medium
-                    color: pill.selected ? Appearance.colors.colOnSecondary :
-                                           Appearance.colors.colOnSecondaryContainer
+                    color: pill.selected ? Appearance.colors.colOnSecondary : Appearance.colors.colOnSecondaryContainer
                 }
             }
         }

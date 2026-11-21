@@ -1,3 +1,12 @@
+// Fork & Trim: end4-pC modules/ii/bar/WeatherBar.qml (D1 weather wiring)
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// D1: the iNiR `Weather` singleton never existed in this tree (22 dead
+// bindings, ReferenceError on load) and `Icons.getWeatherIcon` is gone with
+// it. The widget now consumes WeatherService directly — no forwarding alias —
+// and holds a consumer lease so the backend (timer, network, cache) exists
+// only while the widget is in a lane. No data degrades to "--°" and a cloud
+// glyph instead of placeholder fiction.
 pragma ComponentBehavior: Bound
 import qs.services
 import Quickshell
@@ -10,7 +19,21 @@ MouseArea {
     id: root
     property bool hovered: false
     property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    property bool isMaterial: PersonalizationConfig.barIsMaterial
+
+    property string weatherLeaseId: ""
+    Component.onCompleted: {
+        weatherLeaseId = WeatherService.allocateLeaseId("bar-weather");
+        WeatherService.acquire(weatherLeaseId);
+    }
+    Component.onDestruction: {
+        if (weatherLeaseId !== "")
+            WeatherService.release(weatherLeaseId);
+    }
+
+    readonly property bool hasData: WeatherService.hasValidData
+    readonly property string tempText: root.hasData ? (Math.round(WeatherService.currentTemperatureC) + "°") : "--°"
+    readonly property string iconName: root.hasData ? WeatherService.currentIconName : "cloud"
 
     implicitWidth: vertical ? 32 : (contentLoader.item?.implicitWidth ?? 0)
     implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
@@ -21,18 +44,14 @@ MouseArea {
 
     onClicked: mouse => {
         if (mouse.button === Qt.LeftButton && root.clickForDetails)
-            weatherPopup.active = !weatherPopup.active
+            weatherPopup.active = !weatherPopup.active;
     }
 
     onPressed: mouse => {
         if (mouse.button === Qt.RightButton) {
-            Weather.getData();
-            ActionGateway.execute(["notify-send",
-                Translation.tr("Weather"),
-                Translation.tr("Refreshing (manually triggered)"),
-                "-a", "Shell"
-            ], "bar.weather")
-            mouse.accepted = false
+            WeatherService.refresh();
+            ActionGateway.execute(["notify-send", Translation.tr("Weather"), Translation.tr("Refreshing (manually triggered)"), "-a", "Shell"], "bar.weather");
+            mouse.accepted = false;
         }
     }
 
@@ -50,7 +69,7 @@ MouseArea {
             MaterialSymbol {
                 visible: !root.isMaterial
                 fill: 0
-                text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+                text: root.iconName
                 iconSize: NexusStyle.font.bodyLarge
                 color: Appearance.colors.colOnLayer1
                 Layout.alignment: Qt.AlignVCenter
@@ -60,7 +79,7 @@ MouseArea {
                 visible: !root.isMaterial
                 font.pixelSize: NexusStyle.font.bodyMedium
                 color: Appearance.colors.colOnLayer1
-                text: Weather.data?.temp ?? "--°"
+                text: root.tempText
                 Layout.alignment: Qt.AlignVCenter
             }
 
@@ -68,7 +87,7 @@ MouseArea {
                 visible: root.isMaterial
                 font.pixelSize: NexusStyle.font.bodyMedium
                 color: M3Palette.pillAccent("weatherBar", M3Palette.primary)
-                text: Weather.data?.temp ?? "--°"
+                text: root.tempText
                 Layout.alignment: Qt.AlignVCenter
                 leftPadding: 5
             }
@@ -83,7 +102,7 @@ MouseArea {
                 MaterialSymbol {
                     anchors.centerIn: parent
                     fill: 0
-                    text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+                    text: root.iconName
                     iconSize: NexusStyle.font.bodyLarge
                     color: M3Palette.primaryForeground
                 }
@@ -99,7 +118,7 @@ MouseArea {
             MaterialSymbol {
                 visible: !root.isMaterial
                 fill: 0
-                text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+                text: root.iconName
                 iconSize: NexusStyle.font.bodyLarge
                 color: Appearance.colors.colOnLayer1
                 Layout.alignment: Qt.AlignHCenter
@@ -109,7 +128,7 @@ MouseArea {
                 visible: !root.isMaterial
                 font.pixelSize: NexusStyle.font.bodyMedium
                 color: Appearance.colors.colOnLayer1
-                text: (Weather.data?.temp ?? "--°").replace(/[CF]$/, "")
+                text: root.tempText.replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
             }
 
@@ -117,7 +136,7 @@ MouseArea {
                 visible: root.isMaterial
                 font.pixelSize: NexusStyle.font.bodyMedium
                 color: M3Palette.pillAccent("weatherBar", M3Palette.primary)
-                text: (Weather.data?.temp ?? "--°").replace(/[CF]$/, "")
+                text: root.tempText.replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
                 Layout.topMargin: 3
             }
@@ -133,7 +152,7 @@ MouseArea {
                 MaterialSymbol {
                     anchors.centerIn: parent
                     fill: 0
-                    text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
+                    text: root.iconName
                     iconSize: NexusStyle.font.bodyLarge
                     color: M3Palette.primaryForeground
                 }

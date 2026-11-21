@@ -98,7 +98,6 @@ DashboardCard {
             containerColor: Appearance.colors.colSurfaceContainerHigh
             rippleColor: Appearance.colors.colOnTertiary
             stateLayerColor: Appearance.colors.colOnTertiary
-            stateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
             hoverStateLayerOpacity: Appearance.interaction.hoverStateLayerOpacity
             pressedStateLayerOpacity: Appearance.interaction.pressedStateLayerOpacity
             Accessible.name: root.editable ? I18n.tr("Edit Bézier curve") : I18n.tr("Preset easing")
