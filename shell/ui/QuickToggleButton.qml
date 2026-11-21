@@ -222,7 +222,7 @@ Rectangle {
                 elide: Text.ElideRight
                 color: root.textColor
                 font.family: Fonts.ui
-                font.pixelSize: 13
+                font.pixelSize: NexusStyle.font.bodySmall
                 font.weight: 600
             }
 
@@ -233,7 +233,7 @@ Rectangle {
                 elide: Text.ElideRight
                 color: root.textColor
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 font.weight: 100
             }
         }

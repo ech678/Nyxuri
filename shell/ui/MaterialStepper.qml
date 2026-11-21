@@ -40,7 +40,7 @@ Rectangle {
         text: root.value
         color: Appearance.colors.colOnLayer2
         font.family: Fonts.numeric
-        font.pixelSize: Typography.titleLarge.pixelSize
+        font.pixelSize: NexusStyle.font.titleLarge
         font.weight: Font.Medium
     }
 

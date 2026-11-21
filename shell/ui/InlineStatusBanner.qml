@@ -46,7 +46,7 @@ Rectangle {
                     ? Appearance.colors.colOnTertiaryContainer
                     : Appearance.colors.colOnLayer2
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: NexusStyle.font.bodySmall
             wrapMode: Text.Wrap
         }
     }

@@ -89,7 +89,7 @@ Item {
         textFormat: Text.PlainText
         color: Appearance.colors.colOnSurface
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
         horizontalAlignment: root.compact || root.fan ? Text.AlignLeft : Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideMiddle

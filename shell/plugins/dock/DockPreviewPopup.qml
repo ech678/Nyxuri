@@ -219,7 +219,7 @@ Item {
                 text: root.entryName
                 textFormat: Text.PlainText
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 color: Appearance.colors.colOnSurfaceVariant
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
@@ -286,8 +286,8 @@ Item {
                                 text: desktopActionItem.text
                                 textFormat: Text.PlainText
                                 font.family: Fonts.ui
-                                font.pixelSize: Typography.labelLarge.pixelSize
-                                font.weight: Typography.labelLarge.weight
+                                font.pixelSize: NexusStyle.font.labelLarge
+                                font.weight: NexusStyle.font.labelLargeWeight
                                 color: desktopActionItem.foreground
                                 elide: Text.ElideRight
                             }
@@ -316,7 +316,7 @@ Item {
                          && root.windows.length === 0
                 text: I18n.tr("Application is unavailable")
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 color: Appearance.colors.colOnSurfaceVariant
                 wrapMode: Text.Wrap
             }
@@ -375,7 +375,7 @@ Item {
                     textFormat: Text.PlainText
                     wrapMode: Text.Wrap
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: NexusStyle.font.bodySmall
                     color: Appearance.colors.colError
                 }
                 Rectangle {

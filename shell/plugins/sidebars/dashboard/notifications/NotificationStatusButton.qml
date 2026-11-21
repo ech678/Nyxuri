@@ -59,7 +59,7 @@ Button {
                 text: root.buttonText
                 verticalAlignment: Text.AlignVCenter
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 font.weight: Font.Medium
                 color: root.toggled ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer2
             }

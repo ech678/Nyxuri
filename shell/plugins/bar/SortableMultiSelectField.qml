@@ -391,7 +391,7 @@ FocusScope {
                             text: root.labelFor(chipDelegate.componentId)
                             color: Appearance.colors.colOnPrimaryContainer
                             font.family: Fonts.ui
-                            font.pixelSize: 13
+                            font.pixelSize: NexusStyle.font.bodySmall
                             font.weight: Font.Medium
                             visible: !chipDelegate.placeholder
                             elide: Text.ElideRight
@@ -512,7 +512,7 @@ FocusScope {
             text: I18n.tr("No components selected")
             color: Appearance.colors.colSubtext
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: NexusStyle.font.bodyMedium
 
             anchors {
                 left: parent.left
@@ -656,7 +656,7 @@ FocusScope {
                                 text: root.optionLabel(optionChip.modelData)
                                 color: Appearance.colors.colOnPrimaryContainer
                                 font.family: Fonts.ui
-                                font.pixelSize: 13
+                                font.pixelSize: NexusStyle.font.bodySmall
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                             }
@@ -685,7 +685,7 @@ FocusScope {
                         text: I18n.tr("All widgets are in use")
                         color: Appearance.colors.colSubtext
                         font.family: Fonts.ui
-                        font.pixelSize: 13
+                        font.pixelSize: NexusStyle.font.bodySmall
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }

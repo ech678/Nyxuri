@@ -246,7 +246,7 @@ Item {
                 elide: Text.ElideRight
                 color: Appearance.colors.colOnSecondaryContainer
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: NexusStyle.font.bodyMedium
                 font.weight: Font.DemiBold
                 opacity: root.webEngineProgress
             }
@@ -319,7 +319,7 @@ Item {
                 }
                 color: Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.72)
                 font.family: Fonts.ui
-                font.pixelSize: 20
+                font.pixelSize: NexusStyle.font.titleLarge
                 verticalAlignment: Text.AlignVCenter
                 opacity: !root.structuredInput && searchInput.text.length === 0 ? 1 - root.webTextProgress : 0
                 elide: Text.ElideRight
@@ -339,7 +339,7 @@ Item {
                                                                                       I18n.tr("Search")
                 color: Appearance.applyAlpha(Appearance.colors.colOnSurfaceVariant, 0.72)
                 font.family: Fonts.ui
-                font.pixelSize: 20
+                font.pixelSize: NexusStyle.font.titleLarge
                 verticalAlignment: Text.AlignVCenter
                 opacity: !root.structuredInput && searchInput.text.length === 0 ? root.webTextProgress : 0
                 elide: Text.ElideRight
@@ -356,7 +356,7 @@ Item {
                 selectionColor: Appearance.colors.colPrimary
                 selectedTextColor: Appearance.colors.colOnPrimary
                 font.family: Fonts.ui
-                font.pixelSize: 20
+                font.pixelSize: NexusStyle.font.titleLarge
                 verticalAlignment: TextInput.AlignVCenter
                 selectByMouse: true
                 clip: true

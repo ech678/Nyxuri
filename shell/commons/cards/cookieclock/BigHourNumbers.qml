@@ -35,7 +35,7 @@ Item {
                     rotation: -numberItem.rotation
                     color: root.color
                     font.family: Fonts.expressive
-                    font.pixelSize: 80
+                    font.pixelSize: NexusStyle.font.displayLarge
                     font.weight: Font.Black
                 }
             }

@@ -55,7 +55,7 @@ MouseArea {
                         Layout.rightMargin: -2
                         fill: 1
                         text: "bolt"
-                        iconSize: Appearance.font.pixelSize.smaller
+                        iconSize: NexusStyle.font.bodySmall
                         visible: root.isCharging && root.percentage < 1
                     }
                     StyledText {
@@ -80,7 +80,7 @@ MouseArea {
                         fill: 1
                         text: "bolt"
                         Layout.topMargin: 4
-                        iconSize: Appearance.font.pixelSize.smaller
+                        iconSize: NexusStyle.font.bodySmall
                         visible: root.isCharging && root.percentage < 1
                     }
                     StyledText {

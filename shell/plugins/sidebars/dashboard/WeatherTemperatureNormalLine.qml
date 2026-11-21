@@ -1,4 +1,5 @@
 import QtQuick
+import qs.commons
 import qs.commons.i18n
 
 Item {
@@ -39,7 +40,7 @@ Item {
         text: root.temperatureText
         color: root.labelColor
         font.family: root.numericFontFamily
-        font.pixelSize: 11
+        font.pixelSize: NexusStyle.font.labelSmall
     }
 
     Text {
@@ -50,7 +51,7 @@ Item {
         text: root.normalText
         color: root.labelColor
         font.family: root.uiFontFamily
-        font.pixelSize: 11
+        font.pixelSize: NexusStyle.font.labelSmall
         font.bold: true
     }
 }

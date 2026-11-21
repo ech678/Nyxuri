@@ -235,7 +235,7 @@ Item {
                         text: modelData.hourText
                         color: parent.hourColor
                         font.family: Fonts.numeric
-                        font.pixelSize: 11
+                        font.pixelSize: NexusStyle.font.labelSmall
                         horizontalAlignment: Text.AlignHCenter
                     }
 
@@ -267,7 +267,7 @@ Item {
                         text: modelData.speedText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                     }
                 }
             }
@@ -307,6 +307,6 @@ Item {
         text: I18n.tr("Wind data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 16
+        font.pixelSize: NexusStyle.font.bodyLarge
     }
 }

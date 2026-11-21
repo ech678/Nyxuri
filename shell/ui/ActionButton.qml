@@ -49,9 +49,9 @@ RippleButton {
                 Layout.alignment: Qt.AlignVCenter
                 text: root.text
                 color: root.contentColor
-                font.family: Typography.labelLarge.family
-                font.pixelSize: Typography.labelLarge.pixelSize
-                font.weight: Typography.labelLarge.weight
+                font.family: Fonts.ui
+                font.pixelSize: NexusStyle.font.labelLarge
+                font.weight: NexusStyle.font.labelLargeWeight
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }

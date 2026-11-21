@@ -3,8 +3,10 @@
 > 本页是全 Shell 表面的设计契约唯一权威：字号、圆角、间距、色彩角色、动效、交互反馈、
 > 出生律，以及从参考树借件的方法论（抄件宪章）。数值基准 1:1 取自
 > `references/caelestia/plugin/src/Caelestia/Config/tokens.hpp`（= Material 3 官方 dp 值）。
-> 实施状态：D0 落地中（见 [shell/ROADMAP](../../shell/ROADMAP.md) D0）；本页先钉契约值，
-> 代码随后对齐。运行行为以源码为准，本页管「应该是什么」；阶段与验收归 ROADMAP。
+> 实施状态：契约值已钉；**字号一张表（D-1）已于 2026-11-21 落地**（映射见 Type Scale
+> 节，门禁 `tests/shell/test_type_scale.py`）；交互反馈合一进行中（见
+> [shell/ROADMAP](../../shell/ROADMAP.md) D0）。运行行为以源码为准，本页管「应该是什么」；
+> 阶段与验收归 ROADMAP。
 
 ## 抄件宪章（怎么抄）
 
@@ -37,11 +39,11 @@
 
 宪法（L1/L2）> 表面母体（L4）> 组件原籍习惯。抄来的东西永远不携带母体私有值。
 
-## Type Scale（全库一张表，D-1 定案）
+## Type Scale（全库一张表，D-1 定案，已落地）
 
-NexusStyle 的 QML 实现为唯一定义点（`shell/ui/NexusStyle.qml`）；`pixelSize` 直接收
-dp 值（96dpi 下 dp=px）。Typography 的 end4 阶梯与 `Appearance.font` 双轨退役，
-逐键映射在 D0 实施时按「最近值」原则定；全库字面 `pixelSize` 清零（清账清单见文末）。
+唯一定义点 = `shell/commons/NexusStyle.qml`（D-1 时自 ui/ 迁入 Token 归宿 commons）；
+`pixelSize` 直接收 dp 值（96dpi 下 dp=px）。Typography 单例与 `Appearance.font`
+的 end4 字号阶梯已双双退役删除；全库字面 `pixelSize` 清零。
 
 | 阶 | 档 | px | weight |
 | --- | --- | --- | --- |
@@ -57,8 +59,20 @@ dp 值（96dpi 下 dp=px）。Typography 的 end4 阶梯与 `Appearance.font` �
 | Headline | small | 24 | Medium (500) |
 | Headline | medium | 28 | Medium (500) |
 | Headline | large | 32 | Medium (500) |
+| Display | small/medium/large | 36/45/57 | Regular（M3 规格档；caelestia 未消费，锁屏/时钟大数字用） |
 | Mono | small/medium/large | 12/14/16 | Regular |
 | Icon | small/medium/large/extraLarge | 20/24/32/48 | Material Symbols |
+
+退役映射（2026-11-21 定案，按最近值原则、平值向下）：
+
+- **Typography → NexusStyle**：同名恒等（M3 命名一致），文件删除。
+- **end4 `Appearance.font.pixelSize` → NexusStyle**：`smallest 10→labelSmall 11 ·
+  smaller 12→bodySmall · smallie 13→bodySmall · small 15→bodyMedium 14 ·
+  normal 16→bodyLarge · large 17→bodyLarge · larger 19→icon.small 20（消费点全部是
+  glyph 槽位 iconSize）· huge/title 22→titleLarge`；阶梯删除（family 字符串保留）。
+- **字面值 → token**：文字按最近值（平值向下，如 13→12、15→14、18/19→16、20→22）；
+  Material Symbols 家族的 glyph 文本走 icon 档；`Fonts.mono` 家族走 mono 档。
+  bar 图标槽几何（19/17px iconSize）按 B-2/D-1 保留 end4 基线，不属字号。
 
 正文主力 = `body.small`（UI 默认文字）；bar 密度表面以 Label 档起步。字族不内嵌、
 跟随系统回退（红线：不为视觉引入内嵌字体或启动下载）；时钟/工作区数字字族保留
@@ -139,10 +153,9 @@ bar 的 end4 `elementMove*` 家族（200/320/400）映射入上述档位。出�
 
 ## 清账清单（D0/D5 输入）
 
-- **字号四套并存**：NexusStyle（正典）；`WizardHeader`/`SettingsPanelStyleCard` 走
-  Typography；`ThemePage`/`CursorThemeSelect`/`ShortcutKeycap`/`MatugenTemplateAddWindow`/
-  `ShortcutMap` 裸数字；dashboard 族 Typography+字面混排（`DashboardHomePage` 等 10+ 文件）；
-  quicksettings `BluetoothContent`/`NetworkContent` 字面 12；bar `Appearance.font` 阶梯。
+- ~~**字号四套并存**~~ **已清（2026-11-21，D-1 落地）**：NexusStyle 升格 commons
+  全库唯一 type scale；Typography 与 `Appearance.font` 阶梯删除；字面 `pixelSize`
+  275 处全迁移（映射见 Type Scale 节）；门禁 `tests/shell/test_type_scale.py`。
 - **两份 StateLayer**：`plugins/bar/StateLayer.qml`（end4 枚举版）与 `ui/StateLayer.qml`
   （M3 版）合一；`RippleButton.colBackgroundToggledHover/Toggled` 死属性修复，
   `hoverOpacity` 默认链不得覆盖 0.08。

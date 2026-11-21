@@ -500,7 +500,7 @@ ButtonMouseArea {
             anchors.centerIn: parent
             StyledText {
                 anchors.centerIn: parent
-                font.pixelSize: Appearance.font.pixelSize.small - ((text.length - 1) * (text !== "10") * 2)
+                font.pixelSize: NexusStyle.font.bodyMedium - ((text.length - 1) * (text !== "10") * 2)
                 color: wsNum.contentColor
                 text: Config.options?.bar?.m3?.workspaces?.numberMap[wsNum.wsId - 1] || wsNum.wsId
             }

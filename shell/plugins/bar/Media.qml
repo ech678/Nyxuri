@@ -226,7 +226,7 @@ Item {
                     anchors.centerIn: parent
                     fill: 1
                     text: root.activePlayer?.isPlaying ? "pause" : "music_note"
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: root.contentColor
                 }
             }
@@ -246,7 +246,7 @@ Item {
             anchors.centerIn: parent
             fill: 1
             text: root.activePlayer?.isPlaying ? "pause" : "music_note"
-            iconSize: Appearance.font.pixelSize.normal
+            iconSize: NexusStyle.font.bodyLarge
             color: root.mediaInk
         }
     }
@@ -275,7 +275,7 @@ Item {
                         anchors.centerIn: parent
                         fill: 1
                         text: root.activePlayer?.isPlaying ? "pause" : "music_note"
-                        iconSize: Appearance.font.pixelSize.normal
+                        iconSize: NexusStyle.font.bodyLarge
                         color: Appearance.colors.colOnLayer1
                     }
                 }
@@ -349,7 +349,7 @@ Item {
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: "account_circle"
-                            iconSize: Appearance.font.pixelSize.normal
+                            iconSize: NexusStyle.font.bodyLarge
                             color: M3Palette.primaryContainerForeground
                             visible: avatarImage.status === Image.Error || avatarImage.status === Image.Null
                         }
@@ -362,7 +362,7 @@ Item {
 
                         StyledText {
                             text: SystemIdentityService.accountName
-                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            font.pixelSize: NexusStyle.font.bodySmall
                             color: root.mediaInk
                             elide: Text.ElideRight
                             Layout.maximumWidth: 120
@@ -370,7 +370,7 @@ Item {
 
                         StyledText {
                             id: distroLabel
-                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            font.pixelSize: NexusStyle.font.bodySmall
                             color: root.mediaInk
                             opacity: 0.7
                             elide: Text.ElideRight
@@ -419,7 +419,7 @@ Item {
                             artRadius: artRect.radius
                             placeholderColor: root.mediaContainer
                             iconColor: root.mediaInk
-                            iconSize: Appearance.font.pixelSize.normal
+                            iconSize: NexusStyle.font.bodyLarge
                         }
                     }
 
@@ -433,7 +433,7 @@ Item {
                             id: artistText
                             visible: !(Config.options?.bar?.m3?.media?.onlyTitle ?? false) && root.trackArtist.length > 0
                             text: root.trackArtist
-                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            font.pixelSize: NexusStyle.font.bodySmall
                             color: root.mediaInk
                             elide: Text.ElideRight
                             Layout.maximumWidth: 120
@@ -444,7 +444,7 @@ Item {
                             readonly property bool titleOnly: Config.options?.bar?.m3?.media?.onlyTitle ?? false
                             Layout.topMargin: (root.trackArtist.length === 0) ? -13 : 0
                             text: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
-                            font.pixelSize: titleOnly ? Appearance.font.pixelSize.small : Appearance.font.pixelSize.smallie
+                            font.pixelSize: titleOnly ? NexusStyle.font.bodyMedium : NexusStyle.font.bodySmall
                             font.weight: titleOnly ? Font.Medium : Font.Normal
                             color: titleOnly ? root.mediaInk : (root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.7) : ColorUtils.readableSubtext(root.mediaInk, root.mediaContainer, 0.72))
                             elide: Text.ElideRight
@@ -466,7 +466,7 @@ Item {
                             anchors.centerIn: parent
                             horizontalAlignment: Text.AlignHCenter
                             text: root.isPlaying ? "pause" : "play_arrow"
-                            iconSize: Appearance.font.pixelSize.large
+                            iconSize: NexusStyle.font.bodyLarge
                             fill: 1
                             color: root.playInk
                         }
@@ -488,7 +488,7 @@ Item {
                             anchors.centerIn: parent
                             horizontalAlignment: Text.AlignHCenter
                             text: "skip_next"
-                            iconSize: Appearance.font.pixelSize.large
+                            iconSize: NexusStyle.font.bodyLarge
                             fill: 1
                             color: root.mediaInk
                         }

@@ -50,7 +50,7 @@ DashboardCard {
             StyledText {
                 Layout.fillWidth: true
                 text: root.title
-                font.pixelSize: Typography.bodyLarge.pixelSize
+                font.pixelSize: NexusStyle.font.bodyLarge
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnLayer1
                 wrapMode: Text.WordWrap
@@ -110,7 +110,7 @@ DashboardCard {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 14
         text: Math.round(root.current)
-        font.pixelSize: 28
+        font.pixelSize: NexusStyle.font.headlineMedium
         font.weight: Font.Light
         color: Appearance.colors.colOnLayer1
     }

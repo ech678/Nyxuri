@@ -112,7 +112,7 @@ Item {
 
             contentItem: MaterialSymbol {
                 anchors.centerIn: parent
-                iconSize: Appearance.font.pixelSize.larger
+                iconSize: NexusStyle.icon.small
                 text: Config.options.bar.bottom ? "keyboard_control_key" : "expand_more"
                 horizontalAlignment: Text.AlignHCenter
                 color: root.isMaterial ? M3Palette.pillInk("sysTray") : Appearance.colors.colOnLayer2

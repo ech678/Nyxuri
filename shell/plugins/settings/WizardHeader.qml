@@ -33,9 +33,9 @@ RowLayout {
             Layout.fillWidth: true
             text: root.title
             color: Appearance.colors.colOnSurface
-            font.family: Typography.headlineSmall.family
-            font.pixelSize: Typography.headlineSmall.pixelSize
-            font.weight: Typography.headlineSmall.weight
+            font.family: Fonts.ui
+            font.pixelSize: NexusStyle.font.headlineSmall
+            font.weight: NexusStyle.font.headlineWeight
             elide: Text.ElideRight
         }
 
@@ -44,9 +44,9 @@ RowLayout {
             visible: root.subtitle.length > 0
             text: root.subtitle
             color: Appearance.colors.colOnSurfaceVariant
-            font.family: Typography.bodyMedium.family
-            font.pixelSize: Typography.bodyMedium.pixelSize
-            font.weight: Typography.bodyMedium.weight
+            font.family: Fonts.ui
+            font.pixelSize: NexusStyle.font.bodyMedium
+            font.weight: Font.Normal
             elide: Text.ElideRight
         }
     }

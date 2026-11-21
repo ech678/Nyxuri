@@ -609,7 +609,7 @@ Item {
 
                                         StyledText {
                                             text: slot.modelData.title
-                                            font.pixelSize: Typography.bodyLarge.pixelSize
+                                            font.pixelSize: NexusStyle.font.bodyLarge
                                             font.weight: Font.DemiBold
                                             color: Appearance.colors.colOnPrimaryContainer
                                         }
@@ -618,7 +618,7 @@ Item {
 
                                 StyledText {
                                     text: slot.modelData.count ?? ""
-                                    font.pixelSize: Typography.bodySmall.pixelSize
+                                    font.pixelSize: NexusStyle.font.bodySmall
                                     color: Appearance.colors.colSubtext
                                 }
 

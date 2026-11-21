@@ -179,14 +179,14 @@ Item {
 
                             StyledText {
                                 text: I18n.tr("Current palette")
-                                font.pixelSize: Typography.titleLarge.pixelSize
+                                font.pixelSize: NexusStyle.font.titleLarge
                                 font.weight: Font.DemiBold
                                 color: Appearance.colors.colOnPrimaryContainer
                             }
 
                             StyledText {
                                 text: root.schemeLabel(root.activeScheme)
-                                font.pixelSize: Typography.bodySmall.pixelSize
+                                font.pixelSize: NexusStyle.font.bodySmall
                                 color: Appearance.colors.colOnPrimaryContainer
                                 opacity: 0.75
                             }
@@ -229,7 +229,7 @@ Item {
                                 StyledText {
                                     Layout.fillWidth: true
                                     text: swatch.modelData.name
-                                    font.pixelSize: 10
+                                    font.pixelSize: NexusStyle.font.labelSmall
                                     color: Appearance.colors.colOnPrimaryContainer
                                     opacity: 0.7
                                     elide: Text.ElideRight
@@ -279,7 +279,7 @@ Item {
                         StyledText {
                             Layout.fillWidth: true
                             text: I18n.tr("Matugen templates")
-                            font.pixelSize: Typography.bodyLarge.pixelSize
+                            font.pixelSize: NexusStyle.font.bodyLarge
                             font.weight: Font.DemiBold
                             color: Appearance.colors.colOnLayer1
                             elide: Text.ElideRight
@@ -522,7 +522,7 @@ Item {
                                                 StyledText {
                                                     Layout.fillWidth: true
                                                     text: tileRoot.modelData.label
-                                                    font.pixelSize: Typography.bodyMedium.pixelSize
+                                                    font.pixelSize: NexusStyle.font.bodyMedium
                                                     font.weight: tileRoot.selected ? Font.DemiBold : Font.Normal
                                                     color: Appearance.colors.colOnLayer1
                                                     elide: Text.ElideRight

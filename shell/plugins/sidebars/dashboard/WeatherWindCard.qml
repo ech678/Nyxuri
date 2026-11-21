@@ -163,7 +163,7 @@ WeatherInsightCard {
             text: I18n.tr("Wind")
             color: root.mutedInk
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: NexusStyle.font.bodyLarge
             font.bold: true
         }
     }
@@ -250,7 +250,7 @@ WeatherInsightCard {
         text: root.animatedDetailText()
         color: root.ink
         font.family: Fonts.expressive
-        font.pixelSize: 14
+        font.pixelSize: NexusStyle.font.bodyMedium
         font.bold: true
         elide: Text.ElideRight
         z: 2

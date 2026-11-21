@@ -238,7 +238,7 @@ Rectangle {
             text: line.icon
             color: line.accent
             font.family: Fonts.materialSymbolsOutlined
-            font.pixelSize: 24
+            font.pixelSize: NexusStyle.icon.medium
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }

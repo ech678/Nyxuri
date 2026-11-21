@@ -48,7 +48,7 @@ Rectangle {
         textFormat: Text.PlainText
         elide: Text.ElideRight
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
         color: Appearance.colors.colOnSurfaceVariant
     }
     StyledFlickable {
@@ -98,7 +98,7 @@ Rectangle {
                         elide: Text.ElideRight
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
-                        font.pixelSize: 16
+                        font.pixelSize: NexusStyle.font.bodyLarge
                     }
                     MouseArea {
                         anchors.fill: parent
@@ -137,7 +137,7 @@ Rectangle {
                 color: root.service.state === "error" || root.service.state === "unavailable"
                        ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 16
+                font.pixelSize: NexusStyle.font.bodyLarge
             }
             Text {
                 Layout.fillWidth: true
@@ -147,7 +147,7 @@ Rectangle {
                 wrapMode: Text.WrapAnywhere
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: 28
+                font.pixelSize: NexusStyle.font.headlineMedium
             }
             Repeater {
                 model: root.service.state === "ambiguous" && root.service.result ? root.service.result.candidates :
@@ -170,7 +170,7 @@ Rectangle {
                 textFormat: Text.PlainText
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: NexusStyle.font.bodyMedium
             }
         }
     }

@@ -31,7 +31,7 @@ Rectangle {
             StyledText {
                 id: title
                 Layout.alignment: Qt.AlignLeft
-                font.pixelSize: Appearance.font.pixelSize.smaller
+                font.pixelSize: NexusStyle.font.bodySmall
                 color: root.fgColor
             }
 
@@ -41,14 +41,14 @@ Rectangle {
                 id: symbol
                 Layout.alignment: Qt.AlignRight
                 fill: 0
-                iconSize: Appearance.font.pixelSize.normal
+                iconSize: NexusStyle.font.bodyLarge
                 color: root.fgColor
             }
         }
 
         StyledText {
             id: value
-            font.pixelSize: Appearance.font.pixelSize.small
+            font.pixelSize: NexusStyle.font.bodyMedium
             color: root.fgColor
             opacity: 0.6
         }

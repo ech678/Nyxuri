@@ -118,7 +118,7 @@ Item {
         color: root.leftForeground
         renderType: Text.NativeRendering
         font.family: Fonts.expressive
-        font.pixelSize: 34
+        font.pixelSize: NexusStyle.font.headlineLarge
         font.weight: Font.Black
         font.variableAxes: root.expressiveBoldAxes
 
@@ -288,7 +288,7 @@ Item {
             color: root.rightForeground
             renderType: Text.NativeRendering
             font.family: Fonts.expressive
-            font.pixelSize: 27
+            font.pixelSize: NexusStyle.font.headlineMedium
             font.weight: Font.Black
             font.variableAxes: root.expressiveBoldAxes
             elide: Text.ElideRight

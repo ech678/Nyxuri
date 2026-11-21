@@ -216,7 +216,7 @@ Item {
                 text: SystemIdentityService.accountName
                 color: "white"
                 font.family: Fonts.ui
-                font.pixelSize: 40 * root.uiScale
+                font.pixelSize: NexusStyle.font.displaySmall * root.uiScale
                 font.weight: Font.Medium
                 elide: Text.ElideRight
             }
@@ -249,7 +249,7 @@ Item {
                     visible: root.context.currentText.length === 0 && !root.busy
                     text: I18n.tr("Password")
                     font.family: Fonts.ui
-                    font.pixelSize: 20 * root.uiScale
+                    font.pixelSize: NexusStyle.font.titleLarge * root.uiScale
                     color: "#4D5861"
                 }
 

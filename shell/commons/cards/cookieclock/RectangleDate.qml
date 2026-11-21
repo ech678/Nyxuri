@@ -18,7 +18,7 @@ Rectangle {
         text: String(root.day).padStart(2, "0")
         color: root.textColor
         font.family: Fonts.expressive
-        font.pixelSize: 20
+        font.pixelSize: NexusStyle.font.titleLarge
         font.weight: Font.Black
     }
 }

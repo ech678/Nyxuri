@@ -60,7 +60,7 @@ Item {
                         textFormat: Text.PlainText
                         elide: Text.ElideRight
                         font.family: Fonts.ui
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         color: Appearance.colors.colOnSurface
                     }
                 }

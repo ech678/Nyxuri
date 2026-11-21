@@ -189,7 +189,7 @@ Rectangle {
             text: root.formattedDate(root.currentDate) + I18n.tr("   •   %1 tasks").arg(remainingTasks)
             color: Appearance.colors.colOnLayer1
             font.family: Fonts.ui
-            font.pixelSize: 15
+            font.pixelSize: NexusStyle.font.bodyMedium
             elide: Text.ElideRight
         }
     }
@@ -314,7 +314,7 @@ Rectangle {
                                     color: tabButton.toggled ? Appearance.colors.colOnSecondaryContainer :
                                                                Appearance.colors.colOnLayer1
                                     font.family: Fonts.ui
-                                    font.pixelSize: 12
+                                    font.pixelSize: NexusStyle.font.bodySmall
                                 }
                             }
                         }

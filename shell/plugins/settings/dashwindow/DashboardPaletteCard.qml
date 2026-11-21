@@ -146,7 +146,7 @@ DashboardCard {
 
                 StyledText {
                     text: pill.option.label ?? ""
-                    font.pixelSize: Typography.bodyMedium.pixelSize
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     font.weight: Font.Medium
                     color: pill.selected ? Appearance.colors.colOnSecondary :
                                            Appearance.colors.colOnSecondaryContainer
@@ -191,7 +191,7 @@ DashboardCard {
                     StyledText {
                         Layout.fillWidth: true
                         text: root.title
-                        font.pixelSize: Typography.titleLarge.pixelSize
+                        font.pixelSize: NexusStyle.font.titleLarge
                         font.weight: Font.DemiBold
                         color: Appearance.colors.colOnSecondaryContainer
                         elide: Text.ElideRight
@@ -200,7 +200,7 @@ DashboardCard {
                     StyledText {
                         Layout.fillWidth: true
                         text: I18n.tr("How colors are made from your wallpaper")
-                        font.pixelSize: Typography.bodyMedium.pixelSize
+                        font.pixelSize: NexusStyle.font.bodyMedium
                         color: Appearance.colors.colOnSecondaryContainer
                         opacity: 0.75
                         wrapMode: Text.WordWrap

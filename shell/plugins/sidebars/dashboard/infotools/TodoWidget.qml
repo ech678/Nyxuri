@@ -208,7 +208,7 @@ Item {
                     text: I18n.tr("Add task")
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 16
+                    font.pixelSize: NexusStyle.font.bodyLarge
                     font.weight: Font.Medium
                 }
 
@@ -222,7 +222,7 @@ Item {
                     focus: root.showAddDialog
                     placeholderText: I18n.tr("Task description")
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     wrapMode: TextEdit.NoWrap
                     onAccepted: root.addTask()
                 }

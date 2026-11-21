@@ -122,9 +122,9 @@ Rectangle {
             Layout.fillWidth: true
             text: heading.title
             color: Appearance.colors.colOnSurface
-            font.family: Typography.titleSmall.family
-            font.pixelSize: Typography.titleSmall.pixelSize
-            font.weight: Typography.titleSmall.weight
+            font.family: Fonts.ui
+            font.pixelSize: NexusStyle.font.titleSmall
+            font.weight: NexusStyle.font.titleWeight
         }
         Text {
             Layout.fillWidth: true
@@ -132,8 +132,8 @@ Rectangle {
             visible: text.length > 0
             elide: Text.ElideRight
             color: Appearance.colors.colOnSurfaceVariant
-            font.family: Typography.bodySmall.family
-            font.pixelSize: Typography.bodySmall.pixelSize
+            font.family: Fonts.ui
+            font.pixelSize: NexusStyle.font.bodySmall
         }
     }
 }

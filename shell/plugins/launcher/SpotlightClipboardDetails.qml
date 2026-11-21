@@ -188,7 +188,7 @@ ColumnLayout {
                     selectedTextColor: Appearance.m3colors.m3onPrimary
                     selectionColor: Appearance.m3colors.m3primary
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     // Text selection/copy stays local. Navigation and mode keys
                     // propagate to the existing Spotlight focus router.
                     Keys.priority: Keys.BeforeItem
@@ -292,7 +292,7 @@ ColumnLayout {
                 horizontalAlignment: Text.AlignHCenter
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: 16
+                font.pixelSize: NexusStyle.font.bodyLarge
                 ToolTip.visible: truncated && fileNameHover.hovered
                 ToolTip.text: text
                 HoverHandler {
@@ -366,7 +366,7 @@ ColumnLayout {
         textFormat: Text.PlainText
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
     }
     Text {
         Layout.fillWidth: true
@@ -378,7 +378,7 @@ ColumnLayout {
         textFormat: Text.PlainText
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
     }
     RowLayout {
         Layout.fillWidth: true

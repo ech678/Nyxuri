@@ -274,7 +274,7 @@ Item {
                         Layout.fillWidth: true
                         text: root.shownTitle || I18n.tr("Nothing playing")
                         horizontalAlignment: Text.AlignHCenter
-                        font.pixelSize: 34
+                        font.pixelSize: NexusStyle.font.headlineLarge
                         font.weight: Font.Bold
                         color: root.fg
                         elide: Text.ElideRight
@@ -284,7 +284,7 @@ Item {
                         Layout.fillWidth: true
                         text: root.shownArtist
                         horizontalAlignment: Text.AlignHCenter
-                        font.pixelSize: Typography.titleLarge.pixelSize
+                        font.pixelSize: NexusStyle.font.titleLarge
                         color: root.fgDim
                         elide: Text.ElideRight
                     }
@@ -331,7 +331,7 @@ Item {
                             Layout.preferredWidth: 44
                             horizontalAlignment: Text.AlignRight
                             text: root.formatTime(root.player ? root.player.position : 0)
-                            font.pixelSize: Typography.bodySmall.pixelSize
+                            font.pixelSize: NexusStyle.font.bodySmall
                             color: root.fg
                         }
 
@@ -375,7 +375,7 @@ Item {
                             horizontalAlignment: Text.AlignLeft
                             text: "-" + root.formatTime((root.player ? root.player.length ?? 0 : 0) - (
                                                             root.player ? root.player.position ?? 0 : 0))
-                            font.pixelSize: Typography.bodySmall.pixelSize
+                            font.pixelSize: NexusStyle.font.bodySmall
                             color: root.fg
                         }
                     }

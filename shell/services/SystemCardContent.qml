@@ -236,7 +236,7 @@ Item {
             chartActive: root.active
             updateInterval: root.chartUpdateInterval
             decorationSize: 50
-            valueSize: Typography.headlineMedium.pixelSize
+            valueSize: NexusStyle.font.headlineMedium
             containerColor: root.surfaceColor(Appearance.m3colors.m3primaryContainer,
                                               Appearance.colors.colPrimaryContainer)
             foregroundColor: Appearance.colors.colOnPrimaryContainer
@@ -264,7 +264,7 @@ Item {
             updateInterval: root.chartUpdateInterval
             shapeOverride: MaterialShape.Gem
             decorationSize: 50
-            valueSize: Typography.headlineMedium.pixelSize
+            valueSize: NexusStyle.font.headlineMedium
             containerColor: root.surfaceColor(Appearance.m3colors.m3secondaryContainer,
                                               Appearance.colors.colSecondaryContainer)
             foregroundColor: Appearance.colors.colOnSecondaryContainer

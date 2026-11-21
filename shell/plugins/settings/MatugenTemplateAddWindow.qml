@@ -122,7 +122,7 @@ FloatingWindow {
                                   "This command runs every time Matugen regenerates the theme. Only enable trusted templates.")
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.ui
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         wrapMode: Text.Wrap
                     }
                     InlineStatusBanner {

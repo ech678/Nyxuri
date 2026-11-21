@@ -17,7 +17,7 @@ RowLayout {
     MaterialSymbol {
         text: root.icon
         color: Appearance.colors.colOnSurfaceVariant
-        iconSize: Appearance.font.pixelSize.large
+        iconSize: NexusStyle.font.bodyLarge
     }
     StyledText {
         text: root.label

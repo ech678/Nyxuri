@@ -102,7 +102,7 @@ Item {
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.ui
                         font.bold: true
-                        font.pixelSize: 14
+                        font.pixelSize: NexusStyle.font.bodyMedium
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
@@ -112,7 +112,7 @@ Item {
                         textFormat: Text.StyledText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.ui
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                         maximumLineCount: delegateRoot.normalActions.length > 0 ? 1 : 2
@@ -163,7 +163,7 @@ Item {
                                         text: actionButton.modelData.text
                                         color: Appearance.colors.colOnSurfaceVariant
                                         font.family: Fonts.ui
-                                        font.pixelSize: 12
+                                        font.pixelSize: NexusStyle.font.bodySmall
                                         font.weight: Font.Medium
                                         horizontalAlignment: Text.AlignHCenter
                                         verticalAlignment: Text.AlignVCenter
@@ -192,7 +192,7 @@ Item {
                         text: "close"
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.materialSymbolsRounded
-                        font.pixelSize: 20
+                        font.pixelSize: NexusStyle.icon.small
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }

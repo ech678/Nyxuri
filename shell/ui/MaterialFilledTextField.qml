@@ -38,9 +38,9 @@ TextField {
     rightPadding: Metrics.spacingL + (root.hasTrailingContent ? root.trailingContentWidth + Metrics.spacingXS : 0)
 
     font {
-        family: Typography.bodyLarge.family
-        pixelSize: Typography.bodyLarge.pixelSize
-        weight: Typography.bodyLarge.weight
+        family: Fonts.ui
+        pixelSize: NexusStyle.font.bodyLarge
+        weight: Font.Normal
         hintingPreference: Font.PreferFullHinting
     }
 

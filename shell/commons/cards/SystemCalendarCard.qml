@@ -59,7 +59,7 @@ Rectangle {
             renderType: Text.NativeRendering
             font {
                 family: root.calendarFamily
-                pixelSize: Math.min(Typography.titleMedium.pixelSize, headingBand.height * 0.36)
+                pixelSize: Math.min(NexusStyle.font.titleMedium, headingBand.height * 0.36)
                 weight: Font.Bold
                 letterSpacing: 0.8
                 variableAxes: root.calendarAxes

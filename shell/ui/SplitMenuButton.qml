@@ -151,7 +151,7 @@ Item {
         id: labelMetrics
 
         font.family: Fonts.ui
-        font.pixelSize: 13
+        font.pixelSize: NexusStyle.font.bodySmall
         font.weight: Font.Medium
         text: root.labelFor(root.currentValue) || root.fallbackText
     }
@@ -160,7 +160,7 @@ Item {
         id: menuLabelMetrics
 
         font.family: Fonts.ui
-        font.pixelSize: 14
+        font.pixelSize: NexusStyle.font.bodyMedium
         font.weight: Font.Normal
         text: root.longestLabel()
     }
@@ -257,7 +257,7 @@ Item {
                     text: root.labelFor(root.currentValue) || root.fallbackText
                     color: root.buttonTextColor
                     font.family: Fonts.ui
-                    font.pixelSize: 13
+                    font.pixelSize: NexusStyle.font.bodySmall
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                     horizontalAlignment: Text.AlignHCenter
@@ -430,7 +430,7 @@ Item {
                             color: option.selected ? Appearance.m3colors.m3onSecondaryContainer :
                                                      Appearance.m3colors.m3onSurface
                             font.family: Fonts.ui
-                            font.pixelSize: 14
+                            font.pixelSize: NexusStyle.font.bodyMedium
                             font.weight: option.selected ? Font.Medium : Font.Normal
                             elide: Text.ElideRight
                             verticalAlignment: Text.AlignVCenter

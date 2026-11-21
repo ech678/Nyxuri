@@ -177,14 +177,14 @@ PanelWindow {
             Text {
                 text: "crop_free"
                 font.family: Fonts.materialSymbolsRounded
-                font.pixelSize: 17
+                font.pixelSize: NexusStyle.icon.small
                 color: Appearance.colors.colPrimary
             }
 
             Text {
                 text: Math.round(root.selectionWidth) + " × " + Math.round(root.selectionHeight)
                 font.family: Fonts.numeric
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnSurface
             }
@@ -211,14 +211,14 @@ PanelWindow {
             Text {
                 text: "drag_pan"
                 font.family: Fonts.materialSymbolsRounded
-                font.pixelSize: 18
+                font.pixelSize: NexusStyle.icon.small
                 color: Appearance.colors.colOnPrimaryContainer
             }
 
             Text {
                 text: I18n.tr("Drag to select a region  ·  Esc to cancel")
                 font.family: Fonts.ui
-                font.pixelSize: 13
+                font.pixelSize: NexusStyle.font.bodySmall
                 color: Appearance.colors.colOnPrimaryContainer
             }
         }

@@ -41,7 +41,7 @@ DashboardCard {
             StyledText {
                 Layout.fillWidth: true
                 text: root.title
-                font.pixelSize: Typography.titleLarge.pixelSize
+                font.pixelSize: NexusStyle.font.titleLarge
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight

@@ -332,7 +332,7 @@ FocusScope {
             text: root.displayText
             color: root.showingPlaceholder ? Appearance.colors.colSubtext : Appearance.colors.colOnLayer2
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: NexusStyle.font.bodyMedium
             elide: Text.ElideRight
             verticalAlignment: Text.AlignVCenter
         }
@@ -676,7 +676,7 @@ FocusScope {
                                            ? Appearance.colors.colOnPrimaryContainer :
                                              Appearance.colors.colOnLayer3
                                     font.family: Fonts.ui
-                                    font.pixelSize: 14
+                                    font.pixelSize: NexusStyle.font.bodyMedium
                                     font.weight: optionItem.selected ? Font.Medium : Font.Normal
                                     elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
@@ -736,7 +736,7 @@ FocusScope {
                         text: I18n.tr("No options available")
                         color: Appearance.colors.colSubtext
                         font.family: Fonts.ui
-                        font.pixelSize: 14
+                        font.pixelSize: NexusStyle.font.bodyMedium
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignLeft
                         elide: Text.ElideRight

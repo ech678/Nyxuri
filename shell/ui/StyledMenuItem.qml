@@ -49,8 +49,8 @@ MenuItem {
             text: root.text
             textFormat: Text.PlainText
             font.family: Fonts.ui
-            font.pixelSize: Typography.labelLarge.pixelSize
-            font.weight: Typography.labelLarge.weight
+            font.pixelSize: NexusStyle.font.labelLarge
+            font.weight: NexusStyle.font.labelLargeWeight
             color: root.foreground
             elide: Text.ElideRight
         }

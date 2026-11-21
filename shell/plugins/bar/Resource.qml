@@ -39,7 +39,7 @@ Item {
                     font.weight: Font.DemiBold
                     fill: 1
                     text: root.iconName
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: root.foregroundColor
                 }
             }
@@ -64,7 +64,7 @@ Item {
                     font.weight: vertical ? Font.Medium : Font.DemiBold
                     fill: 1
                     text: root.iconName
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: root.foregroundColor
                 }
             }
@@ -101,13 +101,13 @@ Item {
             TextMetrics {
                 id: fullPercentageTextMetrics
                 text: "100"
-                font.pixelSize: Appearance.font.pixelSize.small
+                font.pixelSize: NexusStyle.font.bodyMedium
             }
             StyledText {
                 id: percentageText
                 anchors.centerIn: parent
                 color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
-                font.pixelSize: Appearance.font.pixelSize.small
+                font.pixelSize: NexusStyle.font.bodyMedium
                 text: root.available ? `${Math.round(root.percentage * 100).toString()}` : "—"
             }
         }

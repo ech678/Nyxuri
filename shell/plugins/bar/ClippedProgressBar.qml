@@ -35,7 +35,7 @@ ProgressBar {
 
     text: Math.round(value * 100)
     font {
-        pixelSize: 13
+        pixelSize: NexusStyle.font.bodySmall
         weight: text.length > 2 ? Font.Medium : Font.DemiBold
     }
 

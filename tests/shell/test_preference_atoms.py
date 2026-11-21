@@ -214,17 +214,26 @@ class TestWindowChrome(unittest.TestCase):
 
 
 class TestNexusStyleParity(unittest.TestCase):
-    """Every NexusStyle value is pinned against Caelestia tokens.hpp."""
+    """Every NexusStyle value is pinned against Caelestia tokens.hpp.
+
+    D-1 promoted NexusStyle to the single library-wide M3 type scale
+    (commons/), so the pins cover the full ladder: label 11/12/14,
+    body 12/14/16, title 14/16/22, headline 24/28/32, display 36/45/57
+    (M3 spec tier), mono 12/14/16 and the icon tokens.
+    """
 
     def test_token_values_match_the_upstream_header(self):
-        source = (REPO_ROOT / "shell" / "ui" / "NexusStyle.qml").read_text(encoding="utf-8")
+        source = (REPO_ROOT / "shell" / "commons" / "NexusStyle.qml").read_text(encoding="utf-8")
         pins = (
             "extraSmall: 4", "small: 8", "medium: 12", "large: 16",
             "largeIncreased: 20", "extraLarge: 28", "extraLargeIncreased: 32",
             "extraExtraLarge: 48",
-            "labelSmall: 11", "bodySmall: 12", "labelMedium: 12",
-            "bodyMedium: 14", "bodyLarge: 16", "titleMedium: 16",
-            "titleLarge: 22", "headlineLarge: 28",
+            "labelSmall: 11", "labelMedium: 12", "labelLarge: 14",
+            "bodySmall: 12", "bodyMedium: 14", "bodyLarge: 16",
+            "titleSmall: 14", "titleMedium: 16", "titleLarge: 22",
+            "headlineSmall: 24", "headlineMedium: 28", "headlineLarge: 32",
+            "displaySmall: 36", "displayMedium: 45", "displayLarge: 57",
+            "monoSmall: 12", "monoMedium: 14", "monoLarge: 16",
             "extraLarge: 48", "large: 32", "medium: 24", "small: 20",
             "heightMult: 0.7", "ratio: 16 / 9",
             "minWidth: 800", "minHeight: 500",
@@ -235,10 +244,11 @@ class TestNexusStyleParity(unittest.TestCase):
             self.assertIn(pin, source, f"token drifted from tokens.hpp: {pin}")
 
     def test_medium_and_large_weights_follow_the_upstream_styles(self):
-        source = (REPO_ROOT / "shell" / "ui" / "NexusStyle.qml").read_text(encoding="utf-8")
+        source = (REPO_ROOT / "shell" / "commons" / "NexusStyle.qml").read_text(encoding="utf-8")
         self.assertIn("titleWeight: Font.Medium", source)
         self.assertIn("headlineWeight: Font.Medium", source)
         self.assertIn("labelMediumWeight: Font.Medium", source)
+        self.assertIn("labelLargeWeight: Font.Medium", source)
 
 
 class TestWarmupAndI18n(unittest.TestCase):

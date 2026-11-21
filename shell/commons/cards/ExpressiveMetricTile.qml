@@ -21,7 +21,7 @@ Rectangle {
     property bool chartActive: visible
     property int updateInterval: 1000
     property real decorationSize: 70
-    property real valueSize: Typography.displaySmall.pixelSize
+    property real valueSize: NexusStyle.font.displaySmall
     property color containerColor: Appearance.colors.colPrimaryContainer
     property color foregroundColor: Appearance.colors.colOnPrimaryContainer
     property color accentColor: Appearance.colors.colPrimary
@@ -120,7 +120,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: "thermostat"
             color: root.foregroundColor
-            iconSize: root.dense ? Typography.titleSmall.pixelSize : Typography.titleMedium.pixelSize
+            iconSize: root.dense ? NexusStyle.font.titleSmall : NexusStyle.font.titleMedium
             fill: 1
             opacity: 0.78
         }
@@ -130,7 +130,7 @@ Rectangle {
             text: root.temperatureText
             color: root.foregroundColor
             font.family: Fonts.numeric
-            font.pixelSize: root.dense ? Typography.titleSmall.pixelSize : Typography.titleMedium.pixelSize
+            font.pixelSize: root.dense ? NexusStyle.font.titleSmall : NexusStyle.font.titleMedium
             font.weight: Font.DemiBold
             opacity: 0.84
         }
@@ -149,8 +149,8 @@ Rectangle {
             text: root.label
             color: root.foregroundColor
             font.family: Fonts.ui
-            font.pixelSize: root.dense ? Typography.titleMedium.pixelSize + 2 :
-                                         Typography.titleLarge.pixelSize
+            font.pixelSize: root.dense ? NexusStyle.font.titleMedium + 2 :
+                                         NexusStyle.font.titleLarge
             font.weight: Font.Bold
             elide: Text.ElideRight
         }
@@ -162,7 +162,7 @@ Rectangle {
             color: root.foregroundColor
             opacity: 0.72
             font.family: Fonts.ui
-            font.pixelSize: Typography.labelSmall.pixelSize
+            font.pixelSize: NexusStyle.font.labelSmall
             elide: Text.ElideRight
         }
 
@@ -222,7 +222,7 @@ Rectangle {
             color: root.foregroundColor
             opacity: 0.74
             font.family: Fonts.ui
-            font.pixelSize: Typography.bodySmall.pixelSize
+            font.pixelSize: NexusStyle.font.bodySmall
             elide: Text.ElideRight
         }
     }

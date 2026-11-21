@@ -228,7 +228,7 @@ Item {
                                Appearance.colors.colOnSurfaceVariant.g,
                                Appearance.colors.colOnSurfaceVariant.b, 0.72)
                 font.family: Fonts.numeric
-                font.pixelSize: 11
+                font.pixelSize: NexusStyle.font.labelSmall
             }
 
             Text {
@@ -241,7 +241,7 @@ Item {
                                Appearance.colors.colOnSurfaceVariant.g,
                                Appearance.colors.colOnSurfaceVariant.b, 0.72)
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
             }
         }
     }
@@ -279,7 +279,7 @@ Item {
                 text: modelData.dayText
                 color: parent.weekColor
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: NexusStyle.font.bodyMedium
                 font.bold: modelData.dayText === I18n.tr("Today")
             }
 
@@ -289,7 +289,7 @@ Item {
                 text: modelData.dateText
                 color: parent.dateColor
                 font.family: Fonts.numeric
-                font.pixelSize: 11
+                font.pixelSize: NexusStyle.font.labelSmall
             }
 
             Rectangle {
@@ -309,7 +309,7 @@ Item {
                 text: modelData.aqiText
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.numeric
-                font.pixelSize: 13
+                font.pixelSize: NexusStyle.font.bodySmall
                 font.bold: modelData.dayText === I18n.tr("Today")
             }
         }
@@ -321,6 +321,6 @@ Item {
         text: I18n.tr("Air quality data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 16
+        font.pixelSize: NexusStyle.font.bodyLarge
     }
 }

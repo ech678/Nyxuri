@@ -79,7 +79,7 @@ Item {
         StyledText {
             Layout.fillWidth: true
             text: (diNotifsRoot.notif?.summary ?? "").replace(/\n/g, " ")
-            font.pixelSize: Appearance.font.pixelSize.smaller
+            font.pixelSize: NexusStyle.font.bodySmall
             font.weight: Font.DemiBold
             color: Appearance.colors.colOnLayer0
             elide: Text.ElideRight
@@ -89,7 +89,7 @@ Item {
         StyledText {
             Layout.fillWidth: true
             text: (diNotifsRoot.notif?.body ?? "").replace(/\n/g, " ")
-            font.pixelSize: Appearance.font.pixelSize.smallest
+            font.pixelSize: NexusStyle.font.labelSmall
             color: Appearance.colors.colOnLayer0
             opacity: 0.7
             elide: Text.ElideRight
@@ -107,7 +107,7 @@ Item {
             topMargin: 8
         }
         text: TimeService.hours + ":" + TimeService.minutes
-        font.pixelSize: Appearance.font.pixelSize.small - 2
+        font.pixelSize: NexusStyle.font.bodyMedium - 2
         color: Appearance.colors.colOnLayer0
         opacity: 0.8
     }

@@ -100,7 +100,7 @@ FocusScope {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: slot.index === 1
                         text: root.timeMode ? "→" : "≈"
-                        font.pixelSize: 20
+                        font.pixelSize: NexusStyle.font.titleLarge
                         color: root.allSelected ? Appearance.colors.colOnPrimary :
                                                   Appearance.colors.colOnSurfaceVariant
                     }
@@ -116,7 +116,7 @@ FocusScope {
                         selectionColor: Appearance.colors.colPrimary
                         selectedTextColor: Appearance.colors.colOnPrimary
                         font.family: Fonts.ui
-                        font.pixelSize: 20
+                        font.pixelSize: NexusStyle.font.titleLarge
                         verticalAlignment: TextInput.AlignVCenter
                         horizontalAlignment: TextInput.AlignLeft
                         clip: true
@@ -224,7 +224,7 @@ FocusScope {
                         visible: !slot.unit && !input.text.length && slot.index !== root.controller.driverSide
                         text: "…"
                         color: Appearance.colors.colOnSurfaceVariant
-                        font.pixelSize: 20
+                        font.pixelSize: NexusStyle.font.titleLarge
                     }
                 }
             }

@@ -133,7 +133,7 @@ Item {
             width: root.hideDate ? 0 : implicitWidth
             color: Appearance.colors.colPrimary
             font.family: Fonts.ui
-            font.pixelSize: 13
+            font.pixelSize: NexusStyle.font.bodySmall
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -238,7 +238,7 @@ Item {
                     text: modelData
                     color: Appearance.colors.colPrimary
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: NexusStyle.font.bodySmall
                     font.bold: true
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -271,7 +271,7 @@ Item {
                 text: String(root.h0) + String(root.h1)
                 color: Appearance.colors.colPrimary
                 font.family: root.clockFamily
-                font.pixelSize: 20
+                font.pixelSize: NexusStyle.font.titleLarge
                 font.weight: Font.Black
                 font.letterSpacing: -1.5
                 font.variableAxes: root.verticalClockAxes
@@ -308,7 +308,7 @@ Item {
                 text: String(root.m0) + String(root.m1)
                 color: Appearance.colors.colPrimary
                 font.family: root.clockFamily
-                font.pixelSize: 20
+                font.pixelSize: NexusStyle.font.titleLarge
                 font.weight: Font.Black
                 font.letterSpacing: -1.5
                 font.variableAxes: root.verticalClockAxes
@@ -323,7 +323,7 @@ Item {
                 text: root.periodLead + "M"
                 color: Appearance.colors.colPrimary
                 font.family: root.clockFamily
-                font.pixelSize: 14
+                font.pixelSize: NexusStyle.font.bodyMedium
                 font.weight: Font.Black
                 font.letterSpacing: -2
                 font.variableAxes: root.verticalClockAxes

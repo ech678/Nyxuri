@@ -26,7 +26,7 @@ Item {
         color: root.month ? Appearance.colors.colOnSecondaryContainer :
                             Appearance.colors.colOnTertiaryContainer
         font.family: Fonts.expressive
-        font.pixelSize: 30
+        font.pixelSize: NexusStyle.font.headlineMedium
         font.weight: Font.Black
     }
 }

@@ -122,7 +122,7 @@ DashboardCard {
         StyledText {
             Layout.fillWidth: true
             text: root.title
-            font.pixelSize: Typography.titleLarge.pixelSize
+            font.pixelSize: NexusStyle.font.titleLarge
             font.weight: Font.DemiBold
             color: root.checked ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colOnLayer1
             elide: Text.ElideRight
@@ -130,7 +130,7 @@ DashboardCard {
 
         StyledText {
             text: root.checked ? I18n.tr("On") : I18n.tr("Off")
-            font.pixelSize: Typography.bodySmall.pixelSize
+            font.pixelSize: NexusStyle.font.bodySmall
             color: root.checked ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext
             opacity: 0.8
         }

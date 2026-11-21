@@ -149,7 +149,7 @@ Rectangle {
                     text: "schedule"
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.materialSymbolsOutlined
-                    font.pixelSize: 22
+                    font.pixelSize: NexusStyle.icon.small
                     Layout.alignment: Qt.AlignVCenter
                 }
 
@@ -158,7 +158,7 @@ Rectangle {
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
                     font.bold: true
-                    font.pixelSize: 22
+                    font.pixelSize: NexusStyle.font.titleLarge
                     Layout.alignment: Qt.AlignVCenter
                 }
 
@@ -197,7 +197,7 @@ Rectangle {
                     text: root.extraTabLabel()
                     color: Appearance.colors.colPrimary
                     font.family: Fonts.ui
-                    font.pixelSize: 13
+                    font.pixelSize: NexusStyle.font.bodySmall
                     font.bold: true
                     Layout.alignment: Qt.AlignVCenter
                 }
@@ -436,7 +436,7 @@ Rectangle {
                                 text: root.hourLabel(hourItem.time)
                                 color: Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.numeric
-                                font.pixelSize: 13
+                                font.pixelSize: NexusStyle.font.bodySmall
                                 horizontalAlignment: Text.AlignHCenter
                             }
 

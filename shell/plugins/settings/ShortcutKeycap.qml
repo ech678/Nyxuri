@@ -34,7 +34,7 @@ Rectangle {
             visible: root.symbol.length === 0
             text: root.superKey ? (root.superStyle === "command" ? "⌘" : "Super") : root.keyText
             font.family: Fonts.mono
-            font.pixelSize: 16
+            font.pixelSize: NexusStyle.font.monoLarge
             color: Appearance.colors.colOnSurface
         }
 

@@ -50,7 +50,7 @@ Rectangle {
 
             color: Appearance.colors.colOutline
             font.family: Fonts.numeric
-            font.pixelSize: 17
+            font.pixelSize: NexusStyle.font.bodyLarge
             font.weight: 500
             elide: Text.ElideRight
         }
@@ -83,7 +83,7 @@ Rectangle {
                     text: I18n.tr("No notifications")
                     color: Appearance.colors.colOutlineVariant
                     font.family: Fonts.numeric
-                    font.pixelSize: 24
+                    font.pixelSize: NexusStyle.font.headlineSmall
                     font.weight: 500
                 }
 
@@ -155,7 +155,7 @@ Rectangle {
                                     text: delegateRoot.modelData ? delegateRoot.modelData.appName : ""
                                     color: Appearance.colors.colPrimary
                                     font.family: Fonts.numeric
-                                    font.pixelSize: 13
+                                    font.pixelSize: NexusStyle.font.bodySmall
                                     font.bold: true
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
@@ -167,7 +167,7 @@ Rectangle {
                                                                        delegateRoot.modelData.receivedAt) : ""
                                     color: Appearance.colors.colOnSurfaceVariant
                                     font.family: Fonts.numeric
-                                    font.pixelSize: 13
+                                    font.pixelSize: NexusStyle.font.bodySmall
                                     opacity: 0.7
                                 }
                             }
@@ -176,7 +176,7 @@ Rectangle {
                                 text: delegateRoot.modelData ? delegateRoot.modelData.summary : ""
                                 color: Appearance.colors.colOnSurface
                                 font.family: Fonts.ui
-                                font.pixelSize: 17
+                                font.pixelSize: NexusStyle.font.bodyLarge
                                 font.bold: true
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
@@ -188,7 +188,7 @@ Rectangle {
                                 textFormat: Text.StyledText
                                 color: Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.ui
-                                font.pixelSize: 16
+                                font.pixelSize: NexusStyle.font.bodyLarge
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                                 maximumLineCount: 2
@@ -261,7 +261,7 @@ Rectangle {
 
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.numeric
-            font.pixelSize: 20
+            font.pixelSize: NexusStyle.font.titleLarge
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }

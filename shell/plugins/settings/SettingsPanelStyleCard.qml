@@ -68,7 +68,7 @@ Rectangle {
                     text: I18n.tr("Settings panel")
                     color: Appearance.colors.colOnLayer1
                     font.family: Fonts.ui
-                    font.pixelSize: Typography.titleMedium.pixelSize
+                    font.pixelSize: NexusStyle.font.titleMedium
                     font.weight: Font.DemiBold
                 }
 
@@ -76,7 +76,7 @@ Rectangle {
                     text: I18n.tr("Choose how settings open")
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.ui
-                    font.pixelSize: Typography.bodySmall.pixelSize
+                    font.pixelSize: NexusStyle.font.bodySmall
                 }
             }
         }
@@ -146,7 +146,7 @@ Rectangle {
                             color: option.selected ? Appearance.colors.colOnPrimary :
                                                      Appearance.colors.colOnSecondaryContainer
                             font.family: Fonts.ui
-                            font.pixelSize: Typography.titleMedium.pixelSize
+                            font.pixelSize: NexusStyle.font.titleMedium
                             font.weight: Font.DemiBold
                         }
 
@@ -159,7 +159,7 @@ Rectangle {
                                                      Appearance.colors.colOnSecondaryContainer
                             opacity: 0.8
                             font.family: Fonts.ui
-                            font.pixelSize: Typography.bodySmall.pixelSize
+                            font.pixelSize: NexusStyle.font.bodySmall
                         }
 
                         Item {

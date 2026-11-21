@@ -160,7 +160,7 @@ NexusPageBase {
                 text: themeCard.title
                 color: themeCard.labelText
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: NexusStyle.font.bodyMedium
                 font.weight: Font.Medium
             }
         }

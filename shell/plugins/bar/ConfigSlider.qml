@@ -34,7 +34,7 @@ RowLayout {
         OptionalMaterialSymbol {
             id: iconWidget
             icon: root.buttonIcon
-            iconSize: Appearance.font.pixelSize.larger
+            iconSize: NexusStyle.icon.small
         }
         StyledText {
             id: labelWidget

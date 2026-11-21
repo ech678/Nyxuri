@@ -45,9 +45,9 @@ ColumnLayout {
         visible: root.error || root.supportingText.length > 0
         text: root.error ? root.errorText : root.supportingText
         color: root.error ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
-        font.family: Typography.bodySmall.family
-        font.pixelSize: Typography.bodySmall.pixelSize
-        font.weight: Typography.bodySmall.weight
+        font.family: Fonts.ui
+        font.pixelSize: NexusStyle.font.bodySmall
+        font.weight: Font.Normal
         wrapMode: Text.Wrap
     }
 

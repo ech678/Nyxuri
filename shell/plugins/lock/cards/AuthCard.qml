@@ -99,7 +99,7 @@ FocusScope {
                         text: "lock"
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.materialSymbolsRounded
-                        font.pixelSize: 24
+                        font.pixelSize: NexusStyle.icon.medium
                         opacity: root.busy ? 0 : 1
 
                         Behavior on opacity {
@@ -157,7 +157,7 @@ FocusScope {
                     text: root.busy ? I18n.tr("Loading…") : I18n.tr("Enter password")
                     color: root.busy ? Appearance.colors.colSecondary : Appearance.colors.colOutline
                     font.family: Fonts.numeric
-                    font.pixelSize: 17
+                    font.pixelSize: NexusStyle.font.bodyLarge
                     opacity: root.hasText ? 0 : 1
                     scale: root.hasText ? 0.96 : 1
 
@@ -413,7 +413,7 @@ FocusScope {
                     text: "arrow_forward"
                     color: root.hasText ? Appearance.colors.colOnPrimary : Appearance.colors.colOnSurface
                     font.family: Fonts.materialSymbolsRounded
-                    font.pixelSize: 24
+                    font.pixelSize: NexusStyle.icon.medium
                     font.weight: 500
                 }
 

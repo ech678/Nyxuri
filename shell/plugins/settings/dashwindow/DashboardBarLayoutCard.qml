@@ -242,7 +242,7 @@ DashboardCard {
 
         StyledText {
         text: barWidgets.displayName(info)
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
         color: Appearance.colors.colOnSecondaryContainer
     }
     }
@@ -322,7 +322,7 @@ DashboardCard {
 
         StyledText {
         text: laneLabel.toUpperCase()
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
         font.weight: Font.DemiBold
         font.letterSpacing: 1.2
         color: Appearance.colors.colSubtext
@@ -374,7 +374,7 @@ DashboardCard {
         StyledText {
         visible: laneRoot.model && laneRoot.model.length === 0
         text: I18n.tr("Drop here")
-        font.pixelSize: 15
+        font.pixelSize: NexusStyle.font.bodyMedium
         color: Appearance.colors.colSubtext
         opacity: 0.6
         anchors.centerIn: parent
@@ -408,14 +408,14 @@ DashboardCard {
 
         StyledText {
         text: root.title
-        font.pixelSize: Typography.titleLarge.pixelSize
+        font.pixelSize: NexusStyle.font.titleLarge
         font.weight: Font.DemiBold
         color: Appearance.colors.colOnLayer1
     }
 
         StyledText {
         text: I18n.tr("Drag widgets between lanes to arrange the bar")
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
         color: Appearance.colors.colSubtext
     }
     }
@@ -475,7 +475,7 @@ DashboardCard {
 
         StyledText {
         text: I18n.tr("Available").toUpperCase()
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
         font.weight: Font.DemiBold
         font.letterSpacing: 1.2
         color: Appearance.colors.colSubtext

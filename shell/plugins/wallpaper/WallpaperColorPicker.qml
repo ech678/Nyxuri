@@ -77,7 +77,7 @@ Item {
                         Layout.fillWidth: true
                         text: I18n.tr("Wallpaper palette")
                         font.family: Fonts.ui
-                        font.pixelSize: 20
+                        font.pixelSize: NexusStyle.font.titleLarge
                         color: Appearance.colors.colOnSurface
                     }
                     IconButton {

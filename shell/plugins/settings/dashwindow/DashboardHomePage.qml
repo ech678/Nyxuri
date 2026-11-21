@@ -194,14 +194,14 @@ Item {
 
             StyledText {
                 text: tile.label
-                font.pixelSize: 10
+                font.pixelSize: NexusStyle.font.labelSmall
                 color: Appearance.colors.colSubtext
             }
 
             StyledText {
                 Layout.fillWidth: true
                 text: tile.value || "–"
-                font.pixelSize: Typography.bodySmall.pixelSize
+                font.pixelSize: NexusStyle.font.bodySmall
                 font.weight: Font.Medium
                 color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight
@@ -222,13 +222,13 @@ Item {
 
                 StyledText {
                     text: root.greeting
-                    font.pixelSize: Typography.titleLarge.pixelSize
+                    font.pixelSize: NexusStyle.font.titleLarge
                     color: Appearance.colors.colSubtext
                 }
 
                 StyledText {
                     text: I18n.tr("Up since") + " • " + SystemIdentityService.uptimeText
-                    font.pixelSize: 30
+                    font.pixelSize: NexusStyle.font.headlineMedium
                     font.weight: Font.Light
                     color: Appearance.colors.colOnLayer0
                 }
@@ -274,14 +274,14 @@ Item {
 
                         StyledText {
                             text: Math.round(parent.parent.modelData.ratio * 100) + "%"
-                            font.pixelSize: 30
+                            font.pixelSize: NexusStyle.font.headlineMedium
                             font.weight: Font.Light
                             color: Appearance.colors.colOnLayer0
                         }
 
                         StyledText {
                             text: parent.parent.modelData.label
-                            font.pixelSize: Typography.bodySmall.pixelSize
+                            font.pixelSize: NexusStyle.font.bodySmall
                             color: Appearance.colors.colSubtext
                         }
                     }
@@ -387,7 +387,7 @@ Item {
                                     StyledText {
                                         Layout.fillWidth: true
                                         text: SystemIdentityService.accountName
-                                        font.pixelSize: Typography.headlineSmall.pixelSize
+                                        font.pixelSize: NexusStyle.font.headlineSmall
                                         font.weight: Font.DemiBold
                                         color: "white"
                                         elide: Text.ElideRight
@@ -396,7 +396,7 @@ Item {
                                     StyledText {
                                         Layout.fillWidth: true
                                         text: SystemIdentityService.accountIdentity
-                                        font.pixelSize: Typography.bodyLarge.pixelSize
+                                        font.pixelSize: NexusStyle.font.bodyLarge
                                         color: Qt.rgba(1, 1, 1, 0.75)
                                         elide: Text.ElideRight
                                     }
@@ -450,7 +450,7 @@ Item {
                                         StyledText {
                                             Layout.fillWidth: true
                                             text: I18n.tr("Profile")
-                                            font.pixelSize: Typography.titleLarge.pixelSize
+                                            font.pixelSize: NexusStyle.font.titleLarge
                                             font.weight: Font.DemiBold
                                             color: Appearance.colors.colOnLayer1
                                         }
@@ -513,7 +513,7 @@ Item {
 
                                                 StyledText {
                                                     text: fieldRow.modelData.label
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: NexusStyle.font.labelSmall
                                                     color: Appearance.colors.colOnLayer1
                                                     opacity: 0.6
                                                 }
@@ -521,7 +521,7 @@ Item {
                                                 StyledText {
                                                     Layout.fillWidth: true
                                                     text: fieldRow.modelData.value
-                                                    font.pixelSize: Typography.bodyLarge.pixelSize
+                                                    font.pixelSize: NexusStyle.font.bodyLarge
                                                     color: Appearance.colors.colOnLayer1
                                                     elide: Text.ElideRight
                                                 }
@@ -743,13 +743,13 @@ Item {
 
                                 StyledText {
                                     text: I18n.tr("Selected date")
-                                    font.pixelSize: Typography.bodySmall.pixelSize
+                                    font.pixelSize: NexusStyle.font.bodySmall
                                     color: Appearance.colors.colSubtext
                                 }
 
                                 StyledText {
                                     text: Qt.locale().toString(root.selectedDate, "ddd, d MMM")
-                                    font.pixelSize: 28
+                                    font.pixelSize: NexusStyle.font.headlineMedium
                                     font.weight: Font.Medium
                                     color: Appearance.colors.colOnLayer1
                                 }
@@ -813,7 +813,7 @@ Item {
                             StyledText {
                                 Layout.fillWidth: true
                                 text: Qt.locale().toString(root.viewMonth, "MMMM yyyy")
-                                font.pixelSize: Typography.titleLarge.pixelSize
+                                font.pixelSize: NexusStyle.font.titleLarge
                                 font.weight: Font.Medium
                                 color: Appearance.colors.colOnLayer1
                             }
@@ -876,7 +876,7 @@ Item {
                                                               Locale.ShortFormat).charAt(0).toUpperCase()
                                     // 15 matches the day numbers below and upstream's
                                     // `small`; bodyLarge rounds down to 14.
-                                    font.pixelSize: 15
+                                    font.pixelSize: NexusStyle.font.bodyMedium
                                     font.weight: Font.Medium
                                     color: Appearance.colors.colSubtext
                                 }
@@ -928,7 +928,7 @@ Item {
                                             anchors.centerIn: parent
                                             text: dayCell.cellDate.getDate()
                                             // 对齐上游 end4-pC 实际渲染值 15，跳过 0.85 缩放
-                                            font.pixelSize: 15
+                                            font.pixelSize: NexusStyle.font.bodyMedium
                                             font.weight: dayCell.isSelected || dayCell.isToday ? Font.Bold :
                                                                                                  Font.Normal
                                             color: dayCell.isSelected ? Appearance.colors.colOnPrimary :
@@ -1005,7 +1005,7 @@ Item {
 
                             StyledText {
                                 text: Qt.locale().toString(root.now, "dddd MMMM d")
-                                font.pixelSize: Typography.bodyLarge.pixelSize
+                                font.pixelSize: NexusStyle.font.bodyLarge
                                 font.weight: Font.Medium
                                 color: Appearance.colors.colPrimary
                             }
@@ -1013,7 +1013,7 @@ Item {
                             StyledText {
                                 text: Qt.locale().toString(root.now, "HH:mm")
                                 color: Appearance.colors.colOnPrimaryContainer
-                                font.pixelSize: 56
+                                font.pixelSize: NexusStyle.font.displayLarge
                                 font.weight: Font.Light
                             }
                         }
@@ -1026,14 +1026,14 @@ Item {
 
                             StyledText {
                                 text: WeatherService.locationName
-                                font.pixelSize: Typography.bodyLarge.pixelSize
+                                font.pixelSize: NexusStyle.font.bodyLarge
                                 font.weight: Font.DemiBold
                                 color: Appearance.colors.colOnPrimaryContainer
                             }
 
                             StyledText {
                                 text: WeatherService.currentWeatherText
-                                font.pixelSize: Typography.bodyLarge.pixelSize
+                                font.pixelSize: NexusStyle.font.bodyLarge
                                 color: Appearance.colors.colOnPrimaryContainer
                                 opacity: 0.75
                             }
@@ -1053,7 +1053,7 @@ Item {
                                     text: WeatherService.hasValidData ? Math.round(
                                                                             WeatherService.currentTemperatureC)
                                                                         + "°C" : "--"
-                                    font.pixelSize: 28
+                                    font.pixelSize: NexusStyle.font.headlineMedium
                                     font.weight: Font.DemiBold
                                     color: Appearance.colors.colPrimary
                                 }
@@ -1101,7 +1101,7 @@ Item {
 
                                 StyledText {
                                     text: I18n.tr("Tasks")
-                                    font.pixelSize: Typography.titleLarge.pixelSize
+                                    font.pixelSize: NexusStyle.font.titleLarge
                                     font.weight: Font.DemiBold
                                     color: Appearance.colors.colOnLayer1
                                 }
@@ -1113,7 +1113,7 @@ Item {
                                                                                                  root.pendingTasks
                                                                                                  + " " + I18n.tr(
                                                                                                      "left")
-                                    font.pixelSize: Typography.bodySmall.pixelSize
+                                    font.pixelSize: NexusStyle.font.bodySmall
                                     color: Appearance.colors.colOnLayer1
                                     opacity: 0.75
                                 }
@@ -1125,7 +1125,7 @@ Item {
 
                             StyledText {
                                 text: root.taskProgressText
-                                font.pixelSize: Typography.titleLarge.pixelSize
+                                font.pixelSize: NexusStyle.font.titleLarge
                                 font.weight: Font.Light
                                 color: Appearance.colors.colOnLayer1
                             }
@@ -1234,7 +1234,7 @@ Item {
                                         StyledText {
                                             Layout.fillWidth: true
                                             text: taskDelegate.modelData.content
-                                            font.pixelSize: Typography.bodyLarge.pixelSize
+                                            font.pixelSize: NexusStyle.font.bodyLarge
                                             font.strikeout: taskDelegate.modelData.done
                                             color: Appearance.colors.colOnLayer1
                                             opacity: taskDelegate.modelData.done ? 0.5 : 1

@@ -139,7 +139,7 @@ PopupWindow {
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: "palette"
-                            iconSize: Appearance.font.pixelSize.larger
+                            iconSize: NexusStyle.icon.small
                             color: Appearance.colors.colOnSecondaryContainer
                         }
                     }
@@ -150,12 +150,12 @@ PopupWindow {
 
                         StyledText {
                             text: root.widgetTitle
-                            font.pixelSize: Appearance.font.pixelSize.large
+                            font.pixelSize: NexusStyle.font.bodyLarge
                             color: Appearance.m3colors.m3onSurface
                         }
                         StyledText {
                             text: Translation.tr("Style for %1 mode").arg(root.group.borderlessMode)
-                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            font.pixelSize: NexusStyle.font.bodySmall
                             color: Appearance.colors.colSubtext
                         }
                     }

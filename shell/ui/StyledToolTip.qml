@@ -11,7 +11,7 @@ PopupToolTip {
     verticalPadding: 5
     font {
         family: Fonts.ui
-        pixelSize: 12
+        pixelSize: NexusStyle.font.bodySmall
         hintingPreference: Font.PreferNoHinting
     }
 

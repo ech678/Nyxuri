@@ -38,7 +38,7 @@ RippleButton {
                 visible: root.iconName !== ""
                 text: root.iconName
                 font.family: Fonts.materialSymbolsRounded
-                font.pixelSize: 20
+                font.pixelSize: NexusStyle.icon.small
                 color: root.critical ? Appearance.colors.colOnSecondaryContainer :
                                        Appearance.colors.colOnLayer4
             }
@@ -47,7 +47,7 @@ RippleButton {
                 visible: root.buttonText !== ""
                 text: root.buttonText
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 font.weight: Font.Medium
                 color: root.critical ? Appearance.colors.colOnSecondaryContainer :
                                        Appearance.colors.colOnLayer4

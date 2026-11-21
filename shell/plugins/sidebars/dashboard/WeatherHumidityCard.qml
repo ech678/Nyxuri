@@ -118,7 +118,7 @@ WeatherInsightCard {
             text: I18n.tr("Relative humidity")
             color: Appearance.colors.colOnWeatherCardSurfaceVariant
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: NexusStyle.font.bodyLarge
             font.bold: true
         }
     }
@@ -161,7 +161,7 @@ WeatherInsightCard {
         text: root.animatedHumidityText()
         color: Appearance.colors.colOnWeatherCardSurface
         font.family: Fonts.expressive
-        font.pixelSize: 58
+        font.pixelSize: NexusStyle.font.displayLarge
         font.bold: true
     }
 
@@ -184,7 +184,7 @@ WeatherInsightCard {
                 text: root.animatedDewPointText()
                 color: Appearance.colors.colOnPrimaryContainer
                 font.family: Fonts.expressive
-                font.pixelSize: 17
+                font.pixelSize: NexusStyle.font.bodyLarge
                 font.bold: true
             }
         }
@@ -193,7 +193,7 @@ WeatherInsightCard {
             text: I18n.tr("Dew point")
             color: Appearance.colors.colOnWeatherCardSurface
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: NexusStyle.font.bodyLarge
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }

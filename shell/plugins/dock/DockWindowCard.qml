@@ -71,7 +71,7 @@ Button {
                 text: root.title
                 textFormat: Text.PlainText
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 color: Appearance.colors.colOnSurface
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
@@ -106,7 +106,7 @@ Button {
                     text: root.minimized ? I18n.tr("Minimized") : I18n.tr("Preview unavailable")
                     textFormat: Text.PlainText
                     font.family: Fonts.ui
-                    font.pixelSize: 11
+                    font.pixelSize: NexusStyle.font.labelSmall
                     color: Appearance.colors.colOnSurfaceVariant
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter

@@ -59,7 +59,7 @@ DashboardCard {
             StyledText {
                 Layout.fillWidth: true
                 text: root.title
-                font.pixelSize: Typography.bodyLarge.pixelSize
+                font.pixelSize: NexusStyle.font.bodyLarge
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnLayer1
                 wrapMode: Text.WordWrap
@@ -88,7 +88,7 @@ DashboardCard {
                 anchors.rightMargin: 16
                 verticalAlignment: TextInput.AlignVCenter
                 clip: true
-                font.pixelSize: Typography.bodyLarge.pixelSize
+                font.pixelSize: NexusStyle.font.bodyLarge
                 font.family: Fonts.ui
                 color: Appearance.colors.colOnLayer1
                 selectionColor: Appearance.colors.colSecondary

@@ -176,7 +176,7 @@ Item {
                 text: headerButton.buttonText
                 color: Appearance.colors.colOnLayer1
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: NexusStyle.font.bodyMedium
             }
 
             MaterialSymbol {
@@ -224,7 +224,7 @@ Item {
                                                 ? Appearance.colors.colOnLayer1 :
                                                   Appearance.colors.colOutlineVariant
             font.family: Fonts.ui
-            font.pixelSize: 14
+            font.pixelSize: NexusStyle.font.bodyMedium
             font.weight: dayButton.bold ? Font.DemiBold : Font.Normal
 
             Behavior on color {

@@ -40,7 +40,7 @@ MouseArea {
         StyledText {
             leftPadding: 5
             rightPadding: 3
-            font.pixelSize: Appearance.font.pixelSize.small
+            font.pixelSize: NexusStyle.font.bodyMedium
             color: root.isMaterial
                 ? M3Palette.pillInk("updatesCount")
                 : Appearance.colors.colOnLayer1
@@ -63,7 +63,7 @@ MouseArea {
                 visible: !root.isMaterial
                 Layout.alignment: Qt.AlignVCenter
                 text: "deployed_code_update"
-                iconSize: Appearance.font.pixelSize.normal
+                iconSize: NexusStyle.font.bodyLarge
                 color: Updates.updateStronglyAdvised ? Appearance.m3colors.m3error
                     : Updates.updateAdvised ? Appearance.colors.colTertiary
                     : Appearance.colors.colOnLayer1
@@ -79,7 +79,7 @@ MouseArea {
                 MaterialSymbol {
                     anchors.centerIn: parent
                     text: "deployed_code_update"
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: root.statusInk
                 }
             }
@@ -100,7 +100,7 @@ MouseArea {
                 visible: !root.isMaterial
                 Layout.alignment: Qt.AlignHCenter
                 text: "deployed_code_update"
-                iconSize: Appearance.font.pixelSize.normal
+                iconSize: NexusStyle.font.bodyLarge
                 color: Updates.updateStronglyAdvised ? Appearance.m3colors.m3error
                     : Updates.updateAdvised ? Appearance.colors.colTertiary
                     : Appearance.colors.colOnLayer1
@@ -117,7 +117,7 @@ MouseArea {
                 MaterialSymbol {
                     anchors.centerIn: parent
                     text: "deployed_code_update"
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: root.statusInk
                 }
             }

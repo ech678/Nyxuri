@@ -3,8 +3,8 @@ import Quickshell
 
 Singleton {
     // Global size scale. The bar/sidebar tokens below are logical pixels tuned
-    // for 1.0; lower it to shrink the shell together with Metrics and
-    // Typography. lockHeightMult and lockRatio are ratios, not sizes.
+    // for 1.0; lower it to shrink the shell together with Metrics (type lives
+    // in NexusStyle). lockHeightMult and lockRatio are ratios, not sizes.
     readonly property real scale: 0.85
 
     readonly property real cornerRadius: 10 * scale

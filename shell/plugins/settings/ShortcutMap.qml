@@ -149,7 +149,7 @@ PanelWindow {
         text: I18n.tr("Shortcut map")
         color: Appearance.colors.colOnSurface
         font.family: Fonts.ui
-        font.pixelSize: 30
+        font.pixelSize: NexusStyle.font.headlineMedium
         font.weight: Font.Bold
         elide: Text.ElideRight
     }
@@ -247,7 +247,7 @@ PanelWindow {
         visible: sectionBlock.modelData.headerHeight > 0
         text: sectionBlock.modelData.title
         font.family: Fonts.ui
-        font.pixelSize: 24
+        font.pixelSize: NexusStyle.font.headlineSmall
         font.weight: Font.Bold
         color: Appearance.colors.colOnSurface
         elide: Text.ElideRight
@@ -288,7 +288,7 @@ PanelWindow {
         verticalAlignment: Text.AlignVCenter
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.mono
-        font.pixelSize: 16
+        font.pixelSize: NexusStyle.font.monoLarge
     }
         ShortcutKeycap {
         keyText: parent.modelData
@@ -302,7 +302,7 @@ PanelWindow {
         text: entryCell.modelData.name
         color: Appearance.colors.colOnSurface
         font.family: Fonts.ui
-        font.pixelSize: 17
+        font.pixelSize: NexusStyle.font.bodyLarge
         maximumLineCount: 2
         wrapMode: Text.Wrap
         elide: Text.ElideRight

@@ -279,7 +279,7 @@ Item {
             text: I18n.tr("Battery")
             color: contents.foregroundColor
             font.family: Fonts.ui
-            font.pixelSize: Typography.titleSmall.pixelSize
+            font.pixelSize: NexusStyle.font.titleSmall
             font.weight: Font.DemiBold
 
             anchors {
@@ -315,7 +315,7 @@ Item {
                     color: contents.foregroundColor
                     opacity: 0.78
                     font.family: Fonts.ui
-                    font.pixelSize: Typography.labelSmall.pixelSize
+                    font.pixelSize: NexusStyle.font.labelSmall
                     elide: Text.ElideRight
                 }
             }
@@ -343,7 +343,7 @@ Item {
                     color: contents.foregroundColor
                     opacity: 0.78
                     font.family: Fonts.numeric
-                    font.pixelSize: Typography.labelSmall.pixelSize
+                    font.pixelSize: NexusStyle.font.labelSmall
                     elide: Text.ElideRight
                 }
             }
@@ -365,7 +365,7 @@ Item {
                     color: contents.foregroundColor
                     opacity: 0.78
                     font.family: Fonts.ui
-                    font.pixelSize: Typography.labelSmall.pixelSize
+                    font.pixelSize: NexusStyle.font.labelSmall
                     elide: Text.ElideRight
                 }
             }
@@ -378,7 +378,7 @@ Item {
             color: contents.foregroundColor
             opacity: 0.76
             font.family: Fonts.ui
-            font.pixelSize: Typography.titleSmall.pixelSize
+            font.pixelSize: NexusStyle.font.titleSmall
             font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
         }
@@ -398,7 +398,7 @@ Item {
                 color: contents.foregroundColor
                 opacity: 0.74
                 font.family: Fonts.ui
-                font.pixelSize: Typography.bodySmall.pixelSize
+                font.pixelSize: NexusStyle.font.bodySmall
             }
 
             RowLayout {
@@ -421,7 +421,7 @@ Item {
                     text: root.present ? Format.percent(root.chargePercent, 0) : "—"
                     color: contents.foregroundColor
                     font.family: Fonts.numeric
-                    font.pixelSize: Typography.headlineSmall.pixelSize
+                    font.pixelSize: NexusStyle.font.headlineSmall
                     font.weight: Font.Bold
                 }
             }

@@ -460,7 +460,7 @@ Item {
                             text: "location_on"
                             color: root.headerInkMuted
                             font.family: Fonts.materialSymbolsOutlined
-                            font.pixelSize: 19
+                            font.pixelSize: NexusStyle.icon.small
                             Layout.preferredWidth: 20
                             Layout.alignment: Qt.AlignVCenter
                             horizontalAlignment: Text.AlignHCenter
@@ -470,7 +470,7 @@ Item {
                             text: root.weatherSource.locationName || I18n.tr("Weather")
                             color: root.headerInk
                             font.family: Fonts.ui
-                            font.pixelSize: 19
+                            font.pixelSize: NexusStyle.font.bodyLarge
                             font.bold: true
                             elide: Text.ElideRight
                             Layout.fillWidth: true
@@ -516,7 +516,7 @@ Item {
                         color: root.weatherSource.status === "stale" || root.weatherSource.status === "error"
                                ? root.headerErrorInk : root.headerInkMuted
                         font.family: Fonts.materialSymbolsOutlined
-                        font.pixelSize: 19
+                        font.pixelSize: NexusStyle.icon.small
                         Layout.preferredWidth: 20
                         Layout.alignment: Qt.AlignVCenter
                         horizontalAlignment: Text.AlignHCenter
@@ -527,7 +527,7 @@ Item {
                         color: root.weatherSource.status === "stale" || root.weatherSource.status === "error"
                                ? root.headerErrorInk : root.headerInk
                         font.family: Fonts.mono
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.monoSmall
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -579,7 +579,7 @@ Item {
                             text: root.weatherSource.currentWeatherText || I18n.tr("Unknown")
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
-                            font.pixelSize: 26
+                            font.pixelSize: NexusStyle.font.headlineSmall
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
@@ -627,7 +627,7 @@ Item {
                             text: I18n.tr("Feels like: ") + fmtTemp(root.weatherSource.currentFeelsLikeC)
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
-                            font.pixelSize: 18
+                            font.pixelSize: NexusStyle.font.bodyLarge
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
                         }
@@ -638,7 +638,7 @@ Item {
                                   + fmtTemp(today().temperatureMinC)
                             color: Appearance.colors.colOnImage
                             font.family: Fonts.ui
-                            font.pixelSize: 18
+                            font.pixelSize: NexusStyle.font.bodyLarge
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
                         }
@@ -943,7 +943,7 @@ Item {
                 text: card.icon
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.materialSymbolsOutlined
-                font.pixelSize: 20
+                font.pixelSize: NexusStyle.icon.small
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -952,7 +952,7 @@ Item {
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
                 font.bold: true
-                font.pixelSize: 15
+                font.pixelSize: NexusStyle.font.bodyMedium
                 anchors.verticalCenter: parent.verticalCenter
             }
         }

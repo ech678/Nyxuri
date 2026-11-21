@@ -28,7 +28,7 @@ MaterialSplitSlider {
         text: quickSlider.percentText
         color: nearEmpty ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnPrimary
         font.family: Fonts.numeric
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
         font.weight: Font.Medium
         renderType: Text.NativeRendering
         z: 1

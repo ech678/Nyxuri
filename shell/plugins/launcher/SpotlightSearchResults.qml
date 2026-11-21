@@ -52,7 +52,7 @@ Item {
         textFormat: Text.PlainText
         color: Appearance.colors.colError
         font.family: Fonts.ui
-        font.pixelSize: 13
+        font.pixelSize: NexusStyle.font.bodySmall
         elide: Text.ElideRight
         verticalAlignment: Text.AlignVCenter
     }
@@ -91,7 +91,7 @@ Item {
                 textFormat: Text.PlainText
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 verticalAlignment: Text.AlignVCenter
                 elide: Text.ElideRight
             }

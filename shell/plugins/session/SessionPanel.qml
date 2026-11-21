@@ -241,7 +241,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 text: actionButton.modelData.key
                                 font.family: Fonts.mono
-                                font.pixelSize: 11
+                                font.pixelSize: NexusStyle.font.monoSmall
                                 font.weight: Font.Bold
                                 color: actionButton.selected ? Appearance.colors.colOnPrimary :
                                                                Appearance.colors.colOnSurfaceVariant
@@ -300,7 +300,7 @@ PanelWindow {
                                 color: actionButton.selected ? Appearance.colors.colOnPrimary :
                                                                Appearance.colors.colOnLayer1
                                 font.family: Fonts.ui
-                                font.pixelSize: 18
+                                font.pixelSize: NexusStyle.font.bodyLarge
                                 font.weight: Font.DemiBold
                             }
                         }

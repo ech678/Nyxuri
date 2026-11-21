@@ -37,6 +37,6 @@ Item {
         anchors.centerIn: parent
         text: "• "
         color: isMaterial ? Appearance.colors.colPrimary : root.contentColor
-        font.pixelSize: Appearance.font.pixelSize.normal
+        font.pixelSize: NexusStyle.font.bodyLarge
     }
 }

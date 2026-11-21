@@ -73,7 +73,7 @@ Item {
             anchors.centerIn: parent
             visible: avatarImage.status !== Image.Ready
             text: "person"
-            iconSize: di.isMaterial ? Appearance.font.pixelSize.large : Appearance.font.pixelSize.normal
+            iconSize: di.isMaterial ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyLarge
             color: Appearance.colors.colOnPrimaryContainer
         }
     }
@@ -96,7 +96,7 @@ Item {
                 reveal: !diIdleRoot.systemIconsElsewhere && VolumeService.sourceMuted
                 MaterialSymbol {
                     text: "mic_off"
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: Appearance.colors.colOnLayer0
                 }
             }
@@ -105,7 +105,7 @@ Item {
                 reveal: !diIdleRoot.systemIconsElsewhere && VolumeService.sinkMuted
                 MaterialSymbol {
                     text: "volume_off"
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: Appearance.colors.colOnLayer0
                 }
             }
@@ -114,7 +114,7 @@ Item {
                 reveal: !diIdleRoot.systemIconsElsewhere && !NetworkService.connected
                 MaterialSymbol {
                     text: "wifi_off"
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: Appearance.colors.colError
                 }
             }
@@ -130,12 +130,12 @@ Item {
                         spacing: 2
                         MaterialSymbol {
                             text: "notifications"
-                            iconSize: Appearance.font.pixelSize.normal
+                            iconSize: NexusStyle.font.bodyLarge
                             color: Appearance.colors.colOnLayer0
                         }
                         StyledText {
                             text: `${NotificationService.unread}`
-                            font.pixelSize: Appearance.font.pixelSize.smallest
+                            font.pixelSize: NexusStyle.font.labelSmall
                             font.features: {
                                 "tnum": 1
                             }
@@ -173,13 +173,13 @@ Item {
                     MaterialSymbol {
                         fill: 0
                         text: WeatherService.hasValidData ? WeatherService.currentIconName : "cloud"
-                        iconSize: Appearance.font.pixelSize.normal
+                        iconSize: NexusStyle.font.bodyLarge
                         color: Appearance.colors.colOnLayer0
                         Layout.alignment: Qt.AlignVCenter
                     }
 
                     StyledText {
-                        font.pixelSize: di.isMaterial ? Appearance.font.pixelSize.normal : Appearance.font.pixelSize.small
+                        font.pixelSize: di.isMaterial ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium
                         font.features: {
                             "tnum": 1
                         }

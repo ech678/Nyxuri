@@ -85,7 +85,7 @@ Item {
                     text: root.title
                     color: Appearance.colors.colOnLayer2
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     font.weight: Font.Medium
                     elide: Text.ElideRight
                 }
@@ -96,7 +96,7 @@ Item {
                     text: root.supportingText
                     color: Appearance.colors.colOnLayer1
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: NexusStyle.font.bodySmall
                     elide: Text.ElideRight
                 }
             }

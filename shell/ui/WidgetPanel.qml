@@ -50,7 +50,7 @@ Rectangle {
                 text: root.title
                 font.family: Fonts.ui
                 font.bold: true
-                font.pixelSize: 18
+                font.pixelSize: NexusStyle.font.bodyLarge
                 color: Appearance.colors.colOnLayer2
                 Layout.fillWidth: true
                 Layout.leftMargin: root.showBackButton ? 0 : 10

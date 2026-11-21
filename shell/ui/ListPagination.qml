@@ -35,7 +35,7 @@ RowLayout {
                   root.count)
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
     }
     IconButton {
         iconName: "chevron_right"

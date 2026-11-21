@@ -149,7 +149,7 @@ Item {
             text: root.componentLabel
             color: Appearance.colors.colOnPrimaryContainer
             font.family: Fonts.ui
-            font.pixelSize: 13
+            font.pixelSize: NexusStyle.font.bodySmall
             font.weight: Font.Medium
             elide: Text.ElideRight
 

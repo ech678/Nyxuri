@@ -59,7 +59,7 @@ Item {
 
             font {
                 family: Fonts.expressive
-                pixelSize: 80
+                pixelSize: NexusStyle.font.displayLarge
                 weight: Font.Medium
             }
         }

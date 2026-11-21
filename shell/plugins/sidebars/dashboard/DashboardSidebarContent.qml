@@ -148,7 +148,7 @@ Item {
                                 color: tabButton.active ? Appearance.colors.colOnSecondaryContainer :
                                                           Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.ui
-                                font.pixelSize: Typography.bodyMedium.pixelSize
+                                font.pixelSize: NexusStyle.font.bodyMedium
                                 font.weight: tabButton.active ? Font.DemiBold : Font.Medium
                             }
                         }

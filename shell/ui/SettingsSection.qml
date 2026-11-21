@@ -62,9 +62,9 @@ Rectangle {
                 visible: root.title.length > 0
                 text: root.title
                 color: root.flat ? Appearance.colors.colOnSurface : Appearance.colors.colOnLayer2
-                font.family: Typography.titleMedium.family
-                font.pixelSize: Typography.titleMedium.pixelSize
-                font.weight: Typography.titleMedium.weight
+                font.family: Fonts.ui
+                font.pixelSize: NexusStyle.font.titleMedium
+                font.weight: NexusStyle.font.titleWeight
                 elide: Text.ElideRight
             }
         }
@@ -75,7 +75,7 @@ Rectangle {
             text: root.supportingText
             color: root.flat ? Appearance.colors.colOnSurfaceVariant : Appearance.colors.colOnLayer1
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: NexusStyle.font.bodySmall
             wrapMode: Text.Wrap
         }
 

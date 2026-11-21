@@ -449,7 +449,7 @@ Item {
                 wrapMode: Text.Wrap
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
             }
             Repeater {
                 model: root.choices
@@ -474,7 +474,7 @@ Item {
                         bottomPadding: 6
                         wrapMode: Text.Wrap
                         font.family: Fonts.ui
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         color: Appearance.colors.colOnSurfaceVariant
                     }
                     StyledMenuItem {
@@ -499,8 +499,8 @@ Item {
                             text: choiceItem.text
                             textFormat: Text.PlainText
                             font.family: Fonts.ui
-                            font.pixelSize: Typography.labelLarge.pixelSize
-                            font.weight: Typography.labelLarge.weight
+                            font.pixelSize: NexusStyle.font.labelLarge
+                            font.weight: NexusStyle.font.labelLargeWeight
                             color: choiceItem.foreground
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight

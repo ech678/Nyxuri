@@ -56,7 +56,7 @@ StyledPopup {
                         StyledText {
                             Layout.alignment: Qt.AlignHCenter
                             text: Qt.locale().toString(date, "ddd").slice(0, 2)
-                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            font.pixelSize: NexusStyle.font.bodySmall
                             color: isToday ? Appearance.colors.colPrimary : Appearance.colors.colOnSurfaceVariant
                             font.weight: isToday ? Font.Bold : Font.Normal
                         }
@@ -64,7 +64,7 @@ StyledPopup {
                         StyledText {
                             Layout.alignment: Qt.AlignHCenter
                             text: date.getDate()
-                            font.pixelSize: isToday ? Appearance.font.pixelSize.normal : Appearance.font.pixelSize.small
+                            font.pixelSize: isToday ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium
                             font.weight: isToday ? Font.Bold : Font.Normal
                             color: isToday ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer1
                         }
@@ -75,12 +75,12 @@ StyledPopup {
 
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.max(20, Appearance.font.pixelSize.small + 6)
+            Layout.preferredHeight: Math.max(20, NexusStyle.font.bodyMedium + 6)
             spacing: 6
 
             MaterialSymbol {
                 text: "timelapse"
-                iconSize: Appearance.font.pixelSize.small
+                iconSize: NexusStyle.font.bodyMedium
                 color: Appearance.colors.colOnSurfaceVariant
             }
 
@@ -89,7 +89,7 @@ StyledPopup {
                 text: Translation.tr("System Uptime") + "  •  " + DateTime.uptime
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
-                font.pixelSize: Appearance.font.pixelSize.smaller
+                font.pixelSize: NexusStyle.font.bodySmall
                 color: Appearance.colors.colOnSurfaceVariant
             }
         }

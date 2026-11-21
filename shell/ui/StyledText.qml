@@ -6,13 +6,13 @@ import qs.commons
 // StyledText, including the number-font switch and the slide/fade text-change
 // animation.
 //
-// Token mapping (end4-pC px -> nyxuri Typography, which carries the local 0.85
-// dense-panel scale):
-//   small/smallie 15/13 -> bodyLarge   16*0.85 = 14
-//   normal        16    -> bodyLarge   16*0.85 = 14
-//   larger        19    -> titleLarge  22*0.85 = 19
-//   huge          22    -> headlineSmall 24*0.85 = 20
-//   smaller       12    -> bodySmall   12*0.85 = 10
+// Token mapping (D-1 single M3 scale; the local 0.85 dense-panel era is
+// over — type comes from NexusStyle.font at 1.0 everywhere):
+//   small/smallie 15/13 -> bodyMedium   14
+//   normal        16    -> bodyLarge    16
+//   larger        19    -> titleLarge   22
+//   huge          22    -> titleLarge   22
+//   smaller       12    -> bodySmall    12
 //
 // Deviation from the end4 baseline (bar media bug, 2026-11-15): the slide
 // rides on a Translate transform instead of the item's x/y. Upstream captures
@@ -41,7 +41,7 @@ Text {
     font {
         hintingPreference: Font.PreferDefaultHinting
         family: root.defaultFont
-        pixelSize: Typography.bodyLarge.pixelSize
+        pixelSize: NexusStyle.font.bodyLarge
         variableAxes: root.shouldUseNumberFont ? ({}) : ({
                 "wght": 450
             })

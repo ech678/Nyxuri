@@ -43,14 +43,14 @@ StyledPopup {
                     StyledText {
                         visible: Weather.showVisibleCity
                         text: Weather.visibleCity
-                        font.pixelSize: Appearance.font.pixelSize.normal
+                        font.pixelSize: NexusStyle.font.bodyLarge
                         font.weight: Font.DemiBold
                         color: Appearance.colors.colOnLayer0
                     }
 
                     StyledText {
                         text: Weather.data?.description ?? "Cloudy"
-                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        font.pixelSize: NexusStyle.font.bodySmall
                         color: Appearance.colors.colOnLayer0
                         opacity: 0.6
                     }
@@ -64,7 +64,7 @@ StyledPopup {
 
                     StyledText {
                         text: Weather.data?.temp ?? "3"
-                        font.pixelSize: 48
+                        font.pixelSize: NexusStyle.font.displayMedium
                         font.weight: Font.Light
                         color: Appearance.colors.colOnLayer0
                     }
@@ -94,12 +94,12 @@ StyledPopup {
                         Layout.alignment: Qt.AlignRight
                         MaterialSymbol {
                             text: "wb_twilight"
-                            iconSize: Appearance.font.pixelSize.smaller
+                            iconSize: NexusStyle.font.bodySmall
                             color: Appearance.colors.colPrimary
                         }
                         StyledText {
                             text: Weather.data?.sunrise ?? "07:34 AM"
-                            font.pixelSize: Appearance.font.pixelSize.smallest
+                            font.pixelSize: NexusStyle.font.labelSmall
                             color: Appearance.colors.colOnLayer0
                             opacity: 0.8
                         }
@@ -110,12 +110,12 @@ StyledPopup {
                         Layout.alignment: Qt.AlignRight
                         MaterialSymbol {
                             text: "bedtime"
-                            iconSize: Appearance.font.pixelSize.smaller
+                            iconSize: NexusStyle.font.bodySmall
                             color: Appearance.colors.colPrimary
                         }
                         StyledText {
                             text: Weather.data?.sunset ?? "05:21 PM"
-                            font.pixelSize: Appearance.font.pixelSize.smallest
+                            font.pixelSize: NexusStyle.font.labelSmall
                             color: Appearance.colors.colOnLayer0
                             opacity: 0.8
                         }

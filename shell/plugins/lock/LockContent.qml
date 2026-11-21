@@ -233,7 +233,7 @@ Item {
                     scale: 0.7
                     color: Appearance.colors.colError
                     font.family: Fonts.numeric
-                    font.pixelSize: 15
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     lineHeight: 1.2
@@ -431,7 +431,7 @@ Item {
                     scale: 0.7
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.numeric
-                    font.pixelSize: 16
+                    font.pixelSize: NexusStyle.font.bodyLarge
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                     lineHeight: 1.2

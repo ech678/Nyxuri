@@ -111,7 +111,7 @@ Rectangle {
             text: I18n.tr("Weather")
             color: Appearance.colors.colPrimary
             font.family: Fonts.ui
-            font.pixelSize: 36
+            font.pixelSize: NexusStyle.font.displaySmall
             font.weight: 500
             Layout.alignment: Qt.AlignHCenter
             Layout.bottomMargin: -Metrics.lockOuterPadding
@@ -139,7 +139,7 @@ Rectangle {
                     text: root.width <= 320 ? root.temp + "  " + root.cond : root.cond
                     color: Appearance.colors.colSecondary
                     font.family: Fonts.ui
-                    font.pixelSize: 24
+                    font.pixelSize: NexusStyle.font.headlineSmall
                     font.weight: 500
                     elide: Text.ElideRight
                 }
@@ -149,7 +149,7 @@ Rectangle {
                     text: root.humidity
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
-                    font.pixelSize: 17
+                    font.pixelSize: NexusStyle.font.bodyLarge
                     elide: Text.ElideRight
                 }
             }
@@ -165,7 +165,7 @@ Rectangle {
                     text: root.temp
                     color: Appearance.colors.colPrimary
                     font.family: Fonts.ui
-                    font.pixelSize: 38
+                    font.pixelSize: NexusStyle.font.displaySmall
                     font.weight: 500
                     horizontalAlignment: Text.AlignRight
                     elide: Text.ElideLeft
@@ -177,7 +177,7 @@ Rectangle {
                     visible: !root.veryCompact
                     color: Appearance.colors.colOutline
                     font.family: Fonts.ui
-                    font.pixelSize: 16
+                    font.pixelSize: NexusStyle.font.bodyLarge
                     horizontalAlignment: Text.AlignRight
                     elide: Text.ElideLeft
                 }

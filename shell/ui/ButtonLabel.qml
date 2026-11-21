@@ -16,8 +16,8 @@ Item {
     property color iconColor: Appearance.colors.colOnSurface
     property color primaryColor: Appearance.colors.colOnSurface
     property color supportingColor: Appearance.colors.colOnSurfaceVariant
-    property int primaryPixelSize: Typography.labelLarge.pixelSize
-    property int supportingPixelSize: Typography.labelSmall.pixelSize
+    property int primaryPixelSize: NexusStyle.font.labelLarge
+    property int supportingPixelSize: NexusStyle.font.labelSmall
     property int primaryWeight: Font.Medium
 
     implicitWidth: contentRow.implicitWidth

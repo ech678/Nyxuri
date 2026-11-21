@@ -65,7 +65,7 @@ Item {
                         text: taskItem.modelData.content
                         color: Appearance.colors.colOnLayer2
                         font.family: Fonts.ui
-                        font.pixelSize: 14
+                        font.pixelSize: NexusStyle.font.bodyMedium
                         wrapMode: Text.Wrap
                     }
 
@@ -132,7 +132,7 @@ Item {
                 text: root.emptyPlaceholderText
                 color: Appearance.colors.colOutline
                 font.family: Fonts.ui
-                font.pixelSize: 14
+                font.pixelSize: NexusStyle.font.bodyMedium
                 horizontalAlignment: Text.AlignHCenter
             }
         }

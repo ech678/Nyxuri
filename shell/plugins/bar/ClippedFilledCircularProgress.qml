@@ -28,7 +28,7 @@ Item {
         StyledText {
             anchors.centerIn: parent
             text: Math.round(root.value * 100)
-            font.pixelSize: 12
+            font.pixelSize: NexusStyle.font.bodySmall
             font.weight: Font.Medium
         }
     }

@@ -71,7 +71,7 @@ Item {
             color: Appearance.colors.colOnTooltip
             wrapMode: Text.Wrap
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: NexusStyle.font.bodySmall
             font.hintingPreference: Font.PreferNoHinting
         }
     }

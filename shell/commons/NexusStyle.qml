@@ -2,12 +2,13 @@ pragma Singleton
 import QtQuick
 import qs.commons
 
-// Caelestia Config tokens, ported 1:1 (plugin/src/Caelestia/Config/tokens.hpp
-// + font defaults from appearanceconfig.hpp). The settings surface runs
-// UNSCALED: pixel parity with the original trumps the fork-wide 0.85
-// dense-panel scale baked into Metrics/Typography. Colors stay in Appearance
-// (m3colors / solved overlays) — this object owns geometry, rhythm and type
-// sizes only, and the contract tests pin every value against the header.
+// Design-system L1 token source (llms-wiki/shell/design-system.md). Numbers
+// port 1:1 from references/caelestia/plugin/src/Caelestia/Config/tokens.hpp
+// + appearanceconfig.hpp; D-1 promoted this table to the single library-wide
+// type scale, so every surface (bar included) reads type from here — the
+// end4 Appearance.font ladder and the old commons/Typography singleton are
+// retired. Colors stay in Appearance/M3Palette; this object owns geometry,
+// rhythm and type sizes only, and the contract tests pin every value.
 QtObject {
     readonly property QtObject rounding: QtObject {
         readonly property int extraSmall: 4
@@ -44,26 +45,39 @@ QtObject {
         readonly property int extraExtraLarge: 48
     }
 
-    // FontSizeTokens plus the weights each style carries in
-    // appearanceconfig.hpp (Title/Headline/Label.medium+ Medium; Body and
-    // Label.small Normal).
+    // The M3 type scale (D-1): label 11/12/14 · body 12/14/16 ·
+    // title 14/16/22 · headline 24/28/32 · display 36/45/57 (M3 spec tier;
+    // Caelestia never consumed it, lock/clock numerals do) · mono 12/14/16.
+    // Weights follow appearanceconfig.hpp: Title/Headline/Label.medium+
+    // carry Medium; Body, Label.small and Mono stay Regular.
     readonly property QtObject font: QtObject {
         readonly property int labelSmall: 11
         readonly property int labelMedium: 12
         readonly property int labelMediumWeight: Font.Medium
+        readonly property int labelLarge: 14
+        readonly property int labelLargeWeight: Font.Medium
         readonly property int bodySmall: 12
         readonly property int bodyMedium: 14
         readonly property int bodyLarge: 16
+        readonly property int titleSmall: 14
         readonly property int titleMedium: 16
         readonly property int titleLarge: 22
         readonly property int titleWeight: Font.Medium
-        readonly property int headlineMedium: 24
-        readonly property int headlineLarge: 28
+        readonly property int headlineSmall: 24
+        readonly property int headlineMedium: 28
+        readonly property int headlineLarge: 32
         readonly property int headlineWeight: Font.Medium
+        readonly property int displaySmall: 36
+        readonly property int displayMedium: 45
+        readonly property int displayLarge: 57
+        readonly property int monoSmall: 12
+        readonly property int monoMedium: 14
+        readonly property int monoLarge: 16
     }
 
     // IconSizeTokens in rendered pixels (the header stores them as 24/1.33
-    // font sizes; MaterialSymbol takes optical pixels directly).
+    // font sizes; MaterialSymbol takes optical pixels directly). Glyph
+    // geometry flows through iconSize properties, not the type scale.
     readonly property QtObject icon: QtObject {
         readonly property int extraLarge: 48
         readonly property int large: 32

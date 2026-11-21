@@ -274,7 +274,7 @@ Rectangle {
                 text: root.accountIdentity
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: Typography.titleLarge.pixelSize
+                font.pixelSize: NexusStyle.font.titleLarge
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
             }
@@ -287,7 +287,7 @@ Rectangle {
                     text: root.distroLogo()
                     color: Appearance.colors.colPrimary
                     font.family: Fonts.numeric
-                    font.pixelSize: 18
+                    font.pixelSize: NexusStyle.font.bodyLarge
                 }
 
                 Text {
@@ -296,7 +296,7 @@ Rectangle {
                     text: root.distroName
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
-                    font.pixelSize: Typography.bodyMedium.pixelSize
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     elide: Text.ElideRight
                 }
 
@@ -311,7 +311,7 @@ Rectangle {
                     text: I18n.tr("Up for %1").arg(root.uptimeText)
                     color: Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
-                    font.pixelSize: Typography.bodyMedium.pixelSize
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     elide: Text.ElideRight
                 }
             }
@@ -344,7 +344,7 @@ Rectangle {
                 supportingText: root.networkStatusDetail
                 maximumTextWidth: 180
                 iconColor: Appearance.colors.colPrimary
-                primaryPixelSize: Typography.bodyMedium.pixelSize
+                primaryPixelSize: NexusStyle.font.bodyMedium
                 primaryWeight: Font.DemiBold
             }
         }

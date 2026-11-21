@@ -78,7 +78,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.title
                 font.family: Fonts.ui
-                font.pixelSize: 16
+                font.pixelSize: NexusStyle.font.bodyLarge
                 color: "#F5F7FA"
                 onTextChanged: Qt.callLater(titleViewport.restartScroll)
             }
@@ -127,7 +127,7 @@ Item {
                 verticalAlignment: Text.AlignVCenter
                 text: WeatherService.hasValidData ? Math.round(UiPreferences.weatherTemperature(WeatherService.currentTemperatureC)) + UiPreferences.weatherTemperatureSymbol() : "—"
                 font.family: Fonts.numeric
-                font.pixelSize: 16
+                font.pixelSize: NexusStyle.font.bodyLarge
                 color: "#F5F7FA"
             }
         }
@@ -161,7 +161,7 @@ Item {
                 verticalAlignment: Text.AlignVCenter
                 text: isFinite(root.batteryPercent) ? Math.round(root.batteryPercent) + "%" : "—"
                 font.family: Fonts.numeric
-                font.pixelSize: 16
+                font.pixelSize: NexusStyle.font.bodyLarge
                 color: "#F5F7FA"
             }
         }

@@ -363,7 +363,7 @@ Item {
                                 color: appDelegate.index === root.selectedIndex
                                        ? root.style.selectedContentColor : Appearance.colors.colOnSurface
                                 font.family: Fonts.ui
-                                font.pixelSize: 17
+                                font.pixelSize: NexusStyle.font.bodyLarge
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                             }
@@ -380,7 +380,7 @@ Item {
                                        ? root.style.selectedContentColor :
                                          Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.ui
-                                font.pixelSize: 13
+                                font.pixelSize: NexusStyle.font.bodySmall
                                 elide: root.fileMode && root.controlHeld && appDelegate.index
                                        === root.selectedIndex ? Text.ElideMiddle : Text.ElideRight
                             }
@@ -678,7 +678,7 @@ Item {
                     color: root.providerAvailable && !root.canRestore ? Appearance.colors.colError :
                                                                         Appearance.colors.colOnSurfaceVariant
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     font.weight: Font.DemiBold
                 }
 
@@ -869,7 +869,7 @@ Item {
                                            ? root.style.selectedContentColor : Appearance.colors.colOnSurface
                                     font.family: Fonts.ui
                                     textFormat: Text.PlainText
-                                    font.pixelSize: 16
+                                    font.pixelSize: NexusStyle.font.bodyLarge
                                     maximumLineCount: 1
                                     wrapMode: Text.NoWrap
                                     elide: Text.ElideRight
@@ -890,7 +890,7 @@ Item {
                                              Appearance.colors.colOnSurfaceVariant
                                     font.family: Fonts.ui
                                     textFormat: Text.PlainText
-                                    font.pixelSize: 12
+                                    font.pixelSize: NexusStyle.font.bodySmall
                                     maximumLineCount: 1
                                     wrapMode: Text.NoWrap
                                     elide: Text.ElideRight
@@ -956,7 +956,7 @@ Item {
                                         color: root.clipboardActionState === "copied"
                                                ? Appearance.colors.colPrimary : Appearance.colors.colError
                                         font.family: Fonts.ui
-                                        font.pixelSize: 12
+                                        font.pixelSize: NexusStyle.font.bodySmall
                                     }
                                 }
                             }
@@ -1018,7 +1018,7 @@ Item {
         textFormat: Text.PlainText
         elide: Text.ElideRight
         font.family: Fonts.ui
-        font.pixelSize: 12
+        font.pixelSize: NexusStyle.font.bodySmall
         color: root.fileError ? Appearance.colors.colError : Appearance.colors.colOnSurfaceVariant
     }
 
@@ -1070,7 +1070,7 @@ Item {
                                                                                                       I18n.tr("No matching results"))
                 color: Appearance.colors.colOnSurfaceVariant
                 font.family: Fonts.ui
-                font.pixelSize: 15
+                font.pixelSize: NexusStyle.font.bodyMedium
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.Wrap
             }

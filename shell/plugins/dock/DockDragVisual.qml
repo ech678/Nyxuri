@@ -150,7 +150,7 @@ Item {
             anchors.centerIn: parent
             text: I18n.tr("Remove from Dock", "DockSurface")
             font.family: Fonts.ui
-            font.pixelSize: 12
+            font.pixelSize: NexusStyle.font.bodySmall
             color: Appearance.colors.colOnSurface
         }
     }

@@ -89,7 +89,7 @@ Rectangle {
             text: "music_note"
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.materialSymbolsRounded
-            font.pixelSize: 48
+            font.pixelSize: NexusStyle.icon.extraLarge
             opacity: 0.2
         }
     }
@@ -110,7 +110,7 @@ Rectangle {
             text: I18n.tr("Now playing")
             color: Appearance.colors.colOnSurfaceVariant
             font.family: Fonts.numeric
-            font.pixelSize: 17
+            font.pixelSize: NexusStyle.font.bodyLarge
             font.weight: 500
             elide: Text.ElideRight
         }
@@ -120,7 +120,7 @@ Rectangle {
             text: root.artist
             color: Appearance.colors.colPrimary
             font.family: Fonts.numeric
-            font.pixelSize: 24
+            font.pixelSize: NexusStyle.font.headlineSmall
             font.weight: 600
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
@@ -131,7 +131,7 @@ Rectangle {
             text: root.title
             color: Appearance.colors.colOnSurface
             font.family: Fonts.numeric
-            font.pixelSize: 20
+            font.pixelSize: NexusStyle.font.titleLarge
             horizontalAlignment: Text.AlignHCenter
             elide: Text.ElideRight
         }
@@ -254,7 +254,7 @@ Rectangle {
             color: control.active ? Appearance.colors[`colOn${control.colour}`] : Appearance.colors[`colOn${control.colour
                                                                                                     }Container`]
             font.family: Fonts.materialSymbolsRounded
-            font.pixelSize: 29
+            font.pixelSize: NexusStyle.icon.large
             font.weight: 500
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter

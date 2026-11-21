@@ -54,7 +54,7 @@ Loader {
                 visible: KeyboardIndicators.layoutVisible
                 horizontalAlignment: Text.AlignHCenter
                 text: KeyboardIndicators.currentLayoutCodeInline
-                font.pixelSize: Appearance.font.pixelSize.small
+                font.pixelSize: NexusStyle.font.bodyMedium
                 color: root.color
             }
         }
@@ -88,7 +88,7 @@ Loader {
                 visible: KeyboardIndicators.layoutVisible
                 horizontalAlignment: Text.AlignHCenter
                 text: KeyboardIndicators.currentLayoutCodeMultiline
-                font.pixelSize: text.includes("\n") ? Appearance.font.pixelSize.smallie : Appearance.font.pixelSize.small
+                font.pixelSize: text.includes("\n") ? NexusStyle.font.bodySmall : NexusStyle.font.bodyMedium
                 color: root.color
             }
         }

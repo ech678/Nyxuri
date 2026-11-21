@@ -749,7 +749,7 @@ FloatingWindow {
                     text: "P1 " + root.formatNumber(root.renderX1) + ", " + root.formatNumber(root.renderY1)
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.mono
-                    font.pixelSize: 12
+                    font.pixelSize: NexusStyle.font.monoSmall
                     fontSizeMode: Text.HorizontalFit
                     minimumPixelSize: 9
                     elide: Text.ElideNone
@@ -761,7 +761,7 @@ FloatingWindow {
                     text: "P2 " + root.formatNumber(root.renderX2) + ", " + root.formatNumber(root.renderY2)
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.mono
-                    font.pixelSize: 12
+                    font.pixelSize: NexusStyle.font.monoSmall
                     fontSizeMode: Text.HorizontalFit
                     minimumPixelSize: 9
                     elide: Text.ElideNone
@@ -1108,7 +1108,7 @@ FloatingWindow {
                                                      ? Appearance.colors.colPrimary :
                                                        Appearance.colors.colSubtext
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: NexusStyle.font.bodySmall
                 }
 
                 TextField {
@@ -1121,7 +1121,7 @@ FloatingWindow {
                     selectionColor: Appearance.colors.colPrimary
                     selectByMouse: true
                     font.family: Fonts.mono
-                    font.pixelSize: 13
+                    font.pixelSize: NexusStyle.font.monoSmall
                     leftPadding: 16
                     rightPadding: 12
                     topPadding: 14

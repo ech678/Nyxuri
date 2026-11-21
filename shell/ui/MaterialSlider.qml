@@ -284,8 +284,8 @@ Item {
                     text: root.formattedValue(control.value)
                     color: Appearance.colors.colOnPrimary
                     font.family: Fonts.numeric
-                    font.pixelSize: Typography.labelLarge.pixelSize
-                    font.weight: Typography.labelLarge.weight
+                    font.pixelSize: NexusStyle.font.labelLarge
+                    font.weight: NexusStyle.font.labelLargeWeight
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                     elide: Text.ElideRight

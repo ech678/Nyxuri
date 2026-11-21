@@ -85,8 +85,8 @@ Rectangle {
                 text: root.title
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: root.supportingText.length > 0 ? Typography.bodyMedium.pixelSize : Typography.bodyLarge.pixelSize
-                font.weight: root.supportingText.length > 0 ? Typography.bodyMedium.weight : Font.Medium
+                font.pixelSize: root.supportingText.length > 0 ? NexusStyle.font.bodyMedium : NexusStyle.font.bodyLarge
+                font.weight: root.supportingText.length > 0 ? Font.Normal : Font.Medium
                 elide: Text.ElideRight
             }
 
@@ -96,7 +96,7 @@ Rectangle {
                 text: root.supportingText
                 color: Appearance.colors.colOnLayer1
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 wrapMode: Text.Wrap
                 elide: Text.ElideRight
                 maximumLineCount: 2

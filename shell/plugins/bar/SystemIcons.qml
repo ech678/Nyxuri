@@ -235,7 +235,7 @@ Item {
 
                         visible: parent.showCount
                         anchors.centerIn: parent
-                        font.pixelSize: Appearance.font.pixelSize.smallest
+                        font.pixelSize: NexusStyle.font.labelSmall
                         color: root.isMaterial ? M3Palette.primary : Appearance.colors.colLayer0
                         text: NotificationService.unread
                     }

@@ -25,7 +25,7 @@ RowLayout {
     MaterialSymbol {
         visible: root.showLabel
         text: root.icon
-        iconSize: Typography.bodyLarge.pixelSize + 5
+        iconSize: NexusStyle.font.bodyLarge + 5
         color: Appearance.colors.colOnLayer0
     }
 

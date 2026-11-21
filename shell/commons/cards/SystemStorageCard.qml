@@ -90,7 +90,7 @@ Item {
         color: root.leftForeground
         renderType: Text.NativeRendering
         font.family: Fonts.expressive
-        font.pixelSize: 32
+        font.pixelSize: NexusStyle.font.headlineLarge
         font.weight: Font.Black
         font.variableAxes: root.expressiveBoldAxes
 
@@ -213,7 +213,7 @@ Item {
                 color: root.rightForeground
                 verticalAlignment: Text.AlignVCenter
                 font.family: Fonts.expressive
-                font.pixelSize: Typography.titleSmall.pixelSize
+                font.pixelSize: NexusStyle.font.titleSmall
                 font.weight: Font.Bold
                 elide: Text.ElideRight
             }
@@ -277,7 +277,7 @@ Item {
             color: root.rightForeground
             renderType: Text.NativeRendering
             font.family: Fonts.expressive
-            font.pixelSize: 27
+            font.pixelSize: NexusStyle.font.headlineMedium
             font.weight: Font.Black
             font.variableAxes: root.expressiveBoldAxes
             elide: Text.ElideRight

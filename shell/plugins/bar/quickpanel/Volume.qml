@@ -60,7 +60,7 @@ Item {
                     visible: root.showValue
                     text: Math.round(VolumeService.sinkVolume * 100) + "%"
                     font.family: Fonts.numeric
-                    font.pixelSize: 12
+                    font.pixelSize: NexusStyle.font.bodySmall
                     color: Appearance.colors.colOnSurface
                     Layout.alignment: Qt.AlignCenter
                 }

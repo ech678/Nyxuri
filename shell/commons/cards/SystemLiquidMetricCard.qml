@@ -125,7 +125,7 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 text: root.iconName
                 color: root.contentColor
-                iconSize: Typography.headlineSmall.pixelSize + 4
+                iconSize: NexusStyle.font.headlineSmall + 4
                 fill: 1
             }
 
@@ -136,7 +136,7 @@ Item {
                 renderType: Text.NativeRendering
                 font {
                     family: root.metricFontFamily
-                    pixelSize: Typography.headlineMedium.pixelSize
+                    pixelSize: NexusStyle.font.headlineMedium
                     weight: Font.DemiBold
                     variableAxes: root.metricFontAxes
                 }
@@ -149,7 +149,7 @@ Item {
                 text: root.supportingText
                 color: root.contentColor
                 font.family: Fonts.expressive
-                font.pixelSize: Typography.labelSmall.pixelSize
+                font.pixelSize: NexusStyle.font.labelSmall
                 font.weight: Font.DemiBold
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideMiddle

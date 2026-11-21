@@ -35,7 +35,7 @@ Item {
                     }
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.numeric
-                    font.pixelSize: 40
+                    font.pixelSize: NexusStyle.font.displaySmall
                 }
 
                 Text {
@@ -44,7 +44,7 @@ Item {
                                                            ? I18n.tr("Break") : I18n.tr("Focus")
                     color: Appearance.colors.colSubtext
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                 }
             }
 
@@ -61,7 +61,7 @@ Item {
                     text: TimerService.pomodoroCycle + 1
                     color: Appearance.colors.colOnLayer2
                     font.family: Fonts.numeric
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                 }
             }
         }
@@ -95,7 +95,7 @@ Item {
                     color: TimerService.pomodoroRunning ? Appearance.colors.colOnSecondaryContainer :
                                                           Appearance.colors.colOnPrimary
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -119,7 +119,7 @@ Item {
                     text: I18n.tr("Reset")
                     color: Appearance.colors.colOnErrorContainer
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter

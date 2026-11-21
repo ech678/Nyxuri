@@ -180,7 +180,7 @@ Button {
         text: root.buttonText.length > 0 ? root.buttonText : root.text
         color: Appearance.colors.colOnSurface
         font.family: Fonts.ui
-        font.pixelSize: 13
+        font.pixelSize: NexusStyle.font.bodySmall
         verticalAlignment: Text.AlignVCenter
     }
 

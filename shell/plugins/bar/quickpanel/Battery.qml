@@ -110,7 +110,7 @@ Item {
             visible: root.showValue
             text: root.valueAvailable ? root.displayText + "%" : root.displayText
             font.family: Fonts.numeric
-            font.pixelSize: 12
+            font.pixelSize: NexusStyle.font.bodySmall
             color: root.foregroundColor
         }
     }

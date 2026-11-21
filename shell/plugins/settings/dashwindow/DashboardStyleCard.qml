@@ -65,14 +65,14 @@ DashboardCard {
 
                 StyledText {
                     text: I18n.tr("Settings panel")
-                    font.pixelSize: Typography.titleLarge.pixelSize
+                    font.pixelSize: NexusStyle.font.titleLarge
                     font.weight: Font.DemiBold
                     color: Appearance.colors.colOnLayer1
                 }
 
                 StyledText {
                     text: I18n.tr("Choose how settings open")
-                    font.pixelSize: Typography.bodyMedium.pixelSize
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     color: Appearance.colors.colSubtext
                 }
             }
@@ -144,7 +144,7 @@ DashboardCard {
                         StyledText {
                             Layout.alignment: Qt.AlignHCenter
                             text: option.modelData.label ?? ""
-                            font.pixelSize: Typography.titleLarge.pixelSize
+                            font.pixelSize: NexusStyle.font.titleLarge
                             font.weight: Font.DemiBold
                             color: option.selected ? Appearance.colors.colOnPrimary :
                                                      Appearance.colors.colOnSecondaryContainer
@@ -155,7 +155,7 @@ DashboardCard {
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.WordWrap
                             text: option.decor.detail ?? ""
-                            font.pixelSize: Typography.bodyMedium.pixelSize
+                            font.pixelSize: NexusStyle.font.bodyMedium
                             color: option.selected ? Appearance.colors.colOnPrimary :
                                                      Appearance.colors.colOnSecondaryContainer
                             opacity: 0.8

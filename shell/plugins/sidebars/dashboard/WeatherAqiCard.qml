@@ -83,7 +83,7 @@ Item {
                 text: I18n.tr("Air quality")
                 color: root.mutedInk
                 font.family: Fonts.expressive
-                font.pixelSize: 18
+                font.pixelSize: NexusStyle.font.bodyLarge
                 font.bold: true
             }
         }
@@ -109,7 +109,7 @@ Item {
             text: root.levelText
             color: root.ink
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: NexusStyle.font.bodyLarge
             font.bold: true
             elide: Text.ElideRight
             z: 2

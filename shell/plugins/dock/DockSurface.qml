@@ -1250,7 +1250,7 @@ PanelWindow {
                 visible: DockService.model.count === 0
                 text: I18n.tr("Drop apps here")
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 color: Appearance.colors.colOnSurfaceVariant
             }
         }

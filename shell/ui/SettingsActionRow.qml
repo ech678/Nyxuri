@@ -45,11 +45,11 @@ RippleButton {
                 text: root.text
                 color: Appearance.colors.colOnSurface
                 font.family: root.description === ""
-                    ? Typography.bodyLarge.family : Typography.bodyMedium.family
+                    ? Fonts.ui : Fonts.ui
                 font.pixelSize: root.description === ""
-                    ? Typography.bodyLarge.pixelSize : Typography.bodyMedium.pixelSize
+                    ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium
                 font.weight: root.description === ""
-                    ? Font.Medium : Typography.bodyMedium.weight
+                    ? Font.Medium : Font.Normal
                 elide: Text.ElideRight
             }
 
@@ -58,8 +58,8 @@ RippleButton {
                 visible: root.description !== ""
                 text: root.description
                 color: Appearance.colors.colOnSurfaceVariant
-                font.family: Typography.bodySmall.family
-                font.pixelSize: Typography.bodySmall.pixelSize
+                font.family: Fonts.ui
+                font.pixelSize: NexusStyle.font.bodySmall
                 elide: Text.ElideRight
             }
         }

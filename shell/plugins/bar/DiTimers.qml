@@ -61,7 +61,7 @@ RowLayout {
     StyledText {
         Layout.alignment: Qt.AlignVCenter
         text: di.timerValueText()
-        font.pixelSize: Appearance.font.pixelSize.small
+        font.pixelSize: NexusStyle.font.bodyMedium
         font.features: { "tnum": 1 }
         color: Appearance.colors.colOnLayer0
     }

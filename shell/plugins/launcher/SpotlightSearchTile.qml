@@ -98,7 +98,7 @@ Item {
                 text: root.result.subtitle || ""
                 textFormat: Text.PlainText
                 font.family: Fonts.ui
-                font.pixelSize: 12
+                font.pixelSize: NexusStyle.font.bodySmall
                 color: root.selected ? root.style.selectedContentColor : Appearance.colors.colOnSurfaceVariant
                 elide: Text.ElideMiddle
             }

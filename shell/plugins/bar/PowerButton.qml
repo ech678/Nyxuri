@@ -44,7 +44,7 @@ RippleButton {
         anchors.centerIn: parent
         visible: root.isMaterial
         text: "power_settings_new"
-        iconSize: Appearance.font.pixelSize.normal
+        iconSize: NexusStyle.font.bodyLarge
         color: Appearance.colors.colOnPrimary
         colSymbol: Appearance.colors.colPrimary
         wrappedShape: MaterialShape.Shape.Cookie12Sided

@@ -734,7 +734,7 @@ Item {
                             color: coordMouse.containsMouse ? Appearance.colors.colOnSurface :
                                                               Appearance.colors.colOnSurfaceVariant
                             font.family: Fonts.mono
-                            font.pixelSize: 13
+                            font.pixelSize: NexusStyle.font.monoSmall
                             font.weight: Font.Medium
                         }
 
@@ -751,7 +751,7 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                             selectByMouse: true
                             font.family: Fonts.mono
-                            font.pixelSize: 13
+                            font.pixelSize: NexusStyle.font.monoSmall
                             padding: 0
                             leftPadding: 0
                             rightPadding: 0

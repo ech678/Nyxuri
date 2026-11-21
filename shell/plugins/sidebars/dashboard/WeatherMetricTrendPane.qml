@@ -521,7 +521,7 @@ Item {
                         text: metricColumn.modelData.timeText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: root.daily ? Fonts.ui : Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         font.bold: root.daily && metricColumn.index === 1
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -533,7 +533,7 @@ Item {
                         text: metricColumn.modelData.dateText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 11
+                        font.pixelSize: NexusStyle.font.labelSmall
                         horizontalAlignment: Text.AlignHCenter
                     }
 
@@ -583,7 +583,7 @@ Item {
                         text: metricColumn.modelData.primaryText
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -597,7 +597,7 @@ Item {
                         text: metricColumn.modelData.secondaryText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -609,7 +609,7 @@ Item {
                         text: metricColumn.modelData.primaryText
                         color: Appearance.colors.colOnSurface
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         elide: Text.ElideRight
@@ -623,7 +623,7 @@ Item {
                         text: metricColumn.modelData.primaryText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -636,7 +636,7 @@ Item {
                         text: metricColumn.modelData.secondaryText
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -648,7 +648,7 @@ Item {
                         text: metricColumn.modelData.histogramText
                         color: "#64b5f6"
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -680,7 +680,7 @@ Item {
             text: root.keyLineValueText
             color: root.labelColor
             font.family: Fonts.numeric
-            font.pixelSize: 11
+            font.pixelSize: NexusStyle.font.labelSmall
         }
 
         Text {
@@ -691,7 +691,7 @@ Item {
             text: root.keyLineLabel
             color: root.labelColor
             font.family: Fonts.ui
-            font.pixelSize: 11
+            font.pixelSize: NexusStyle.font.labelSmall
             font.bold: true
         }
     }

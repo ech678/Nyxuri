@@ -231,7 +231,7 @@ Item {
                         text: modelData.dayText
                         color: parent.weekColor
                         font.family: Fonts.ui
-                        font.pixelSize: 14
+                        font.pixelSize: NexusStyle.font.bodyMedium
                         font.bold: modelData.dayText === I18n.tr("Today")
                     }
 
@@ -241,7 +241,7 @@ Item {
                         text: modelData.dateText
                         color: parent.dateColor
                         font.family: Fonts.numeric
-                        font.pixelSize: 11
+                        font.pixelSize: NexusStyle.font.labelSmall
                     }
 
                     WindDirectionGlyph {
@@ -261,7 +261,7 @@ Item {
                         text: modelData.dayTextValue
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 13
+                        font.pixelSize: NexusStyle.font.bodySmall
                     }
 
                     Rectangle {
@@ -293,7 +293,7 @@ Item {
                         text: modelData.nightTextValue
                         color: Appearance.colors.colOnSurfaceVariant
                         font.family: Fonts.numeric
-                        font.pixelSize: 13
+                        font.pixelSize: NexusStyle.font.bodySmall
                     }
 
                     WindDirectionGlyph {
@@ -343,6 +343,6 @@ Item {
         text: I18n.tr("Wind data is unavailable")
         color: Appearance.colors.colOnSurfaceVariant
         font.family: Fonts.ui
-        font.pixelSize: 16
+        font.pixelSize: NexusStyle.font.bodyLarge
     }
 }

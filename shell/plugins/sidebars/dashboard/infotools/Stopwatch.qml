@@ -60,7 +60,7 @@ Item {
                 text: root.mainTime(TimerService.stopwatchTime)
                 color: Appearance.colors.colOnSurface
                 font.family: Fonts.numeric
-                font.pixelSize: 40
+                font.pixelSize: NexusStyle.font.displaySmall
             }
 
             Text {
@@ -69,7 +69,7 @@ Item {
                 text: `:${root.centiseconds(TimerService.stopwatchTime)}`
                 color: Appearance.colors.colSubtext
                 font.family: Fonts.numeric
-                font.pixelSize: 20
+                font.pixelSize: NexusStyle.font.titleLarge
             }
         }
 
@@ -130,14 +130,14 @@ Item {
                         text: `${TimerService.stopwatchLaps.length - lapItem.index}.`
                         color: Appearance.colors.colSubtext
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                     }
 
                     Text {
                         text: `${root.mainTime(lapItem.modelData)}.${root.centiseconds(lapItem.modelData)}`
                         color: Appearance.colors.colOnLayer2
                         font.family: Fonts.numeric
-                        font.pixelSize: 12
+                        font.pixelSize: NexusStyle.font.bodySmall
                     }
 
                     Item {
@@ -153,7 +153,7 @@ Item {
                         }
                         color: Appearance.colors.colPrimary
                         font.family: Fonts.numeric
-                        font.pixelSize: 11
+                        font.pixelSize: NexusStyle.font.labelSmall
                     }
                 }
             }
@@ -190,7 +190,7 @@ Item {
                     color: TimerService.stopwatchRunning ? Appearance.colors.colOnSecondaryContainer :
                                                            Appearance.colors.colOnPrimary
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -224,7 +224,7 @@ Item {
                     color: TimerService.stopwatchRunning ? Appearance.colors.colOnLayer2 :
                                                            Appearance.colors.colOnErrorContainer
                     font.family: Fonts.ui
-                    font.pixelSize: 14
+                    font.pixelSize: NexusStyle.font.bodyMedium
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter

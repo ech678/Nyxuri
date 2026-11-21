@@ -313,7 +313,7 @@ Rectangle {
             text: root.moon ? I18n.tr("Moon") : I18n.tr("Sun")
             color: root.titleInk
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: NexusStyle.font.bodyLarge
             font.bold: true
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -548,7 +548,7 @@ Rectangle {
             text: root.phaseText(root.phaseAngle)
             color: Appearance.colors.colOnWeatherCardSurfaceVariant
             font.family: Fonts.expressive
-            font.pixelSize: 11
+            font.pixelSize: NexusStyle.font.labelSmall
         }
     }
 }

@@ -43,7 +43,7 @@ Rectangle {
             MaterialShapeWrappedMaterialSymbol {
                 shape: root.iconShape
                 text: root.iconText
-                iconSize: Appearance.font.pixelSize.huge
+                iconSize: NexusStyle.font.titleLarge
                 implicitSize: 28
                 color: "transparent" // I know that you are going to give me color one day =P
                 colSymbol: root.usageColor(root.value)
@@ -54,7 +54,7 @@ Rectangle {
 
             StyledText {
                 text: root.available ? `${Math.round(root.value * 100)}%` : "—"
-                font.pixelSize: Appearance.font.pixelSize.large || 18
+                font.pixelSize: NexusStyle.font.bodyLarge || 18
                 font.weight: Font.Bold
                 font.features: { "tnum": 1 }
                 color: Appearance.colors.colOnSurface
@@ -68,7 +68,7 @@ Rectangle {
 
             StyledText {
                 text: root.label
-                font.pixelSize: Appearance.font.pixelSize.small
+                font.pixelSize: NexusStyle.font.bodyMedium
                 font.weight: Font.Medium
                 color: Appearance.colors.colOnSurface
                 Layout.fillWidth: true
@@ -77,7 +77,7 @@ Rectangle {
 
             StyledText {
                 text: root.available ? root.sublabel : qsTr("Unavailable")
-                font.pixelSize: Appearance.font.pixelSize.smallest || 10
+                font.pixelSize: NexusStyle.font.labelSmall || 10
                 color: root.sublabelColor
                 font.features: { "tnum": 1 }
                 Layout.fillWidth: true

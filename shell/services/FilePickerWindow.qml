@@ -473,7 +473,7 @@ FloatingWindow {
                             text: root.dialogTitle
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
-                            font.pixelSize: 19
+                            font.pixelSize: NexusStyle.font.bodyLarge
                             font.weight: Font.DemiBold
                             elide: Text.ElideRight
                         }
@@ -483,7 +483,7 @@ FloatingWindow {
                             text: root.description
                             color: Appearance.colors.colSubtext
                             font.family: Fonts.ui
-                            font.pixelSize: 12
+                            font.pixelSize: NexusStyle.font.bodySmall
                             elide: Text.ElideRight
                         }
                     }
@@ -528,7 +528,7 @@ FloatingWindow {
                             text: I18n.tr("Location")
                             color: Appearance.colors.colOnSurface
                             font.family: Fonts.ui
-                            font.pixelSize: 15
+                            font.pixelSize: NexusStyle.font.bodyMedium
                             font.weight: Font.DemiBold
                         }
 
@@ -593,7 +593,7 @@ FloatingWindow {
                                 text: root.formatSummary
                                 color: Appearance.colors.colOnSurfaceVariant
                                 font.family: Fonts.ui
-                                font.pixelSize: 11
+                                font.pixelSize: NexusStyle.font.labelSmall
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                                 wrapMode: Text.WordWrap
@@ -688,7 +688,7 @@ FloatingWindow {
                                                         text: "/"
                                                         color: Appearance.colors.colOnSurfaceVariant
                                                         font.family: Fonts.mono
-                                                        font.pixelSize: 13
+                                                        font.pixelSize: NexusStyle.font.monoSmall
                                                     }
 
                                                     BreadcrumbButton {
@@ -731,7 +731,7 @@ FloatingWindow {
                                     color: Appearance.colors.colOnSurface
                                     verticalAlignment: TextInput.AlignVCenter
                                     font.family: Fonts.mono
-                                    font.pixelSize: 12
+                                    font.pixelSize: NexusStyle.font.monoSmall
 
                                     background: Rectangle {
                                         radius: Appearance.rounding.full
@@ -785,7 +785,7 @@ FloatingWindow {
                                 text: root.emptyStateText
                                 color: Appearance.colors.colSubtext
                                 font.family: Fonts.ui
-                                font.pixelSize: 14
+                                font.pixelSize: NexusStyle.font.bodyMedium
                             }
                         }
 
@@ -975,7 +975,7 @@ FloatingWindow {
                                         color: fileItem.selected ? Appearance.colors.colOnSecondaryContainer :
                                                                    Appearance.colors.colOnSurface
                                         font.family: Fonts.ui
-                                        font.pixelSize: 12
+                                        font.pixelSize: NexusStyle.font.bodySmall
                                         font.weight: fileItem.selected ? Font.DemiBold : Font.Normal
                                         horizontalAlignment: Text.AlignHCenter
                                         elide: Text.ElideMiddle
@@ -1030,7 +1030,7 @@ FloatingWindow {
                                                                                                 root.selectedName
                                         color: Appearance.colors.colOnSurfaceVariant
                                         font.family: Fonts.ui
-                                        font.pixelSize: 13
+                                        font.pixelSize: NexusStyle.font.bodySmall
                                         elide: Text.ElideMiddle
                                     }
                                 }
@@ -1102,7 +1102,7 @@ FloatingWindow {
                     text: breadcrumbButton.label
                     color: Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 12
+                    font.pixelSize: NexusStyle.font.bodySmall
                     font.weight: breadcrumbButton.current ? Font.DemiBold : Font.Medium
                 }
             }
@@ -1185,7 +1185,7 @@ FloatingWindow {
                 color: locationButton.active ? Appearance.colors.colOnSecondaryContainer :
                                                Appearance.colors.colOnSurface
                 font.family: Fonts.ui
-                font.pixelSize: 13
+                font.pixelSize: NexusStyle.font.bodySmall
                 font.weight: locationButton.active ? Font.DemiBold : Font.Normal
                 elide: Text.ElideRight
             }
@@ -1235,7 +1235,7 @@ FloatingWindow {
                     color: actionButton.primary ? Appearance.colors.colOnPrimary :
                                                   Appearance.colors.colOnSurface
                     font.family: Fonts.ui
-                    font.pixelSize: 13
+                    font.pixelSize: NexusStyle.font.bodySmall
                     font.weight: Font.DemiBold
                 }
             }

@@ -101,7 +101,7 @@ Item {
                 text: I18n.tr("Pressure")
                 color: root.mutedInk
                 font.family: Fonts.expressive
-                font.pixelSize: 18
+                font.pixelSize: NexusStyle.font.bodyLarge
                 font.bold: true
             }
         }
@@ -125,7 +125,7 @@ Item {
             text: root.unitText
             color: root.ink
             font.family: Fonts.expressive
-            font.pixelSize: 18
+            font.pixelSize: NexusStyle.font.bodyLarge
             font.bold: true
             z: 2
         }

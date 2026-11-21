@@ -28,26 +28,11 @@ Singleton {
     property QtObject spacing
     property QtObject scrollBar
     property QtObject interaction
-    // end4-pC sources read type through Appearance.font.pixelSize.<token>. This
-    // is the bar/island type surface, pinned to the upstream 1.0 values
-    // (references/end4-pC/modules/common/Appearance.qml:253-263) — the M3
-    // ladder at 1.0 is close but not equal (15/16/17/19 vs 14/16/16/22), and
-    // the bar is measured against end4. Settings and other surfaces read
-    // Typography directly, so the two scales stay separable.
+    // Font families only. D-1 retired the end4 pixelSize ladder that used to
+    // live here (10/12/13/15/16/17/19/22): every surface now reads type from
+    // the single M3 scale in NexusStyle.font, bar included.
     readonly property QtObject font: QtObject {
-        readonly property QtObject pixelSize: QtObject {
-            readonly property int smallest: 10
-            readonly property int smaller: 12
-            readonly property int smallie: 13
-            readonly property int small: 15
-            readonly property int normal: 16
-            readonly property int large: 17
-            readonly property int larger: 19
-            readonly property int huge: 22
-            readonly property int title: 22
-        }
-
-        readonly property string main: Typography.bodyLarge.family
+        readonly property string main: Fonts.ui
         readonly property string monospace: Fonts.mono
         readonly property string iconMaterial: Fonts.materialSymbolsRounded
     }
@@ -325,10 +310,9 @@ Singleton {
         readonly property real spacingSmall: 6
         readonly property real spacingLarge: 12
         readonly property real hyprlandGapsOut: 5
-        // end4-pC bar baseline, not the MD3 typography scale: upstream used
-        // 19px cluster glyphs / 17px util glyphs. Feeding `font.pixelSize.larger`
-        // (22) into the ported widgets made the right cluster visibly larger
-        // than util buttons and the resource rings.
+        // end4-pC bar baseline, not the icon token ladder: upstream used
+        // 19px cluster glyphs / 17px util glyphs. The M3 icon tokens
+        // (20/24/32/48) overshoot the 26px util slots these feed.
         readonly property int barIconSize: 19
         readonly property int barUtilIconSize: 17
         readonly property int barPowerButtonSize: 32

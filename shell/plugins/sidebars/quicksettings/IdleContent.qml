@@ -191,8 +191,8 @@ WidgetPanel {
         Text {
         text: I18n.tr("Dim percentage")
         color: Appearance.colors.colOnLayer2
-        font.family: Typography.bodyMedium.family
-        font.pixelSize: Typography.bodyMedium.pixelSize
+        font.family: Fonts.ui
+        font.pixelSize: NexusStyle.font.bodyMedium
     }
 
         MaterialSplitSlider {

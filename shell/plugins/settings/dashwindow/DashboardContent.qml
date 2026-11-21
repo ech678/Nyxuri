@@ -336,14 +336,14 @@ Item {
                         text: root.distroGlyph
                         color: root.ui.fgSurface
                         font.family: Fonts.ui
-                        font.pixelSize: 20
+                        font.pixelSize: NexusStyle.font.titleLarge
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
 
                     StyledText {
                         text: SystemIdentityService.distroName
-                        font.pixelSize: Typography.bodyLarge.pixelSize
+                        font.pixelSize: NexusStyle.font.bodyLarge
                         font.weight: Font.Medium
                         color: root.ui.fgSurface
                     }
@@ -393,7 +393,7 @@ Item {
 
                                 MaterialSymbol {
                                     text: navBtn.modelData.icon
-                                    iconSize: Typography.titleLarge.pixelSize
+                                    iconSize: NexusStyle.font.titleLarge
                                     color: navBtn.toggled ? root.ui.fgAccent : root.ui.fgSurface
                                     fill: navBtn.toggled ? 1 : 0
                                 }
@@ -450,7 +450,7 @@ Item {
                             MaterialSymbol {
                                 anchors.centerIn: parent
                                 text: "search"
-                                iconSize: Typography.titleLarge.pixelSize
+                                iconSize: NexusStyle.font.titleLarge
                                 color: root.ui.fgSurface
                             }
                         }
@@ -465,7 +465,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: root.searchOpen
                         clip: true
-                        font.pixelSize: Typography.bodyLarge.pixelSize
+                        font.pixelSize: NexusStyle.font.bodyLarge
                         font.family: Fonts.ui
                         color: root.ui.fgSurface
                         selectionColor: root.ui.accent
@@ -503,7 +503,7 @@ Item {
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: "notifications"
-                            iconSize: Typography.titleLarge.pixelSize
+                            iconSize: NexusStyle.font.titleLarge
                             color: root.ui.fgSurface
                         }
 
@@ -524,7 +524,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: NotificationService.list.length > 9 ? "9+" :
                                                                             NotificationService.list.length
-                                font.pixelSize: 10
+                                font.pixelSize: NexusStyle.font.labelSmall
                                 font.weight: Font.Bold
                                 color: Appearance.colors.colOnError
                             }

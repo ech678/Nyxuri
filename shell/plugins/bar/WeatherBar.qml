@@ -51,14 +51,14 @@ MouseArea {
                 visible: !root.isMaterial
                 fill: 0
                 text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
-                iconSize: Appearance.font.pixelSize.large
+                iconSize: NexusStyle.font.bodyLarge
                 color: Appearance.colors.colOnLayer1
                 Layout.alignment: Qt.AlignVCenter
             }
 
             StyledText {
                 visible: !root.isMaterial
-                font.pixelSize: Appearance.font.pixelSize.small
+                font.pixelSize: NexusStyle.font.bodyMedium
                 color: Appearance.colors.colOnLayer1
                 text: Weather.data?.temp ?? "--°"
                 Layout.alignment: Qt.AlignVCenter
@@ -66,7 +66,7 @@ MouseArea {
 
             StyledText {
                 visible: root.isMaterial
-                font.pixelSize: Appearance.font.pixelSize.small
+                font.pixelSize: NexusStyle.font.bodyMedium
                 color: M3Palette.pillAccent("weatherBar", M3Palette.primary)
                 text: Weather.data?.temp ?? "--°"
                 Layout.alignment: Qt.AlignVCenter
@@ -84,7 +84,7 @@ MouseArea {
                     anchors.centerIn: parent
                     fill: 0
                     text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: M3Palette.primaryForeground
                 }
             }
@@ -100,14 +100,14 @@ MouseArea {
                 visible: !root.isMaterial
                 fill: 0
                 text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
-                iconSize: Appearance.font.pixelSize.large
+                iconSize: NexusStyle.font.bodyLarge
                 color: Appearance.colors.colOnLayer1
                 Layout.alignment: Qt.AlignHCenter
             }
 
             StyledText {
                 visible: !root.isMaterial
-                font.pixelSize: Appearance.font.pixelSize.small
+                font.pixelSize: NexusStyle.font.bodyMedium
                 color: Appearance.colors.colOnLayer1
                 text: (Weather.data?.temp ?? "--°").replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
@@ -115,7 +115,7 @@ MouseArea {
 
             StyledText {
                 visible: root.isMaterial
-                font.pixelSize: Appearance.font.pixelSize.small
+                font.pixelSize: NexusStyle.font.bodyMedium
                 color: M3Palette.pillAccent("weatherBar", M3Palette.primary)
                 text: (Weather.data?.temp ?? "--°").replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
@@ -134,7 +134,7 @@ MouseArea {
                     anchors.centerIn: parent
                     fill: 0
                     text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"
-                    iconSize: Appearance.font.pixelSize.normal
+                    iconSize: NexusStyle.font.bodyLarge
                     color: M3Palette.primaryForeground
                 }
             }

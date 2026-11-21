@@ -68,9 +68,9 @@ Dialog {
                 visible: root.dialogTitle.length > 0
                 text: root.dialogTitle
                 color: Appearance.colors.colOnSurface
-                font.family: Typography.headlineSmall.family
-                font.pixelSize: Typography.headlineSmall.pixelSize
-                font.weight: Typography.headlineSmall.weight
+                font.family: Fonts.ui
+                font.pixelSize: NexusStyle.font.headlineSmall
+                font.weight: NexusStyle.font.headlineWeight
                 wrapMode: Text.Wrap
             }
 
@@ -79,9 +79,9 @@ Dialog {
                 visible: root.messageText.length > 0
                 text: root.messageText
                 color: Appearance.colors.colOnSurfaceVariant
-                font.family: Typography.bodyMedium.family
-                font.pixelSize: Typography.bodyMedium.pixelSize
-                font.weight: Typography.bodyMedium.weight
+                font.family: Fonts.ui
+                font.pixelSize: NexusStyle.font.bodyMedium
+                font.weight: Font.Normal
                 wrapMode: Text.Wrap
             }
 
