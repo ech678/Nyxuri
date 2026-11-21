@@ -215,6 +215,13 @@ def _propagate(mode: str, toggle: bool) -> "tuple[str, str | None]":
     return "none", mode
 
 
+def _reload_compositor(comp, timeout: int = 3) -> bool:
+    if comp and comp.reload_argv and shutil.which(comp.reload_argv[0]):
+        res = timed_run(list(comp.reload_argv), timeout, capture_output=True, text=True, check=False)
+        return res is not None and res.returncode == 0
+    return False
+
+
 def _sync_glow_layout(current: str) -> None:
     """Swap the fixed-glow niri layout for the active mode, then reload niri.
 
@@ -241,9 +248,7 @@ def _sync_glow_layout(current: str) -> None:
     # Reload argv is the compositor registry's truth (S0-5), not a local
     # literal; this glow-layout path is niri-specific by state form.
     from nyxuri.system.compositors import COMPOSITORS
-    argv = COMPOSITORS["niri"].reload_argv
-    if shutil.which(argv[0]):
-        timed_run(list(argv), 3, capture_output=True, text=True, check=False)
+    _reload_compositor(COMPOSITORS["niri"])
 
 
 def status() -> int:
@@ -321,9 +326,12 @@ def sync(mode: str = "sync") -> int:
 
         _sync_glow_layout(current)
 
-        # Reload Mango compositor if running
-        if shutil.which("mmsg"):
-            timed_run(["mmsg", "dispatch", "reload_config"], 2, check=False)
+        # Reload running compositors with reload capabilities
+        from nyxuri.system.compositors import COMPOSITORS
+        for wm, comp in COMPOSITORS.items():
+            if wm == "niri":
+                continue
+            _reload_compositor(comp, timeout=2)
 
         if sys.stdout.isatty() and mode != "sync":
             channel_label = {"noctalia": "shell: noctalia",

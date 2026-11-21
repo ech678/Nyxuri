@@ -63,10 +63,7 @@ CORE_DEPS = [
     "qt6-imageformats",
     "cliphist",
 ]
-CORE_NIRI_DEPS = ["niri", "xwayland-satellite"]
 from nyxuri.system.compositors import MAIN_WM
-
-DESKTOP_DEPS = [MAIN_WM, THEME_ENGINE]
 AUR_DEPS = ["mpvpaper"]
 ANSI_ESCAPE_RE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 

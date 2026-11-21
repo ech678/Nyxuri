@@ -415,36 +415,41 @@ def is_shell_locked(shell_name: str, bin_path: str = "") -> bool:
 
 
 def ensure_compositor_gateway_scripts() -> None:
-    """Ensure compositor gateway scripts in niri/scripts match the repository source."""
+    """Ensure compositor gateway scripts match repository sources across configured compositors."""
+    from nyxuri.system.compositors import COMPOSITORS
     from nyxuri.system.env import get_env
     env = get_env()
-    dest_dir = env.config_dir / "niri" / "scripts"
-    src_dir = env.plugins_src / "niri" / "scripts"
-    if not dest_dir.is_dir() or not src_dir.is_dir():
-        return
 
-    for script_name in ("session-shell.sh", "shell-action.sh"):
-        src = src_dir / script_name
-        dest = dest_dir / script_name
-        if not src.is_file():
+    for comp in COMPOSITORS.values():
+        if not comp.scripts_subpath:
             continue
-        need_copy = False
-        if not dest.is_file():
-            need_copy = True
-        else:
-            try:
-                if src.read_bytes() != dest.read_bytes():
-                    need_copy = True
-            except OSError:
-                need_copy = True
+        dest_dir = env.config_dir / comp.scripts_subpath
+        src_dir = env.plugins_src / comp.scripts_subpath
+        if not dest_dir.is_dir() or not src_dir.is_dir():
+            continue
 
-        if need_copy:
-            temp_dest = dest.with_name(f".{script_name}.tmp.{os.getpid()}")
-            temp_dest.write_bytes(src.read_bytes())
-            temp_dest.chmod(0o755)
-            temp_dest.replace(dest)
-        elif not os.access(dest, os.X_OK):
-            dest.chmod(0o755)
+        for script_name in ("session-shell.sh", "shell-action.sh"):
+            src = src_dir / script_name
+            dest = dest_dir / script_name
+            if not src.is_file():
+                continue
+            need_copy = False
+            if not dest.is_file():
+                need_copy = True
+            else:
+                try:
+                    if src.read_bytes() != dest.read_bytes():
+                        need_copy = True
+                except OSError:
+                    need_copy = True
+
+            if need_copy:
+                temp_dest = dest.with_name(f".{script_name}.tmp.{os.getpid()}")
+                temp_dest.write_bytes(src.read_bytes())
+                temp_dest.chmod(0o755)
+                temp_dest.replace(dest)
+            elif not os.access(dest, os.X_OK):
+                dest.chmod(0o755)
 
     try:
         from nyxuri.system.env import ensure_nyxuri_shell_symlink

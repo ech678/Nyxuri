@@ -34,7 +34,7 @@ from nyxuri.system.env import (
     THEME_ENGINE,
     get_env_var,
 )
-from nyxuri.system.compositors import COMPOSITORS, MAIN_WM, portal_conf_name, session_wm
+from nyxuri.system.compositors import COMPOSITORS, MAIN_WM, get_compositor, portal_conf_name, session_wm
 from nyxuri.system.env import get_env, get_pics_dir, log_msg, timed_run
 from nyxuri.system.i18n import msg, text
 
@@ -45,9 +45,10 @@ def _check_compositor(env) -> None:
         print(msg("doctor_ok", text(f"合成器: {xdg_curr} 正在运行", f"Compositor: {xdg_curr} is running")))
     else:
         current = xdg_curr or text("未知", "Unknown")
+        main_comp = COMPOSITORS[MAIN_WM]
         print(msg("doctor_warn", text(
-            f"合成器: 当前桌面为 {current}，{MAIN_WM} 未运行",
-            f"Compositor: current desktop is {current}; {MAIN_WM} is not running",
+            f"合成器: 当前桌面为 {current}，{main_comp.display_name} 未运行",
+            f"Compositor: current desktop is {current}; {main_comp.display_name} is not running",
         )))
 
 def _check_wayland_session(env) -> None:
@@ -129,22 +130,21 @@ def _check_matugen(env) -> None:
 
 def _check_scripts(env) -> None:
     config_dir = env.config_dir
+    active_comp = get_compositor()
     scripts_info = [
         (f"{THEME_ENGINE}/wallpaper-hook.sh", "wallpaper-hook.sh"),
         (f"{THEME_ENGINE}/mpvpaper-sync.sh", "mpvpaper-sync.sh"),
-        (f"{MAIN_WM}/scripts/session-shell.sh", "session-shell.sh"),
-        (f"{MAIN_WM}/scripts/shell-action.sh", "shell-action.sh"),
-        (f"{MAIN_WM}/scripts/toggle-eyecare.sh", "toggle-eyecare.sh"),
-        (f"{MAIN_WM}/scripts/niri-scratch-toggle.sh", "niri-scratch-toggle.sh"),
         (f"{THEME_ENGINE}/tools/orbit-launcher.py", "orbit-launcher.py"),
-        (f"{MAIN_WM}/scripts/niri-scratch-menu.py", "niri-scratch-menu.py"),
         (f"{THEME_ENGINE}/tools/wallpaper-picker.py", "wallpaper-picker.py"),
-        (f"{MAIN_WM}/scripts/niri-brightness.sh", "niri-brightness.sh"),
     ]
+    if active_comp.scripts_subpath:
+        for script_name in active_comp.essential_scripts:
+            scripts_info.append((f"{active_comp.scripts_subpath}/{script_name}", script_name))
+
     for rel_path, name in scripts_info:
         full_path = config_dir / rel_path
-        if not full_path.is_file() and (config_dir / MAIN_WM / name).is_file():
-            full_path = config_dir / MAIN_WM / name
+        if not full_path.is_file() and (config_dir / active_comp.id / name).is_file():
+            full_path = config_dir / active_comp.id / name
         if full_path.is_file():
             if os.access(full_path, os.X_OK):
                 print(msg("doctor_ok", text(f"脚本可执行: {name}", f"Script is executable: {name}")))
@@ -555,9 +555,13 @@ def generate_bug_report() -> Optional[Path]:
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     report_file = env.state_dir / f"nyxuri-bug-report-{timestamp}.md"
 
+    active_comp = get_compositor()
+    outputs_cmd = list(active_comp.doctor_outputs_cmd) if active_comp.doctor_outputs_cmd else None
+
     # Parallel collection of all subprocess-based info
     version_cmds = {}
-    for cmd in (MAIN_WM, THEME_ENGINE, "fish", "starship", "kitty", "mpvpaper", "wpctl", "ddcutil", "brightnessctl"):
+    tools_to_check = set((MAIN_WM, THEME_ENGINE, "fish", "starship", "kitty", "mpvpaper", "wpctl", "ddcutil", "brightnessctl", active_comp.id))
+    for cmd in tools_to_check:
         if not shutil.which(cmd):
             continue
         if cmd == "wpctl":
@@ -570,13 +574,14 @@ def generate_bug_report() -> Optional[Path]:
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         futures = {
             "lspci": pool.submit(_run_cmd, ["lspci"]),
-            "niri_outputs": pool.submit(_run_cmd, [MAIN_WM, "msg", "outputs"]),
             "journalctl": pool.submit(_run_cmd, ["journalctl", "--user", "-n", "30", "--no-pager"]),
             "noctalia_status": pool.submit(_run_cmd, [THEME_ENGINE, "msg", "status"]),
             "portal_status": pool.submit(_run_cmd, ["systemctl", "--user", "status", "xdg-desktop-portal"]),
             "df_home": pool.submit(_run_cmd, ["df", "-h", str(env.home)]),
             "portal_gtk": pool.submit(_run_cmd, ["pacman", "-Qq", "xdg-desktop-portal-gtk"]),
         }
+        if outputs_cmd:
+            futures["compositor_outputs"] = pool.submit(_run_cmd, outputs_cmd)
         version_futures = {cmd: pool.submit(_run_cmd, vc) for cmd, vc in version_cmds.items()}
         results = {key: fut.result() for key, fut in futures.items()}
         version_results = {cmd: fut.result() for cmd, fut in version_futures.items()}
@@ -608,13 +613,16 @@ def generate_bug_report() -> Optional[Path]:
 
     # Connected Displays
     displays = "Unknown"
-    niri_res = results.get("niri_outputs")
-    if niri_res:
-        displays = niri_res.stdout.strip() if niri_res.returncode == 0 and niri_res.stdout.strip() else f"{MAIN_WM} msg outputs failed"
+    if outputs_cmd and "compositor_outputs" in results:
+        comp_res = results.get("compositor_outputs")
+        if comp_res:
+            displays = comp_res.stdout.strip() if comp_res.returncode == 0 and comp_res.stdout.strip() else f"{' '.join(outputs_cmd)} failed"
+    elif not outputs_cmd:
+        displays = f"{active_comp.display_name} (outputs probe not defined)"
 
     # Tool Versions
     tool_lines = []
-    for cmd in (MAIN_WM, THEME_ENGINE, "fish", "starship", "kitty", "mpvpaper", "wpctl", "ddcutil", "brightnessctl"):
+    for cmd in sorted(tools_to_check):
         if not shutil.which(cmd):
             tool_lines.append(f"{cmd}: NOT INSTALLED")
             continue

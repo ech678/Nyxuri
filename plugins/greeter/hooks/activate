@@ -25,9 +25,9 @@ from nyxuri.system.env import (  # noqa: E402
     GREETER_POLKIT_RULE,
     GREETER_SESSION_BIN,
     GREETER_STATE_DIR,
-    MAIN_WM,
     THEME_ENGINE,
 )
+from nyxuri.system.compositors import MAIN_WM, detect_preferred_wm
 from nyxuri.system.i18n import msg  # noqa: E402
 
 CONFLICT_DMS = ["sddm", "lightdm", "gdm", "ly"]
@@ -237,7 +237,7 @@ def _greeter_session_arg() -> str:
     if greeter_cli:
         try:
             res = subprocess.run([greeter_cli, "sessions"], capture_output=True, text=True, check=False)
-            pref = "mango" if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() == "mango" else MAIN_WM
+            pref = detect_preferred_wm()
             if pref.lower() in res.stdout.lower():
                 return f"-- --session {pref}"
             if MAIN_WM.lower() in res.stdout.lower():

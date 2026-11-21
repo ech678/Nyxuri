@@ -130,7 +130,13 @@ class TestMangoAdaptation(unittest.TestCase):
         The registry is the single place that knows which compositors
         exist; doctor/menus/workflows must not re-hardcode the pair.
         """
-        from nyxuri.system.compositors import COMPOSITORS, MAIN_WM, portal_conf_name, session_wm
+        from nyxuri.system.compositors import (
+            COMPOSITORS,
+            MAIN_WM,
+            get_compositor,
+            portal_conf_name,
+            session_wm,
+        )
 
         self.assertEqual(set(COMPOSITORS), {"niri", "mango"})
         self.assertEqual(MAIN_WM, "niri")
@@ -139,6 +145,21 @@ class TestMangoAdaptation(unittest.TestCase):
                          ("niri", "msg", "action", "load-config-file"))
         self.assertEqual(COMPOSITORS["mango"].reload_argv,
                          ("mmsg", "dispatch", "reload_config"))
+        # Enriched registry facts: config_relpath, scripts_subpath, essential_scripts
+        self.assertEqual(COMPOSITORS["niri"].config_relpath, "niri/config.kdl")
+        self.assertEqual(COMPOSITORS["mango"].config_relpath, "mango/config.conf")
+        self.assertEqual(COMPOSITORS["niri"].scripts_subpath, "niri/scripts")
+        self.assertEqual(COMPOSITORS["mango"].scripts_subpath, "mango/scripts")
+        self.assertTrue(COMPOSITORS["niri"].has_glow_support)
+        self.assertFalse(COMPOSITORS["mango"].has_glow_support)
+        self.assertIn("session-shell.sh", COMPOSITORS["niri"].essential_scripts)
+        self.assertIn("session-shell.sh", COMPOSITORS["mango"].essential_scripts)
+
+        # Helper lookups
+        self.assertEqual(get_compositor("niri").id, "niri")
+        self.assertEqual(get_compositor("mango").id, "mango")
+        self.assertEqual(get_compositor("unknown_wm").id, MAIN_WM)
+
         # Portal routing: known session -> own conf, unknown -> main.
         self.assertEqual(portal_conf_name("mango"), "mango-portals.conf")
         self.assertEqual(portal_conf_name("niri"), "niri-portals.conf")
@@ -155,6 +176,14 @@ class TestMangoAdaptation(unittest.TestCase):
             capture_output=True, text=True,
         )
         self.assertEqual(result.stdout.strip(), "", "SUPPORTED_WMS must stay dead")
+
+        # Zero mango hardcoding in templates.py and theme.py
+        templates_src = (repo / "nyxuri" / "deploy" / "templates.py").read_text(encoding="utf-8")
+        self.assertNotIn('"mango"', templates_src, "templates.py must iterate COMPOSITORS polymorphically")
+        self.assertNotIn("mango/config.conf", templates_src)
+
+        theme_src = (repo / "nyxuri" / "system" / "theme.py").read_text(encoding="utf-8")
+        self.assertNotIn('"mmsg"', theme_src, "theme.py must reload compositors via reload_compositor")
 
     def test_checkbox_list_radio_group_mutual_exclusion(self):
         """CheckboxList with radio_group enforces single selection."""
