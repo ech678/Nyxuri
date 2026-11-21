@@ -24,6 +24,7 @@ import qs.commons
 import qs.services
 import qs.ui
 import "BarWidgetFiles.js" as BarWidgetFiles
+import "SegmentRoles.js" as SegmentRoles
 
 Item {
     id: root
@@ -39,12 +40,31 @@ Item {
     readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
     readonly property bool isMaterialHug: PersonalizationConfig.barIsMaterialHug
     readonly property bool isPanel: PersonalizationConfig.barIsPanel
-    // Same inset relationship as the horizontal lanes (ROADMAP B9.0).
-    readonly property real laneMargin: root.isMaterialHug ? 0 : root.isMaterial ? Appearance.sizes.hyprlandGapsOut : (Config.options.bar.cornerStyle === 1 || root.isPanel) ? 4 : 8
+    // Same inset relationship as the horizontal lanes (ROADMAP B9.0); the
+    // per-style values are the baseline under the D4c innerPadding axis.
+    readonly property real laneMargin: PersonalizationConfig.resolvedBarInnerPadding()
 
     readonly property color materialPillBgColor: Appearance.colors.colLayer0
+    // D4c bar shell radius axis (see BarContent.shellRadius).
+    readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding)
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
+
+    // D4c SegmentRoles runs (same contract as BarContent): participation
+    // from the active branch's live groups.
+    function laneSegmentRoles(entries, plainRepeater, materialRepeater) {
+        const repeater = root.isMaterial ? materialRepeater : plainRepeater;
+        const participating = [];
+        for (let i = 0; i < entries.length; i += 1) {
+            const item = repeater && repeater.count === entries.length ? repeater.itemAt(i) : null;
+            participating.push(item === null ? true : item.hasContent);
+        }
+        return SegmentRoles.resolve(entries, participating);
+    }
+
+    readonly property var leftSegmentRoles: root.laneSegmentRoles(root.effectiveLeftLayout, leftGroups, leftMaterialGroups)
+    readonly property var middleSegmentRoles: root.laneSegmentRoles(root.effectiveMiddleLayout, middleGroups, middleMaterialGroups)
+    readonly property var rightSegmentRoles: root.laneSegmentRoles(root.effectiveRightLayout, rightGroups, rightMaterialGroups)
 
     // D4a: same entry model as BarContent — normalized barConfigs entries,
     // disabled widgets dropped before instantiation (they collapse the lane
@@ -108,10 +128,10 @@ Item {
         objectName: "barBackground"
         anchors.fill: parent
         anchors.margins: Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
-        color: (!root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) ? Appearance.colors.colLayer0 : "transparent"
+        color: (!root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0) : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: (!root.centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
-        border.color: Config.options.bar.cornerStyle === 1 && !Config.options.bar.m3.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8)
+        border.width: PersonalizationConfig.barSurfaceBorderWidth(!root.centerOnly && Config.options.bar.cornerStyle === 1 ? 1 : 0)
+        border.color: PersonalizationConfig.barSurfaceBorderColor(Config.options.bar.cornerStyle === 1 && !Config.options.bar.m3.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8))
     }
 
     // center-only
@@ -137,9 +157,9 @@ Item {
         border.color: Appearance.colors.colLayer0Border
 
         bottomRightRadius: Config.options.bar.cornerStyle === 0 && !root.onRight ? 0 : radius
-        topRightRadius: Config.options.bar.cornerStyle === 0 && !root.onRight ? Appearance.rounding.screenRounding : radius
+        topRightRadius: Config.options.bar.cornerStyle === 0 && !root.onRight ? root.shellRadius : radius
         bottomLeftRadius: Config.options.bar.cornerStyle === 0 && root.onRight ? 0 : radius
-        topLeftRadius: Config.options.bar.cornerStyle === 0 && root.onRight ? Appearance.rounding.screenRounding : radius
+        topLeftRadius: Config.options.bar.cornerStyle === 0 && root.onRight ? root.shellRadius : radius
     }
 
     Item {
@@ -169,8 +189,8 @@ Item {
 
                 topLeftRadius: root.isMaterialHug ? 0 : radius
                 topRightRadius: root.isMaterialHug ? 0 : radius
-                bottomLeftRadius: (root.isMaterialHug && root.onRight) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && !root.onRight) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                bottomLeftRadius: (root.isMaterialHug && root.onRight) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomRightRadius: (root.isMaterialHug && !root.onRight) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 ColumnLayout {
                     id: topMaterialCol
@@ -178,6 +198,7 @@ Item {
                     spacing: 3
 
                     Repeater {
+                        id: leftMaterialGroups
                         model: root.effectiveLeftLayout
                         delegate: topMaterialGroupDelegate
                     }
@@ -187,10 +208,9 @@ Item {
                         BarGroup {
                             Layout.fillWidth: true
                             vertical: true
-                            currentIndex: index
+                            segmentRole: root.leftSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
-                            totalCount: root.effectiveLeftLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
@@ -214,7 +234,7 @@ Item {
                 anchors.top: topMaterialPill.bottom
                 anchors.left: !root.onRight ? parent.left : undefined
                 anchors.right: root.onRight ? parent.right : undefined
-                implicitSize: Appearance.rounding.screenRounding
+                implicitSize: root.shellRadius
                 color: root.materialPillBgColor
                 corner: !root.onRight ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.TopRight
             }
@@ -226,6 +246,7 @@ Item {
                 spacing: root.laneSpacing
 
                 Repeater {
+                    id: leftGroups
                     model: root.effectiveLeftLayout
                     delegate: topGroupDelegate
                 }
@@ -235,10 +256,9 @@ Item {
                     BarGroup {
                         Layout.fillWidth: true
                         vertical: true
-                        currentIndex: index
+                        segmentRole: root.leftSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
-                        totalCount: root.effectiveLeftLayout.length
                         Loader {
                             Layout.fillWidth: true
                             active: !root.isMaterial
@@ -269,7 +289,7 @@ Item {
                 anchors.bottom: centerMaterialPill.top
                 anchors.left: !root.onRight ? parent.left : undefined
                 anchors.right: root.onRight ? parent.right : undefined
-                implicitSize: Appearance.rounding.screenRounding
+                implicitSize: root.shellRadius
                 color: root.materialPillBgColor
                 corner: !root.onRight ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.BottomRight
             }
@@ -284,10 +304,10 @@ Item {
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topLeftRadius: (root.isMaterialHug && root.onRight) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && root.onRight) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                topRightRadius: (root.isMaterialHug && !root.onRight) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && !root.onRight) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topLeftRadius: (root.isMaterialHug && root.onRight) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomLeftRadius: (root.isMaterialHug && root.onRight) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                topRightRadius: (root.isMaterialHug && !root.onRight) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomRightRadius: (root.isMaterialHug && !root.onRight) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 ColumnLayout {
                     id: centerMaterialCol
@@ -295,6 +315,7 @@ Item {
                     spacing: 3
 
                     Repeater {
+                        id: middleMaterialGroups
                         model: root.effectiveMiddleLayout
                         delegate: centerMaterialGroupDelegate
                     }
@@ -304,10 +325,9 @@ Item {
                         BarGroup {
                             Layout.fillWidth: true
                             vertical: true
-                            currentIndex: index
+                            segmentRole: root.middleSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
-                            totalCount: root.effectiveMiddleLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
@@ -331,7 +351,7 @@ Item {
                 anchors.top: centerMaterialPill.bottom
                 anchors.left: !root.onRight ? parent.left : undefined
                 anchors.right: root.onRight ? parent.right : undefined
-                implicitSize: Appearance.rounding.screenRounding
+                implicitSize: root.shellRadius
                 color: root.materialPillBgColor
                 corner: !root.onRight ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.TopRight
             }
@@ -343,6 +363,7 @@ Item {
                 spacing: root.laneSpacing
 
                 Repeater {
+                    id: middleGroups
                     model: root.effectiveMiddleLayout
                     delegate: middleGroupDelegate
                 }
@@ -352,10 +373,9 @@ Item {
                     BarGroup {
                         Layout.fillWidth: true
                         vertical: true
-                        currentIndex: index
+                        segmentRole: root.middleSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
-                        totalCount: root.effectiveMiddleLayout.length
                         paintBackground: modelData.widgetId !== "island"
                         Loader {
                             Layout.fillWidth: true
@@ -388,7 +408,7 @@ Item {
                 anchors.bottom: bottomMaterialPill.top
                 anchors.left: !root.onRight ? parent.left : undefined
                 anchors.right: root.onRight ? parent.right : undefined
-                implicitSize: Appearance.rounding.screenRounding
+                implicitSize: root.shellRadius
                 color: root.materialPillBgColor
                 corner: !root.onRight ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.BottomRight
             }
@@ -405,8 +425,8 @@ Item {
 
                 bottomLeftRadius: root.isMaterialHug ? 0 : radius
                 bottomRightRadius: root.isMaterialHug ? 0 : radius
-                topLeftRadius: (root.isMaterialHug && root.onRight) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                topRightRadius: (root.isMaterialHug && !root.onRight) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topLeftRadius: (root.isMaterialHug && root.onRight) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                topRightRadius: (root.isMaterialHug && !root.onRight) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 ColumnLayout {
                     id: bottomMaterialCol
@@ -414,6 +434,7 @@ Item {
                     spacing: 3
 
                     Repeater {
+                        id: rightMaterialGroups
                         model: root.effectiveRightLayout
                         delegate: bottomMaterialGroupDelegate
                     }
@@ -423,10 +444,9 @@ Item {
                         BarGroup {
                             Layout.fillWidth: true
                             vertical: true
-                            currentIndex: index
+                            segmentRole: root.rightSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
-                            totalCount: root.effectiveRightLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
@@ -451,6 +471,7 @@ Item {
                 spacing: root.laneSpacing
 
                 Repeater {
+                    id: rightGroups
                     model: root.effectiveRightLayout
                     delegate: bottomGroupDelegate
                 }
@@ -460,10 +481,9 @@ Item {
                     BarGroup {
                         Layout.fillWidth: true
                         vertical: true
-                        currentIndex: index
+                        segmentRole: root.rightSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
-                        totalCount: root.effectiveRightLayout.length
                         Loader {
                             Layout.fillWidth: true
                             active: !root.isMaterial
@@ -483,5 +503,7 @@ Item {
     // end4's vertical spacing ladder. It differs from the horizontal row
     // spacing on purpose: stacked groups need more air on the transparent
     // mode and less on the segmented one.
-    readonly property real laneSpacing: Config.options.bar.borderless === "transparent" ? -4 : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3 : Config.options?.bar.borderless === "segmented" ? -2 : root.isPanel ? 4 : 2
+    // end4's vertical spacing baseline; the D4c spacing axis overrides it
+    // (sentinel -1 = the per-mode values below).
+    readonly property real laneSpacing: PersonalizationConfig.resolvedBarSpacing(true)
 }

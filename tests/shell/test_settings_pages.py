@@ -636,8 +636,8 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
             self.assertIn(atom, card, f"BarComponentsCard must use the atom: {atom}")
         # Four selects ride the appearance tab (edge/corner/borderless/
         # group color); the modules tab carries none anymore.
-        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 4,
-                         "the appearance selects must register the popup input region")
+        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 7,
+                         "the appearance selects must register the popup input region (D4c added surface/border/outline color rows)")
         self.assertEqual(modules.count("inputRegionService: PopupInputRegionService"), 0,
                          "the modules selects moved to the per-widget options pages")
 

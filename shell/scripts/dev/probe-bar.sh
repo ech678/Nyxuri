@@ -483,6 +483,20 @@ if ipc d4bClickVocabulary >/dev/null 2>&1; then
     d4b_click_vocabulary=$(ipc d4bClickVocabulary 2>/dev/null || true)
 fi
 
+# D4c: v5 migration + sentinel resolution + fusion roles.
+d4c_migration_state=""
+d4c_sentinels_state=""
+d4c_roles_state=""
+if ipc d4cMigration >/dev/null 2>&1; then
+    d4c_migration_state=$(ipc d4cMigration 2>/dev/null || true)
+fi
+if ipc d4cSentinels >/dev/null 2>&1; then
+    d4c_sentinels_state=$(ipc d4cSentinels 2>/dev/null || true)
+fi
+if ipc d4cRoles >/dev/null 2>&1; then
+    d4c_roles_state=$(ipc d4cRoles 2>/dev/null || true)
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -685,7 +699,7 @@ ipc cornerStyle 1 >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" <<'PY'
 import json
 import re
 import sys
@@ -703,7 +717,8 @@ import sys
  d2_immediate_state, d2_settled_state, d2_unhover_state,
  d4a_entries_spacers, d4a_entries_disabled, d4a_singletons,
  d4a_migration_state, d4a_persistence_state, d4b_migration_state,
- d4b_instances_state, d4b_click_vocabulary) = sys.argv[1:62]
+ d4b_instances_state, d4b_click_vocabulary, d4c_migration_state,
+ d4c_sentinels_state, d4c_roles_state) = sys.argv[1:65]
 
 
 def load_tsv(path):
@@ -1382,7 +1397,7 @@ d4a_entries_ok = bool(
 )
 d4a_migration_ok = bool(
     d4a_migration.get("changed") is True
-    and d4a_migration.get("version") == 4
+    and d4a_migration.get("version") == 5
     and d4a_migration.get("aliasResolved") is True
     and d4a_migration.get("islandSeeded") is True
     and d4a_migration.get("legacyStripped") is True
@@ -1393,7 +1408,7 @@ d4a_persistence_ok = bool(
     and d4a_persistence.get("singleKey") is True
     and d4a_persistence.get("restoredEmpty") is True
     and d4a_persistence.get("enabledViewDropsDisabled") is True
-    and d4a_persistence.get("configVersion") == 4
+    and d4a_persistence.get("configVersion") == 5
     and isinstance(d4a_persistence.get("disabledSparse"), list)
 )
 d4a_ok = d4a_entries_ok and d4a_migration_ok and d4a_persistence_ok
@@ -1404,7 +1419,7 @@ d4b_instances = json.loads(d4b_instances_state) if d4b_instances_state.strip() e
 d4b_click = json.loads(d4b_click_vocabulary) if d4b_click_vocabulary.strip() else {}
 d4b_migration_ok = bool(
     d4b_migration.get("changed") is True
-    and d4b_migration.get("version") == 4
+    and d4b_migration.get("version") == 5
     and d4b_migration.get("workspacesFolded") is True
     and d4b_migration.get("workspacesDefaultsSkipped") is True
     and d4b_migration.get("separatorFolded") is True
@@ -1429,12 +1444,50 @@ d4b_click_ok = bool(
 )
 d4b_ok = d4b_migration_ok and d4b_instances_ok and d4b_click_ok
 
+# D4c: v5 migration + sentinel resolution + fusion roles.
+d4c_migration = json.loads(d4c_migration_state) if d4c_migration_state.strip() else {}
+d4c_sentinels = json.loads(d4c_sentinels_state) if d4c_sentinels_state.strip() else {}
+d4c_roles = json.loads(d4c_roles_state) if d4c_roles_state.strip() else {}
+d4c_migration_ok = bool(
+    d4c_migration.get("changed") is True
+    and d4c_migration.get("version") == 5
+    and d4c_migration.get("positionFolded") is True
+    and d4c_migration.get("cornerStyleFolded") is True
+    and d4c_migration.get("borderlessFolded") is True
+    and d4c_migration.get("thicknessFolded") is True
+    and d4c_migration.get("edgeMarginFolded") is True
+    and d4c_migration.get("defaultsSkipped") is True
+    and d4c_migration.get("activeModeStyleFolded") is True
+    and d4c_migration.get("otherModeStyleDropped") is True
+    and d4c_migration.get("flatStripped") is True
+    and d4c_migration.get("trayKept") is True
+    and d4c_migration.get("idempotent") is True
+)
+d4c_sentinels_ok = bool(
+    d4c_sentinels.get("baselinePositive") is True
+    and d4c_sentinels.get("explicitOverrides") is True
+    and d4c_sentinels.get("restoredBaseline") is True
+    and d4c_sentinels.get("insetBaseline") is True
+    and d4c_sentinels.get("widgetPaddingBaseline") is True
+    and d4c_sentinels.get("radiusAuto") is True
+    and d4c_sentinels.get("radiusSquare") is True
+    and d4c_sentinels.get("radiusOverride") is True
+    and d4c_sentinels.get("fontScaleLive") is True
+)
+d4c_roles_ok = bool(
+    d4c_roles.get("runFused") is True
+    and d4c_roles.get("hiddenReShapes") is True
+    and d4c_roles.get("spacerBreaks") is True
+    and d4c_roles.get("liveRoles") is not None
+)
+d4c_ok = d4c_migration_ok and d4c_sentinels_ok and d4c_roles_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1606,6 +1659,32 @@ report = {
             "ok": d4b_click_ok,
             "ids": d4b_click.get("ids"),
             "commandNeedsArgv": d4b_click.get("commandNeedsArgv"),
+        },
+    },
+    "d4c": {
+        "ok": d4c_ok,
+        "migration": {
+            "ok": d4c_migration_ok,
+            "version": d4c_migration.get("version"),
+            "positionFolded": d4c_migration.get("positionFolded"),
+            "thicknessFolded": d4c_migration.get("thicknessFolded"),
+            "activeModeStyleFolded": d4c_migration.get("activeModeStyleFolded"),
+            "otherModeStyleDropped": d4c_migration.get("otherModeStyleDropped"),
+            "trayKept": d4c_migration.get("trayKept"),
+            "idempotent": d4c_migration.get("idempotent"),
+        },
+        "sentinels": {
+            "ok": d4c_sentinels_ok,
+            "restoredBaseline": d4c_sentinels.get("restoredBaseline"),
+            "radiusSquare": d4c_sentinels.get("radiusSquare"),
+            "radiusOverride": d4c_sentinels.get("radiusOverride"),
+            "fontScaleLive": d4c_sentinels.get("fontScaleLive"),
+        },
+        "roles": {
+            "ok": d4c_roles_ok,
+            "runFused": d4c_roles.get("runFused"),
+            "hiddenReShapes": d4c_roles.get("hiddenReShapes"),
+            "spacerBreaks": d4c_roles.get("spacerBreaks"),
         },
     },
     "b96": {

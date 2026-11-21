@@ -88,7 +88,7 @@ Item {
 
         StyledText {
             Layout.fillWidth: true
-            font.pixelSize: NexusStyle.font.bodySmall
+            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
             color: root.subtextColor
             elide: Text.ElideRight
             text: root.activeAppClass !== "" ? root.activeAppClass : Translation.tr("Desktop")
@@ -96,7 +96,7 @@ Item {
 
         StyledText {
             Layout.fillWidth: true
-            font.pixelSize: NexusStyle.font.bodyMedium
+            font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
             color: root.contentColor
             elide: Text.ElideRight
             text: root.activeTitle !== "" ? root.activeTitle : root.workspaceFallbackTitle

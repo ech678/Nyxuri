@@ -71,7 +71,7 @@ MouseArea {
                         Layout.rightMargin: -2
                         fill: 1
                         text: "bolt"
-                        iconSize: NexusStyle.font.bodySmall
+                        iconSize: NexusStyle.font.bodySmall * BarScale.font
                         visible: root.isCharging && root.percentage < 1
                     }
                     StyledText {
@@ -96,7 +96,7 @@ MouseArea {
                         fill: 1
                         text: "bolt"
                         Layout.topMargin: 4
-                        iconSize: NexusStyle.font.bodySmall
+                        iconSize: NexusStyle.font.bodySmall * BarScale.font
                         visible: root.isCharging && root.percentage < 1
                     }
                     StyledText {
@@ -130,7 +130,7 @@ MouseArea {
         anchors.verticalCenter: parent.verticalCenter
         text: root.powerText
         color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
-        font.pixelSize: NexusStyle.font.bodySmall
+        font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
         font.features: ({
             "tnum": 1
         })

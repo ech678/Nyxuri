@@ -72,7 +72,7 @@ class BarEnd4ContractTest(unittest.TestCase):
         # editor is wired, and persistence goes through PersonalizationConfig
         # instead of the read-only Config bridge.
         self.assertIn("BarGroupStylePopup", content, "BarGroup must wire the right-click style editor")
-        self.assertIn("PersonalizationConfig.setBarWidgetStyle", content, "widget styles must persist via PersonalizationConfig")
+        self.assertIn("PersonalizationConfig.setBarEntryStyle", content, "widget styles must persist via the entry (D4c uid protocol)")
         self.assertIn("PersonalizationConfig.barIsMaterial", content, "material treatment comes from the single source")
         self.assertIn("resolvedGroupColor", content, "BarGroup must consume bar.groupColor")
         self.assertIn("paintBackground", content, "BarGroup must honour paintBackground")
@@ -595,14 +595,19 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
 
     def test_settled_keys_live_in_the_store(self):
         # D4b: the per-widget settled axes moved to the entry defaults
-        # table; the store keeps the bar-frame keys.
+        # table; the store keeps the bar-frame keys. D4c: those frame keys
+        # are derived views off the configs entry (axes), written only
+        # through the named setters.
         config = read_services_file("PersonalizationConfig.qml")
         for prop in (
-            "property bool barAutoHide",
-            "property var barScreenList",
-            "property bool barShowBackground",
+            "readonly property bool barAutoHide",
+            "readonly property var barScreenList",
+            "readonly property bool barShowBackground",
         ):
             self.assertIn(prop, config, f"settled key missing from the store: {prop}")
+        # D4c: persistence rides the configs entry (sparseBarConfigs diff
+        # against BarDefaults), not flat [bar] keys.
+        self.assertIn("Object.keys(BarDefaults.DEFAULTS)", config)
         defaults = read_services_file("BarWidgetDefaults.js")
         for axis in (
             "screenSnip: true",
@@ -617,13 +622,14 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
             "numberStyle: \"normal\"",
         ):
             self.assertIn(axis, defaults, f"settled axis missing from the defaults table: {axis}")
-        for token in (
-            "function normalizedScreenList",
-            '"autoHide": root.barAutoHide',
-            '"screenList": root.barScreenList.slice()',
-            '"showBackground": root.barShowBackground',
-        ):
-            self.assertIn(token, config, f"settled persistence token missing: {token}")
+        self.assertIn("function normalizedScreenList", config,
+                      "settled persistence token missing: function normalizedScreenList")
+        # D4c: the frame keys persist through the configs entry axes —
+        # the explicit map lives in ConfigMigrations.
+        migrations = read_services_file("ConfigMigrations.js")
+        for token in ('var MIGRATED_BAR_GLOBALS', "autoHide: \"autoHide\"",
+                      "screenList: \"screenList\"", "showBackground: \"showBackground\""):
+            self.assertIn(token, migrations, f"settled persistence token missing: {token}")
 
     def test_config_bridge_reads_the_store(self):
         bridge = read_services_file("Config.qml")

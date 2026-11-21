@@ -2076,6 +2076,31 @@
 "System Status & Diagnostics" = "系统运行状态与诊断"
 "Session log, resource sampling, and Niri connection" = "会话日志、资源采样与 Niri 连接"
 
+
+# D4c bar-level geometry & style axes (BarAppearanceSection).
+"Bar end margin (%)" = "状态栏两端边距（%）"
+"Widget spacing" = "小组件间距"
+"Lane inset" = "通道内边距"
+"Widget padding" = "小组件内边距"
+"Content scale" = "内容缩放"
+"Square corners" = "方角"
+"Corner radius" = "圆角半径"
+"Effects" = "效果"
+"Surface color" = "表面颜色"
+"Surface opacity" = "表面不透明度"
+"Surface border" = "表面边框"
+"Border color" = "边框颜色"
+"Border opacity" = "边框不透明度"
+"Border width" = "边框宽度"
+"Widget layer" = "小组件层"
+"Widget opacity" = "小组件不透明度"
+"Widget outline" = "小组件描边"
+"Outline color" = "描边颜色"
+"Outline opacity" = "描边不透明度"
+"Outline width" = "描边宽度"
+"Flat" = "扁平"
+"Surface container" = "表面容器"
+
 [BluetoothDevicePage]
 "Disconnect" = "断开连接"
 

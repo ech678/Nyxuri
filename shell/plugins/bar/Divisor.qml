@@ -40,6 +40,6 @@ Item {
         anchors.centerIn: parent
         text: "• "
         color: isMaterial ? Appearance.colors.colPrimary : root.contentColor
-        font.pixelSize: NexusStyle.font.bodyLarge
+        font.pixelSize: NexusStyle.font.bodyLarge * BarScale.font
     }
 }

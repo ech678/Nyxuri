@@ -97,14 +97,14 @@ StyledPopup {
 
                 MaterialSymbol {
                     text: card.iconName
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: card.accentColor
                 }
 
                 StyledText {
                     text: card.label
                     color: Appearance.colors.colOnSurfaceVariant
-                    font.pixelSize: NexusStyle.font.bodySmall
+                    font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                     font.weight: Font.Medium
                 }
 
@@ -114,7 +114,7 @@ StyledPopup {
             StyledText {
                 text: root.formatRate(card.speed)
                 color: Appearance.colors.colOnSurfaceVariant
-                font.pixelSize: NexusStyle.font.bodyLarge
+                font.pixelSize: NexusStyle.font.bodyLarge * BarScale.font
                 font.weight: Font.DemiBold
                 font.features: { "tnum": 1 }
             }
@@ -123,7 +123,7 @@ StyledPopup {
                 text: `${root.formatTotal(card.total)} ${Translation.tr("this session")}`
                 color: Appearance.colors.colOnSurfaceVariant
                 opacity: 0.6
-                font.pixelSize: NexusStyle.font.labelSmall
+                font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
             }
         }
     }
@@ -141,7 +141,7 @@ StyledPopup {
             MaterialShapeWrappedMaterialSymbol {
                 shape: MaterialShape.Shape.Circle
                 text: Network.materialSymbol
-                iconSize: NexusStyle.font.bodyLarge
+                iconSize: NexusStyle.font.bodyLarge * BarScale.font
                 implicitSize: 36
                 color: Appearance.colors.colPrimaryContainer
                 colSymbol: Appearance.colors.colPrimary
@@ -153,7 +153,7 @@ StyledPopup {
 
                 StyledText {
                     text: root.connectionName
-                    font.pixelSize: NexusStyle.font.bodyLarge
+                    font.pixelSize: NexusStyle.font.bodyLarge * BarScale.font
                     font.weight: Font.Medium
                     color: Appearance.colors.colOnSurfaceVariant
                     elide: Text.ElideRight
@@ -162,7 +162,7 @@ StyledPopup {
 
                 StyledText {
                     text: root.connectionDetails
-                    font.pixelSize: NexusStyle.font.bodySmall
+                    font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                     color: Appearance.colors.colOnSurfaceVariant
                     opacity: 0.6
                 }

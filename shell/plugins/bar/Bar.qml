@@ -70,6 +70,20 @@ Scope {
                 id: barRoot
                 screen: barLoader.modelData
 
+                // D4c bar shell radius axis (see BarContent.shellRadius);
+                // every screen-corner decorator below reads this alias.
+                readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding)
+                // D4c percent length: a nonzero sideMarginPercent converts to
+                // pixels against the along-axis screen span and replaces the
+                // px sideMargin (0 keeps full width / the px axis).
+                readonly property real sideMarginPx: {
+                    const percent = PersonalizationConfig.barAxes.sideMarginPercent;
+                    if (!(percent > 0))
+                        return Config.options.bar.sideMargin;
+                    const span = barRoot.vertical ? (barRoot.screen?.height ?? 0) : (barRoot.screen?.width ?? 0);
+                    return span > 0 ? Math.round(span * percent / 100) : Config.options.bar.sideMargin;
+                }
+
                 Component.onDestruction: {
                     if (bar.windowProbe === barRoot)
                         bar.windowProbe = null;
@@ -129,7 +143,7 @@ Scope {
                 readonly property real sideMargin: Config.options.bar.sideMargin
                 // The margins and the reserved exclusive zone share one pure
                 // implementation (commons/BarGeometry.js) with the probe.
-                readonly property var windowMargins: BarGeometry.margins(barRoot.edge, barRoot.vertical, barRoot.edgeMargin, barRoot.sideMargin, barRoot.layerGap, barRoot.autoHideEnabled, barRoot.deadPixel)
+                readonly property var windowMargins: BarGeometry.margins(barRoot.edge, barRoot.vertical, barRoot.edgeMargin, barRoot.sideMarginPx, barRoot.layerGap, barRoot.autoHideEnabled, barRoot.deadPixel)
                 readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, Config.options.bar.m3.cornerStyle, Config.options.bar.m3.gapsOut, barRoot.edgeMargin)
                 // The content is instantiated exactly once, by the active
                 // orientation branch (B8.6: a second copy stole islandHost and
@@ -162,8 +176,8 @@ Scope {
                 // special workspace, so the bar stays on Top and fullscreen
                 // windows cover it, which is what iNiR's own bar does too.
                 WlrLayershell.layer: WlrLayer.Top
-                implicitHeight: barRoot.vertical ? 0 : (Appearance.sizes.barHeight + Appearance.rounding.screenRounding + (barRoot.autoHideEnabled ? barRoot.layerGap : 0))
-                implicitWidth: barRoot.vertical ? (Appearance.sizes.verticalBarWidth + Appearance.rounding.screenRounding + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)) : 0
+                implicitHeight: barRoot.vertical ? 0 : (Appearance.sizes.barHeight + barRoot.shellRadius + (barRoot.autoHideEnabled ? barRoot.layerGap : 0))
+                implicitWidth: barRoot.vertical ? (Appearance.sizes.verticalBarWidth + barRoot.shellRadius + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)) : 0
                 // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
                 // and same-layer overlap is resolved by stacking, not layer priority - bar was winning and
                 // swallowing the tiny corner-open hit rects. Carve them out of the bar's own mask so clicks
@@ -350,7 +364,7 @@ Scope {
                         id: leftPillCorner
                         visible: !barRoot.vertical && barRoot.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
                         x: barRoot.centerPillX - implicitSize
-                        implicitSize: Appearance.rounding.screenRounding
+                        implicitSize: barRoot.shellRadius
                         color: Appearance.colors.colLayer0
                         corner: RoundCorner.CornerEnum.TopRight
 
@@ -411,7 +425,7 @@ Scope {
                         id: rightPillCorner
                         visible: !barRoot.vertical && barRoot.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
                         x: barRoot.centerPillX + barRoot.centerPillWidth
-                        implicitSize: Appearance.rounding.screenRounding
+                        implicitSize: barRoot.shellRadius
                         color: Appearance.colors.colLayer0
                         corner: RoundCorner.CornerEnum.TopLeft
 
@@ -442,7 +456,7 @@ Scope {
                         visible: barRoot.vertical && barRoot.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
                         y: barRoot.centerPillY - implicitSize
                         x: contentLoader.x + (barRoot.edge === "right" ? -implicitSize : contentLoader.width)
-                        implicitSize: Appearance.rounding.screenRounding
+                        implicitSize: barRoot.shellRadius
                         color: Appearance.colors.colLayer0
                         corner: barRoot.edge === "right" ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.BottomLeft
                     }
@@ -452,7 +466,7 @@ Scope {
                         visible: barRoot.vertical && barRoot.centerOnly && showBarBackground && Config.options.bar.m3.cornerStyle === 0
                         y: barRoot.centerPillY + (barRoot.barContent?.centerPillHeight ?? 0)
                         x: contentLoader.x + (barRoot.edge === "right" ? -implicitSize : contentLoader.width)
-                        implicitSize: Appearance.rounding.screenRounding
+                        implicitSize: barRoot.shellRadius
                         color: Appearance.colors.colLayer0
                         corner: barRoot.edge === "right" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.TopLeft
                     }
@@ -464,13 +478,13 @@ Scope {
                         id: roundDecorators
                         x: barRoot.vertical ? (barRoot.edge === "right" ? contentLoader.x - width : contentLoader.x + contentLoader.width) : 0
                         y: barRoot.vertical ? contentLoader.y : (barRoot.edge === "bottom" ? contentLoader.y - height : contentLoader.y + contentLoader.height)
-                        width: barRoot.vertical ? Appearance.rounding.screenRounding : contentLoader.width
-                        height: barRoot.vertical ? contentLoader.height : Appearance.rounding.screenRounding
+                        width: barRoot.vertical ? barRoot.shellRadius : contentLoader.width
+                        height: barRoot.vertical ? contentLoader.height : barRoot.shellRadius
                         active: (showBarBackground && Config.options.bar.m3.cornerStyle === 0 && !barRoot.centerOnly) || Config.options.bar.m3.cornerStyle === 4
 
                         sourceComponent: Item {
-                            implicitWidth: Appearance.rounding.screenRounding
-                            implicitHeight: Appearance.rounding.screenRounding
+                            implicitWidth: barRoot.shellRadius
+                            implicitHeight: barRoot.shellRadius
                             readonly property color decoratorColor: (Config.options.bar.m3.cornerStyle === 4 || showBarBackground) ? Appearance.colors.colLayer0 : "transparent"
 
                             RoundCorner {
@@ -480,7 +494,7 @@ Scope {
                                 y: barRoot.vertical ? 0 : (barRoot.edge === "bottom" ? parent.height - height : 0)
                                 width: implicitSize
                                 height: implicitSize
-                                implicitSize: Appearance.rounding.screenRounding
+                                implicitSize: barRoot.shellRadius
                                 color: parent.decoratorColor
 
                                 corner: barRoot.vertical ? (barRoot.edge === "right" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.TopLeft) : (barRoot.edge === "bottom" ? RoundCorner.CornerEnum.BottomLeft : RoundCorner.CornerEnum.TopLeft)
@@ -492,7 +506,7 @@ Scope {
                                 y: barRoot.vertical ? parent.height - height : (barRoot.edge === "bottom" ? 0 : parent.height - height)
                                 width: implicitSize
                                 height: implicitSize
-                                implicitSize: Appearance.rounding.screenRounding
+                                implicitSize: barRoot.shellRadius
                                 color: parent.decoratorColor
 
                                 corner: barRoot.vertical ? (barRoot.edge === "right" ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.BottomLeft) : (barRoot.edge === "bottom" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight)

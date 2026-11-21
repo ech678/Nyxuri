@@ -19,6 +19,7 @@ import qs.commons
 import qs.commons.i18n
 import qs.ui
 import "BarWidgetFiles.js" as BarWidgetFiles
+import "SegmentRoles.js" as SegmentRoles
 
 Item {
     id: root
@@ -30,12 +31,15 @@ Item {
     readonly property bool isPanel: PersonalizationConfig.barIsPanel
     // end4 lane inset (references/end4-pC/modules/ii/bar/BarContent.qml:193):
     // Material hug sits flush, the Material pill keeps its 5px outer gutter,
-    // Float and Panel inset 4, every other style 8. The property was read by
-    // both lane anchors before it existed, so the bug silently pinned them to
-    // the screen edge.
-    readonly property real laneMargin: root.isMaterialHug ? 0 : root.isMaterial ? Appearance.sizes.hyprlandGapsOut : (Config.options.bar.cornerStyle === 1 || root.isPanel) ? 4 : 8
+    // Float and Panel inset 4, every other style 8. D4c: the per-style values
+    // are the baseline under the innerPadding axis (sentinel -1 = these).
+    readonly property real laneMargin: PersonalizationConfig.resolvedBarInnerPadding()
 
     readonly property color materialPillBgColor: Appearance.colors.colLayer0
+    // D4c bar shell radius axis: -1 keeps the theme's screen rounding,
+    // squareCorners flattens, an explicit value overrides — one alias per
+    // host keeps every corner expression on a single source.
+    readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding)
     readonly property real centerPillX: centerPill.x
     readonly property real centerPillWidth: centerPill.width
     // Probe surface (scripts/dev/probe-bar.sh): the optical centre lane and its
@@ -52,6 +56,28 @@ Item {
     readonly property real middleRowImplicitWidth: middleRow.implicitWidth
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
+
+    // D4c SegmentRoles runs (fusion corners): participation comes from the
+    // live groups of the ACTIVE branch (material vs plain — the inactive
+    // branch's loaders are off and would report hasContent forever). A
+    // hidden widget (Media with no track) re-shapes its neighbours' roles
+    // instead of stranding the "last" radius on an invisible group; a
+    // not-yet-loaded group counts as participating so the bar does not
+    // flicker while loaders instantiate. spacer/separator break the run
+    // (SegmentRoles.breaksRun).
+    function laneSegmentRoles(entries, plainRepeater, materialRepeater) {
+        const repeater = root.isMaterial ? materialRepeater : plainRepeater;
+        const participating = [];
+        for (let i = 0; i < entries.length; i += 1) {
+            const item = repeater && repeater.count === entries.length ? repeater.itemAt(i) : null;
+            participating.push(item === null ? true : item.hasContent);
+        }
+        return SegmentRoles.resolve(entries, participating);
+    }
+
+    readonly property var leftSegmentRoles: root.laneSegmentRoles(root.effectiveLeftLayout, leftGroups, leftMaterialGroups)
+    readonly property var middleSegmentRoles: root.laneSegmentRoles(root.effectiveMiddleLayout, middleGroups, middleMaterialGroups)
+    readonly property var rightSegmentRoles: root.laneSegmentRoles(root.effectiveRightLayout, rightGroups, rightMaterialGroups)
 
     // D4a: the lane model is normalized entry objects off the barConfigs
     // truth. filterLayout keeps the system gates (no tray host without
@@ -165,10 +191,10 @@ Item {
         objectName: "barBackground"
         anchors.fill: parent
         anchors.margins: Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
-        color: (!centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) ? Appearance.colors.colLayer0 : "transparent"
+        color: (!centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0) : "transparent"
         radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: (!centerOnly && Config.options.bar.cornerStyle === 1) ? 1 : 0
-        border.color: Config.options.bar.cornerStyle === 1 && !Config.options.bar.m3.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8)
+        border.width: PersonalizationConfig.barSurfaceBorderWidth(!centerOnly && Config.options.bar.cornerStyle === 1 ? 1 : 0)
+        border.color: PersonalizationConfig.barSurfaceBorderColor(Config.options.bar.cornerStyle === 1 && !Config.options.bar.m3.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8))
     }
 
     // center-only
@@ -196,10 +222,10 @@ Item {
         border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
-        bottomLeftRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        topLeftRadius: Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
-        topRightRadius: Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom ? Appearance.rounding.screenRounding : radius
+        bottomLeftRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? root.shellRadius : radius
+        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? root.shellRadius : radius
+        topLeftRadius: Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom ? root.shellRadius : radius
+        topRightRadius: Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom ? root.shellRadius : radius
     }
 
     Item {
@@ -285,8 +311,8 @@ Item {
 
                 topLeftRadius: root.isMaterialHug ? 0 : radius
                 bottomLeftRadius: root.isMaterialHug ? 0 : radius
-                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: leftMaterialRow
@@ -294,6 +320,7 @@ Item {
                     spacing: 3
 
                     Repeater {
+                        id: leftMaterialGroups
                         model: root.effectiveLeftLayout
                         delegate: leftMaterialGroupDelegate
                     }
@@ -302,10 +329,9 @@ Item {
                         id: leftMaterialGroupDelegate
                         BarGroup {
                             Layout.fillHeight: true
-                            currentIndex: index
+                            segmentRole: root.leftSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
-                            totalCount: root.effectiveLeftLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
@@ -328,7 +354,7 @@ Item {
                 visible: root.isMaterialHug && leftLane.hasContent
                 x: leftMaterialPill.x + leftMaterialPill.width
                 y: Config.options.bar.bottom ? parent.height - implicitSize : 0
-                implicitSize: Appearance.rounding.screenRounding
+                implicitSize: root.shellRadius
                 color: root.materialPillBgColor
                 corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
             }
@@ -341,6 +367,7 @@ Item {
                 spacing: root.rowSpacing
 
                 Repeater {
+                    id: leftGroups
                     model: root.effectiveLeftLayout
                     delegate: leftBarGroupDelegate
                 }
@@ -349,10 +376,9 @@ Item {
                     id: leftBarGroupDelegate
                     BarGroup {
                         Layout.fillHeight: true
-                        currentIndex: index
+                        segmentRole: root.leftSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
-                        totalCount: root.effectiveLeftLayout.length
                         Loader {
                             Layout.fillHeight: true
                             active: !root.isMaterial
@@ -382,7 +408,7 @@ Item {
                 visible: root.isMaterialHug && absoluteCenter.hasContent
                 x: centerMaterialPill.x - implicitSize
                 y: Config.options.bar.bottom ? parent.height - implicitSize : 0
-                implicitSize: Appearance.rounding.screenRounding
+                implicitSize: root.shellRadius
                 color: root.materialPillBgColor
                 corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
             }
@@ -397,10 +423,10 @@ Item {
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: centerMaterialRow
@@ -408,6 +434,7 @@ Item {
                     spacing: 3
 
                     Repeater {
+                        id: middleMaterialGroups
                         model: root.effectiveMiddleLayout
                         delegate: middleMaterialGroupDelegate
                     }
@@ -416,11 +443,10 @@ Item {
                         id: middleMaterialGroupDelegate
                         BarGroup {
                             Layout.fillHeight: true
-                            currentIndex: index
+                            segmentRole: root.middleSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
                             paintBackground: modelData.widgetId !== "island"
-                            totalCount: root.effectiveMiddleLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
@@ -443,7 +469,7 @@ Item {
                 visible: root.isMaterialHug && absoluteCenter.hasContent
                 x: centerMaterialPill.x + centerMaterialPill.width
                 y: Config.options.bar.bottom ? parent.height - implicitSize : 0
-                implicitSize: Appearance.rounding.screenRounding
+                implicitSize: root.shellRadius
                 color: root.materialPillBgColor
                 corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
             }
@@ -456,6 +482,7 @@ Item {
                 spacing: root.rowSpacing
 
                 Repeater {
+                    id: middleGroups
                     model: root.effectiveMiddleLayout
                     delegate: middleBarGroupDelegate
                 }
@@ -464,11 +491,10 @@ Item {
                     id: middleBarGroupDelegate
                     BarGroup {
                         Layout.fillHeight: true
-                        currentIndex: index
+                        segmentRole: root.middleSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
                         paintBackground: modelData.widgetId !== "island"
-                        totalCount: root.effectiveMiddleLayout.length
                         Loader {
                             Layout.fillHeight: true
                             active: !root.isMaterial
@@ -495,7 +521,7 @@ Item {
                 visible: root.isMaterialHug && rightLane.hasContent
                 x: rightMaterialPill.x - implicitSize
                 y: Config.options.bar.bottom ? parent.height - implicitSize : 0
-                implicitSize: Appearance.rounding.screenRounding
+                implicitSize: root.shellRadius
                 color: root.materialPillBgColor
                 corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
             }
@@ -513,8 +539,8 @@ Item {
 
                 topRightRadius: root.isMaterialHug ? 0 : radius
                 bottomRightRadius: root.isMaterialHug ? 0 : radius
-                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? Appearance.rounding.screenRounding : (root.isMaterialHug ? 0 : radius)
+                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: rightMaterialRow
@@ -522,6 +548,7 @@ Item {
                     spacing: 3
 
                     Repeater {
+                        id: rightMaterialGroups
                         model: root.effectiveRightLayout
                         delegate: rightMaterialGroupDelegate
                     }
@@ -530,10 +557,9 @@ Item {
                         id: rightMaterialGroupDelegate
                         BarGroup {
                             Layout.fillHeight: true
-                            currentIndex: index
+                            segmentRole: root.rightSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
-                            totalCount: root.effectiveRightLayout.length
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
@@ -559,6 +585,7 @@ Item {
                 spacing: root.rowSpacing
 
                 Repeater {
+                    id: rightGroups
                     model: root.effectiveRightLayout
                     delegate: rightBarGroupDelegate
                 }
@@ -567,10 +594,9 @@ Item {
                     id: rightBarGroupDelegate
                     BarGroup {
                         Layout.fillHeight: true
-                        currentIndex: index
+                        segmentRole: root.rightSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
-                        totalCount: root.effectiveRightLayout.length
                         Loader {
                             Layout.fillHeight: true
                             active: !root.isMaterial
@@ -583,7 +609,8 @@ Item {
         }
     }
 
-    // end4's per-widget spacing: transparent pulls the groups together,
-    // segmented separates them, panel keeps a wider gap.
-    readonly property real rowSpacing: Config.options.bar.borderless === "transparent" ? -7 : (Config.options?.bar.borderless === "segmented" && root.isPanel) ? 3 : Config.options?.bar.borderless === "segmented" ? -1 : root.isPanel ? 4 : 2
+    // end4's per-widget spacing baseline (transparent pulls the groups
+    // together, segmented separates them, panel keeps a wider gap); the
+    // D4c spacing axis overrides it (sentinel -1 = these values).
+    readonly property real rowSpacing: PersonalizationConfig.resolvedBarSpacing(false)
 }

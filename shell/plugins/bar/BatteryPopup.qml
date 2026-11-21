@@ -29,7 +29,7 @@ StyledPopup {
             MaterialShapeWrappedMaterialSymbol {
                 shape: MaterialShape.Shape.ClamShell
                 text: "battery_android_full"
-                iconSize: NexusStyle.font.bodyLarge
+                iconSize: NexusStyle.font.bodyLarge * BarScale.font
                 implicitSize: 36
                 color: Appearance.colors.colPrimaryContainer
                 colSymbol: Appearance.colors.colPrimary
@@ -43,13 +43,13 @@ StyledPopup {
                     text: Translation.tr("Battery")
                     font {
                         weight: Font.Medium
-                        pixelSize: NexusStyle.font.bodyLarge
+                        pixelSize: NexusStyle.font.bodyLarge * BarScale.font
                     }
                     color: Appearance.colors.colOnSurfaceVariant
                 }
 
                 StyledText {
-                    font.pixelSize: NexusStyle.font.bodySmall
+                    font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                     color: Appearance.colors.colOnSurfaceVariant
                     opacity: 0.6
                     text: {
@@ -68,7 +68,7 @@ StyledPopup {
 
             StyledText {
                 Layout.rightMargin: 8
-                font.pixelSize: NexusStyle.font.titleLarge
+                font.pixelSize: NexusStyle.font.titleLarge * BarScale.font
                 font.weight: Font.Bold
                 color: Appearance.colors.colPrimary
                 text: `${Math.round(Battery.percentage * 100)}`

@@ -68,14 +68,14 @@ StyledPopup {
                     StyledText {
                         visible: WeatherService.locationName.length > 0
                         text: WeatherService.locationName
-                        font.pixelSize: NexusStyle.font.bodyLarge
+                        font.pixelSize: NexusStyle.font.bodyLarge * BarScale.font
                         font.weight: Font.DemiBold
                         color: Appearance.colors.colOnLayer0
                     }
 
                     StyledText {
                         text: WeatherService.hasValidData ? WeatherService.currentWeatherText : Translation.tr("No data")
-                        font.pixelSize: NexusStyle.font.bodySmall
+                        font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                         color: Appearance.colors.colOnLayer0
                         opacity: 0.6
                     }
@@ -89,7 +89,7 @@ StyledPopup {
 
                     StyledText {
                         text: root.tempText
-                        font.pixelSize: NexusStyle.font.displayMedium
+                        font.pixelSize: NexusStyle.font.displayMedium * BarScale.font
                         font.weight: Font.Light
                         color: Appearance.colors.colOnLayer0
                     }
@@ -119,12 +119,12 @@ StyledPopup {
                         Layout.alignment: Qt.AlignRight
                         MaterialSymbol {
                             text: "wb_twilight"
-                            iconSize: NexusStyle.font.bodySmall
+                            iconSize: NexusStyle.font.bodySmall * BarScale.font
                             color: Appearance.colors.colPrimary
                         }
                         StyledText {
                             text: root.todayDaily ? root.epochToClock(root.todayDaily.sunrise) : "--:--"
-                            font.pixelSize: NexusStyle.font.labelSmall
+                            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
                             color: Appearance.colors.colOnLayer0
                             opacity: 0.8
                         }
@@ -135,12 +135,12 @@ StyledPopup {
                         Layout.alignment: Qt.AlignRight
                         MaterialSymbol {
                             text: "bedtime"
-                            iconSize: NexusStyle.font.bodySmall
+                            iconSize: NexusStyle.font.bodySmall * BarScale.font
                             color: Appearance.colors.colPrimary
                         }
                         StyledText {
                             text: root.todayDaily ? root.epochToClock(root.todayDaily.sunset) : "--:--"
-                            font.pixelSize: NexusStyle.font.labelSmall
+                            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
                             color: Appearance.colors.colOnLayer0
                             opacity: 0.8
                         }

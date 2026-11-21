@@ -77,14 +77,14 @@ MouseArea {
                 visible: !root.isMaterial
                 fill: 0
                 text: root.iconName
-                iconSize: NexusStyle.font.bodyLarge
+                iconSize: NexusStyle.font.bodyLarge * BarScale.font
                 color: Appearance.colors.colOnLayer1
                 Layout.alignment: Qt.AlignVCenter
             }
 
             StyledText {
                 visible: !root.isMaterial
-                font.pixelSize: NexusStyle.font.bodyMedium
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
                 color: Appearance.colors.colOnLayer1
                 text: root.tempText
                 Layout.alignment: Qt.AlignVCenter
@@ -92,7 +92,7 @@ MouseArea {
 
             StyledText {
                 visible: root.isMaterial
-                font.pixelSize: NexusStyle.font.bodyMedium
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
                 color: M3Palette.pillAccent("weatherBar", M3Palette.primary)
                 text: root.tempText
                 Layout.alignment: Qt.AlignVCenter
@@ -110,7 +110,7 @@ MouseArea {
                     anchors.centerIn: parent
                     fill: 0
                     text: root.iconName
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: M3Palette.primaryForeground
                 }
             }
@@ -126,14 +126,14 @@ MouseArea {
                 visible: !root.isMaterial
                 fill: 0
                 text: root.iconName
-                iconSize: NexusStyle.font.bodyLarge
+                iconSize: NexusStyle.font.bodyLarge * BarScale.font
                 color: Appearance.colors.colOnLayer1
                 Layout.alignment: Qt.AlignHCenter
             }
 
             StyledText {
                 visible: !root.isMaterial
-                font.pixelSize: NexusStyle.font.bodyMedium
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
                 color: Appearance.colors.colOnLayer1
                 text: root.tempText.replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
@@ -141,7 +141,7 @@ MouseArea {
 
             StyledText {
                 visible: root.isMaterial
-                font.pixelSize: NexusStyle.font.bodyMedium
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
                 color: M3Palette.pillAccent("weatherBar", M3Palette.primary)
                 text: root.tempText.replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
@@ -160,7 +160,7 @@ MouseArea {
                     anchors.centerIn: parent
                     fill: 0
                     text: root.iconName
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: M3Palette.primaryForeground
                 }
             }

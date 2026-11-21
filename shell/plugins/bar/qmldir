@@ -1,2 +1,3 @@
 singleton TrayService 1.0 TrayService.qml
 singleton BarWidgetActions 1.0 BarWidgetActions.qml
+singleton BarScale 1.0 BarScale.qml

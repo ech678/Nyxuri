@@ -92,14 +92,14 @@ Item {
             id: trackTitleMetrics
             visible: false
             text: di.activePlayer?.trackTitle ?? ""
-            font.pixelSize: NexusStyle.font.bodySmall
+            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
             font.weight: Font.DemiBold
         }
         StyledText {
             id: trackArtistMetrics
             visible: false
             text: di.activePlayer?.trackArtist ?? ""
-            font.pixelSize: NexusStyle.font.labelSmall
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
         }
 
         ColumnLayout {
@@ -124,7 +124,7 @@ Item {
             StyledText {
                 Layout.fillWidth: true
                 text: di.activePlayer?.trackTitle ?? ""
-                font.pixelSize: NexusStyle.font.bodySmall
+                font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnLayer0
                 elide: Text.ElideRight
@@ -134,7 +134,7 @@ Item {
             StyledText {
                 Layout.fillWidth: true
                 text: di.activePlayer?.trackArtist ?? ""
-                font.pixelSize: NexusStyle.font.labelSmall
+                font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
                 color: Appearance.colors.colOnLayer0
                 opacity: 0.7
                 elide: Text.ElideRight

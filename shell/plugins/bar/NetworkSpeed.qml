@@ -51,7 +51,7 @@ MouseArea {
     TextMetrics {
         id: regularRateMetrics
         text: "999.9 MB/s"
-        font.pixelSize: NexusStyle.font.labelSmall
+        font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
         font.weight: Font.Medium
     }
 
@@ -69,8 +69,8 @@ MouseArea {
         MaterialSymbol {
             text: speedLine.iconName
             iconSize: root.vertical
-                ? NexusStyle.font.labelSmall
-                : NexusStyle.font.bodySmall
+                ? NexusStyle.font.labelSmall * BarScale.font
+                : NexusStyle.font.bodySmall * BarScale.font
             color: speedLine.accentColor
             opacity: speedLine.rate > 0 ? 1 : 0.45
 
@@ -84,7 +84,7 @@ MouseArea {
             horizontalAlignment: Text.AlignRight
             text: speedLine.rateText
             color: Appearance.colors.colOnLayer1
-            font.pixelSize: NexusStyle.font.labelSmall
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
             font.weight: Font.Medium
             font.features: { "tnum": 1 }
         }

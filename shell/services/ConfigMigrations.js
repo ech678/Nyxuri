@@ -9,7 +9,7 @@
 
 // v2: the schema-2 file without a configVersion key (pre-D4a).
 var LEGACY_VERSION = 2;
-var CURRENT_VERSION = 4;
+var CURRENT_VERSION = 5;
 
 // Explicit key map for the v3 step (dux MIGRATED_GLOBALS pattern): the
 // layout keys [[bar.configs]] supersedes. A key rename can never silently
@@ -72,6 +72,30 @@ var MIGRATED_WIDGET_GLOBALS = {
 // quickSettings entry folds the utilButtons keys.
 MIGRATED_WIDGET_GLOBALS.quickSettings = MIGRATED_WIDGET_GLOBALS.utilButtons;
 
+// v5 explicit key map (D4c): bar-level axes move from the flat [bar]
+// keys onto the [[bar.configs]] entry itself (same names, pure move — a
+// rename still has to be edited here). Behavior keys ride along for the
+// D4e multi-bar future; they are not style math.
+var MIGRATED_BAR_GLOBALS = {
+    position: "position",
+    autoHide: "autoHide",
+    screenList: "screenList",
+    showBackground: "showBackground",
+    cornerStyle: "cornerStyle",
+    borderless: "borderless",
+    groupColor: "groupColor",
+    barThickness: "barThickness",
+    verticalThickness: "verticalThickness",
+    edgeMargin: "edgeMargin",
+    sideMargin: "sideMargin"
+};
+
+// The style-popup overrides that fold from the per-(mode, widget)
+// bar.widgetStyles array onto the lane entries (D4c: styles follow the
+// entry instance, dux per-widget axis lineage). Keys keep their names —
+// they become plain entry overrides.
+var WIDGET_STYLE_KEYS = ["color", "borderColor", "radius", "borderWidth", "padding"];
+
 // Runs every pending step. seed carries what the caller (who owns the pure
 // resolve helpers and the widget whitelist) resolved from the legacy keys:
 // { lanes: {left, middle, right}, allowedIds, defaults } — defaults is the
@@ -89,6 +113,11 @@ function migrateConfig(parsed, seed) {
     if (version < 4) {
         changed = migrateWidgetGlobals(config, seed) || changed;
         version = 4;
+        config.configVersion = version;
+    }
+    if (version < 5) {
+        changed = migrateBarGlobals(config, seed) || changed;
+        version = 5;
         config.configVersion = version;
     }
     return {
@@ -225,4 +254,85 @@ function migrateWidgetGlobals(config, seed) {
         touched = true;
     }
     return touched;
+}
+
+// v5 (D4c): bar-level axes fold from the flat [bar] keys onto the first
+// [[bar.configs]] entry; the per-(mode, widget) widgetStyles array folds
+// onto the lane entries of the active borderless mode. Same semantics as
+// v4: default-equal values skip (the minimal writer drops them), keys
+// already on the target win, the superseded globals strip afterwards.
+// Idempotent by construction: after one run the flat keys are gone.
+function migrateBarGlobals(config, seed) {
+    const bar = config.bar;
+    if (!bar || typeof bar !== "object" || Array.isArray(bar) || !Array.isArray(bar.configs))
+        return false;
+    const entry = bar.configs[0] && typeof bar.configs[0] === "object" ? bar.configs[0] : null;
+    if (!entry)
+        return false;
+    const defaults = seed && seed.barDefaults ? seed.barDefaults : {};
+    let touched = false;
+
+    for (const entryKey in MIGRATED_BAR_GLOBALS) {
+        const flatKey = MIGRATED_BAR_GLOBALS[entryKey];
+        const value = bar[flatKey];
+        if (value === undefined)
+            continue;
+        if (entry[entryKey] === undefined && !isDefaultAxis(defaults[entryKey], value))
+            entry[entryKey] = value;
+        delete bar[flatKey];
+        touched = true;
+    }
+
+    // Style-popup fold: only the entries of the ACTIVE borderless mode
+    // survive (the settled D4c decision — styles follow the instance, the
+    // per-mode dimension retires). Every instance of the widget class
+    // receives the style, matching the old class-wide semantics.
+    if (Array.isArray(bar.widgetStyles)) {
+        const currentMode = typeof entry.borderless === "string" ? entry.borderless : (typeof bar.borderless === "string" ? bar.borderless : "pills");
+        const byWidget = {};
+        for (let i = 0; i < bar.widgetStyles.length; i++) {
+            const style = bar.widgetStyles[i];
+            if (style && typeof style === "object" && style.mode === currentMode && typeof style.widget === "string")
+                byWidget[style.widget] = style;
+        }
+        const lanes = entry.lanes && typeof entry.lanes === "object" ? entry.lanes : null;
+        if (lanes) {
+            for (const zone of ["left", "middle", "right"]) {
+                const lane = lanes[zone];
+                if (!Array.isArray(lane))
+                    continue;
+                for (let i = 0; i < lane.length; i++) {
+                    const raw = lane[i];
+                    const id = typeof raw === "string" ? raw : (raw && typeof raw === "object" ? raw.id : null);
+                    const style = id ? byWidget[id] : null;
+                    if (!style)
+                        continue;
+                    const laneEntry = typeof raw === "string" ? {
+                        id: raw
+                    } : raw;
+                    let copied = false;
+                    for (let k = 0; k < WIDGET_STYLE_KEYS.length; k++) {
+                        const key = WIDGET_STYLE_KEYS[k];
+                        if (style[key] !== undefined && laneEntry[key] === undefined) {
+                            laneEntry[key] = style[key];
+                            copied = true;
+                        }
+                    }
+                    if (copied) {
+                        lane[i] = laneEntry;
+                        touched = true;
+                    }
+                }
+            }
+        }
+        delete bar.widgetStyles;
+        touched = true;
+    }
+    return touched;
+}
+
+function isDefaultAxis(def, value) {
+    if (Array.isArray(def) && Array.isArray(value))
+        return JSON.stringify(def) === JSON.stringify(value);
+    return def === value;
 }

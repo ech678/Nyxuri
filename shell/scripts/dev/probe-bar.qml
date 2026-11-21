@@ -16,7 +16,9 @@ import qs.ui
 import "commons/BarGeometry.js" as BarGeometry
 import "services/ConfigMigrations.js" as ConfigMigrations
 import "services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "services/BarDefaults.js" as BarDefaults
 import "plugins/bar" as BarPlugin
+import "plugins/bar/SegmentRoles.js" as SegmentRoles
 
 ShellRoot {
     id: probeRoot
@@ -584,12 +586,24 @@ ShellRoot {
 
         // B9.6: right-click style editor chain end-to-end. The write goes
         // through the same store setter the popup uses; the dump reads the
-        // BarGroup binding and the bound widget property.
+        // BarGroup binding and the bound widget property. D4c: the style
+        // keys ride the lane entry (uid addressed).
         function b96Style(on: bool): string {
+            const zones = ["left", "middle", "right"];
+            let uid = "";
+            for (let z = 0; z < zones.length; z += 1) {
+                const lane = PersonalizationConfig.laneEntries(zones[z]);
+                for (let i = 0; i < lane.length; i += 1) {
+                    if (lane[i].widgetId === "workspaces")
+                        uid = lane[i].uid;
+                }
+            }
+            if (uid === "")
+                return "NO-ENTRY";
             if (on)
-                PersonalizationConfig.setBarWidgetStyle("pills", "workspaces", "color", "primary");
+                PersonalizationConfig.setBarEntryStyle(uid, "color", "primary");
             else
-                PersonalizationConfig.resetBarWidgetStyle("pills", "workspaces");
+                PersonalizationConfig.resetBarEntryStyle(uid);
             return "OK";
         }
 
@@ -690,11 +704,13 @@ ShellRoot {
                 }
             };
             const seed = {
-                "lanes": PersonalizationConfig.resolveBarLayouts(legacy.bar, {}, true)
+                "lanes": PersonalizationConfig.resolveBarLayouts(legacy.bar, {}, true),
+                "barDefaults": BarDefaults.DEFAULTS
             };
             const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
             const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), {
-                "lanes": PersonalizationConfig.resolveBarLayouts({}, {}, true)
+                "lanes": PersonalizationConfig.resolveBarLayouts({}, {}, true),
+                "barDefaults": BarDefaults.DEFAULTS
             });
             const bar = first.config.bar;
             return JSON.stringify({
@@ -726,7 +742,7 @@ ShellRoot {
             PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
             return JSON.stringify({
                 "defaultEmpty": barDefault === undefined || Object.keys(barDefault).length === 0,
-                "singleKey": barOneKey !== undefined && Object.keys(barOneKey).length === 1 && barOneKey.barThickness === 40,
+                "singleKey": barOneKey !== undefined && Object.keys(barOneKey).length === 1 && barOneKey.configs !== undefined && barOneKey.configs.length === 1 && Object.keys(barOneKey.configs[0]).length === 2 && barOneKey.configs[0].barThickness === 40,
                 "restoredEmpty": barRestored === undefined || Object.keys(barRestored).length === 0,
                 "disabledSparse": disabledSparse,
                 "enabledViewDropsDisabled": JSON.stringify(disabledIds) === JSON.stringify(["workspaces"]),
@@ -1098,7 +1114,9 @@ ShellRoot {
 
         // B9.7 settled-settings sweep: generic store passthrough (values are
         // JSON-parsed so bools/numbers/arrays arrive typed) plus a duck-typed
-        // dump of every wired consumer.
+        // dump of every wired consumer. D4c: the bar-frame keys became
+        // derived views (writable only through the named axis setters), so
+        // they route through the writer map before the generic path.
         function b97Set(key: string, value: string): string {
             let parsed = value;
             try {
@@ -1106,7 +1124,16 @@ ShellRoot {
             } catch (e) {
                 parsed = value;
             }
-            PersonalizationConfig.setValue(key, parsed);
+            // D4c: the bar-frame keys are derived views now — only the
+            // named axis setters can write them.
+            if (key === "barShowBackground")
+                PersonalizationConfig.setBarShowBackground(parsed === true);
+            else if (key === "barScreenList")
+                PersonalizationConfig.setBarScreenList(Array.isArray(parsed) ? parsed : []);
+            else if (key === "barAutoHide")
+                PersonalizationConfig.setBarAutoHide(parsed === true);
+            else
+                PersonalizationConfig.setValue(key, parsed);
             return "OK";
         }
 
@@ -1163,7 +1190,8 @@ ShellRoot {
                 }
             };
             const seed = {
-                "defaults": BarWidgetDefaults.DEFAULTS
+                "defaults": BarWidgetDefaults.DEFAULTS,
+                "barDefaults": BarDefaults.DEFAULTS
             };
             const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
             const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), seed);
@@ -1273,6 +1301,143 @@ ShellRoot {
                 "noneConsumes": dispatchNone === true,
                 "commandNeedsArgv": dispatchBadCommand,
                 "axisForButtons": [BarWidgetActions.axisForButton(Qt.LeftButton), BarWidgetActions.axisForButton(Qt.MiddleButton), BarWidgetActions.axisForButton(Qt.RightButton)]
+            });
+        }
+
+        // D4c: the v5 migration — flat [bar] globals fold onto the configs
+        // entry (deviations only), the per-(mode, widget) widgetStyles fold
+        // onto the entries of the ACTIVE borderless mode, both strip, and a
+        // second run changes nothing.
+        function d4cMigration(): string {
+            const legacy = {
+                "configVersion": 4,
+                "bar": {
+                    "configs": [{
+                        "id": "default",
+                        "name": "Bar",
+                        "lanes": {
+                            "left": ["launcherButton", "workspaces", "activeWindow"],
+                            "middle": ["island"],
+                            "right": ["tray", "quickSettings", "systemIcons", "powerButton"]
+                        }
+                    }],
+                    "position": "bottom",
+                    "cornerStyle": 2,
+                    "borderless": "segmented",
+                    "barThickness": 44,
+                    "edgeMargin": 12,
+                    "showValues": true,
+                    "widgetStyles": [{
+                        "mode": "segmented",
+                        "widget": "workspaces",
+                        "color": "primary",
+                        "padding": 9
+                    }, {
+                        "mode": "pills",
+                        "widget": "clock",
+                        "color": "error"
+                    }],
+                    "tray": {
+                        "pinnedItems": ["probe:keep"]
+                    }
+                }
+            };
+            const seed = {
+                "defaults": BarWidgetDefaults.DEFAULTS,
+                "barDefaults": BarDefaults.DEFAULTS
+            };
+            const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
+            const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), seed);
+            const entry = first.config.bar.configs[0];
+            const workspaces = entry.lanes.left.find(e => typeof e === "object" && e.id === "workspaces") ?? {};
+            return JSON.stringify({
+                "changed": first.changed,
+                "version": first.config.configVersion,
+                "positionFolded": entry.position === "bottom",
+                "cornerStyleFolded": entry.cornerStyle === 2,
+                "borderlessFolded": entry.borderless === "segmented",
+                "thicknessFolded": entry.barThickness === 44,
+                "edgeMarginFolded": entry.edgeMargin === 12,
+                "defaultsSkipped": entry.sideMargin === undefined && entry.autoHide === undefined && entry.groupColor === undefined,
+                "activeModeStyleFolded": workspaces.color === "primary" && workspaces.padding === 9,
+                "otherModeStyleDropped": JSON.stringify(first.config.bar.configs).indexOf("error") === -1,
+                "flatStripped": first.config.bar.position === undefined && first.config.bar.widgetStyles === undefined && first.config.bar.cornerStyle === undefined,
+                "trayKept": JSON.stringify(first.config.bar.tray.pinnedItems) === JSON.stringify(["probe:keep"]),
+                "idempotent": second.changed === false && JSON.stringify(second.config.bar.configs[0]) === JSON.stringify(entry)
+            });
+        }
+
+        // D4c: sentinel resolution + the live lane geometry. Baselines come
+        // from BarDefaults (per-style), an explicit axis overrides, and the
+        // reset returns to the baseline. Fonts scale through BarScale.
+        function d4cSentinels(): string {
+            const baseline = PersonalizationConfig.resolvedBarSpacing(false);
+            PersonalizationConfig.setBarSpacing(0);
+            const explicit = PersonalizationConfig.resolvedBarSpacing(false);
+            PersonalizationConfig.setBarSpacing(-1);
+            const restored = PersonalizationConfig.resolvedBarSpacing(false);
+            const baselineInset = PersonalizationConfig.resolvedBarInnerPadding();
+            const baselinePadding = PersonalizationConfig.resolvedBarWidgetPadding(false);
+            const radiusAuto = PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding);
+            PersonalizationConfig.setBarSquareCorners(true);
+            const radiusSquare = PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding);
+            PersonalizationConfig.setBarRadius(20);
+            const radiusOverride = PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding);
+            PersonalizationConfig.setBarSquareCorners(false);
+            PersonalizationConfig.setBarRadius(-1);
+            PersonalizationConfig.setBarFontScale(1.25);
+            const scaledFont = PersonalizationConfig.barAxes.fontScale;
+            PersonalizationConfig.setBarFontScale(1);
+            const resetFont = PersonalizationConfig.barAxes.fontScale;
+            return JSON.stringify({
+                "baselinePositive": baseline > 0 || baseline < 0,
+                "explicitOverrides": explicit === 0,
+                "restoredBaseline": restored === baseline,
+                "insetBaseline": baselineInset === 4,
+                "widgetPaddingBaseline": baselinePadding === 5,
+                "radiusAuto": radiusAuto === Appearance.rounding.screenRounding,
+                "radiusSquare": radiusSquare === 0,
+                "radiusOverride": radiusOverride === 20,
+                "fontScaleLive": scaledFont === 1.25 && resetFont === 1
+            });
+        }
+
+        // D4c: SegmentRoles fusion — hidden widgets re-shape the run,
+        // spacer/separator break it, and the live lanes resolve through it.
+        function d4cRoles(): string {
+            const entries = [
+                {
+                    widgetId: "a"
+                },
+                {
+                    widgetId: "media"
+                },
+                {
+                    widgetId: "b"
+                }
+            ];
+            const allShown = SegmentRoles.resolve(entries, [true, true, true]);
+            const lastHidden = SegmentRoles.resolve(entries, [true, false, true]);
+            const broken = SegmentRoles.resolve([
+                {
+                    widgetId: "a"
+                },
+                {
+                    widgetId: "spacer"
+                },
+                {
+                    widgetId: "b"
+                }
+            ], [true, true, true]);
+            const content = barLoader.item;
+            return JSON.stringify({
+                "runFused": JSON.stringify(allShown) === JSON.stringify(["first", "middle", "last"]),
+                "hiddenReShapes": JSON.stringify(lastHidden) === JSON.stringify(["solo", "solo", "solo"]),
+                "spacerBreaks": JSON.stringify(broken) === JSON.stringify(["solo", "solo", "solo"]),
+                "liveRoles": content ? {
+                    "left": content.leftSegmentRoles,
+                    "right": content.rightSegmentRoles
+                } : null
             });
         }
 

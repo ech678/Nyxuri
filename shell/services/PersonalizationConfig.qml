@@ -6,6 +6,7 @@ import qs.commons
 import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
 import "BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarDefaults.js" as BarDefaults
 import "ConfigMigrations.js" as ConfigMigrations
 import qs.services
 import qs.commons.i18n
@@ -327,17 +328,21 @@ Singleton {
     ]
     // B3-1 one-shot marker: seed the middle lane with the island exactly once.
     property bool islandLayoutMigrated: false
-    property string barPosition: "top"
-    // B9.7 settled keys. `barAutoHide` drives `bar.autoHide.enable` (the
-    // slide-out window); pushWindows / hoverRegionWidth / super-reveal stay
-    // internal bridge defaults — consumed, but not user-visible surface.
-    property bool barAutoHide: false
+    // D4c: the bar-level axes live on the [[bar.configs]] entry
+    // (normalizeBarAxes); the properties below are derived views so every
+    // existing consumer (Config bridge, Bar window, popups) keeps its read
+    // path. Setters write through withBarConfigs — nothing assigns these.
+    readonly property string barPosition: root.activeBarConfig().axes.position
+    // B9.7 settled keys. `barAutoHide` drives the slide-out window;
+    // pushWindows / hoverRegionWidth / super-reveal stay internal bridge
+    // defaults — consumed, but not user-visible surface.
+    readonly property bool barAutoHide: root.activeBarConfig().axes.autoHide
     // Screen filter for the bar windows. Empty list = every screen (end4
     // semantics); names come from Quickshell.screens.
-    property var barScreenList: []
+    readonly property var barScreenList: root.activeBarConfig().axes.screenList
     // end4 `bar.showBackground`: the frame/pill background of non-material
     // styles. Only Hug/Float expose it; other styles ignore it downstream.
-    property bool barShowBackground: true
+    readonly property bool barShowBackground: root.activeBarConfig().axes.showBackground
     readonly property var barCornerStyles: [
         {
             value: 0,
@@ -364,7 +369,7 @@ Singleton {
             label: I18n.tr("Panel")
         }
     ]
-    property int barCornerStyle: 1
+    readonly property int barCornerStyle: root.activeBarConfig().axes.cornerStyle
     // Single truth for the material pill treatment (end4: cornerStyle 3 or 4).
     // Widgets bind these instead of re-deriving `=== 3`, which kept 4/5
     // half-styled in nine files.
@@ -398,10 +403,16 @@ Singleton {
         {
             value: "transparent",
             label: I18n.tr("Transparent")
+        },
+        {
+            // D4c: bare widgets, no capsule geometry at all ("transparent"
+            // keeps the capsule shape with a transparent fill).
+            value: "flat",
+            label: I18n.tr("Flat")
         }
     ]
-    property string barBorderless: "pills"
-    property string barGroupColor: "layer1"
+    readonly property string barBorderless: root.activeBarConfig().axes.borderless
+    readonly property string barGroupColor: root.activeBarConfig().axes.groupColor
     readonly property var barGroupColorOptions: [
         {
             "value": "primaryContainer",
@@ -424,10 +435,11 @@ Singleton {
             "label": I18n.tr("Background")
         }
     ]
-    // Per-widget background/border overrides from the bar's right-click style
-    // editor. Shape: { mode, widget, color?, borderColor?, radius?,
-    // borderWidth?, padding? } — normalized on load, saved with the bar block.
-    property var barWidgetStyles: []
+    // Per-widget style overrides (right-click style editor) ride the lane
+    // entries themselves since D4c (plain entry overrides: color /
+    // borderColor / radius / borderWidth / padding). The pre-D4c
+    // per-(mode, widget) barWidgetStyles array folded onto the entries in
+    // the v5 migration; the per-mode dimension retired with it.
     // Tray contract (ROADMAP B9.1). Pinning is tray-domain shared STATE, not
     // a per-instance aesthetic: pinned ids keep a permanent slot, and
     // invertPinnedItems swaps the two groups (the stored list is the hidden
@@ -495,20 +507,112 @@ Singleton {
                 "icon": "power_settings_new"
             })]
     property var quickSettingsComponents: root.defaultQuickSettingsComponents.slice()
-    readonly property int defaultBarThickness: 36
-    property int barThickness: root.defaultBarThickness
+    readonly property int defaultBarThickness: BarDefaults.DEFAULTS.barThickness
+    readonly property int barThickness: root.activeBarConfig().axes.barThickness
     onBarThicknessChanged: Appearance.barThickness = root.barThickness
     // B9.4: vertical thickness is a separate axis (ROADMAP B-2). It used to
     // reuse `barThickness`, which made the left/right edges impossible to tune
     // apart from the top/bottom one.
-    readonly property int defaultBarVerticalThickness: 36
-    property int barVerticalThickness: root.defaultBarVerticalThickness
+    readonly property int defaultBarVerticalThickness: BarDefaults.DEFAULTS.verticalThickness
+    readonly property int barVerticalThickness: root.activeBarConfig().axes.verticalThickness
     onBarVerticalThicknessChanged: Appearance.verticalBarThickness = root.barVerticalThickness
     // B9.5 outer margins: distance from the screen edge (normal axis) and the
     // inset at both ends (along the bar). 0 keeps the end4 edge-flush baseline;
-    // they are separate from the internal lane inset.
-    property int barEdgeMargin: 0
-    property int barSideMargin: 0
+    // they are separate from the internal lane inset. sideMarginPercent
+    // (D4c) is the each-side margin in percent of the screen: 0 keeps full
+    // width, a nonzero value centers the bar on the remaining span.
+    readonly property int barEdgeMargin: root.activeBarConfig().axes.edgeMargin
+    readonly property int barSideMargin: root.activeBarConfig().axes.sideMargin
+    // Full normalized axes view for the D4c consumers (Bar window geometry,
+    // BarContent/BarGroup chrome resolve through BarDefaults).
+    readonly property var barAxes: root.activeBarConfig().axes
+    // D4c sentinel resolution (BarDefaults baselines). The context carries
+    // the style booleans; gapsOut comes from Appearance so the baseline
+    // stays in sync with the theme token. Bindings stay reactive: reading
+    // barAxes/barStyleContext inside these functions tracks them.
+    readonly property var barStyleContext: ({
+        cornerStyle: root.barCornerStyle,
+        borderless: root.barBorderless,
+        material: root.barIsMaterial,
+        materialHug: root.barIsMaterialHug,
+        panel: root.barIsPanel,
+        gapsOut: Appearance.sizes.hyprlandGapsOut
+    })
+
+    function resolvedBarSpacing(isVertical) {
+        const context = Object.assign({}, root.barStyleContext, {
+            vertical: isVertical === true
+        });
+        return BarDefaults.resolvedSpacing(root.barAxes, context);
+    }
+
+    function resolvedBarInnerPadding() {
+        return BarDefaults.resolvedInnerPadding(root.barAxes, root.barStyleContext);
+    }
+
+    function resolvedBarWidgetPadding(paintMaterialPill) {
+        return BarDefaults.resolvedWidgetPadding(root.barAxes, root.barStyleContext, paintMaterialPill === true);
+    }
+
+    // Bar shell corner radius: -1 keeps the style-derived value, an
+    // explicit value wins, squareCorners flattens to 0 (dux semantics).
+    function resolvedBarShellRadius(styleRadius) {
+        return BarDefaults.resolvedRadius(root.barAxes, styleRadius);
+    }
+
+    // D4c color-axis resolution shared by the surface and widget layers:
+    // "default" keeps the passed base, a #hex wins directly, anything else
+    // resolves as an Appearance role name (col-prefixed). Explicit opacity
+    // (0..1) bakes over the result; -1/-absent keeps the color untouched.
+    function resolvedBarAxisColor(name, baseColor, opacity) {
+        let color = baseColor;
+        if (typeof name === "string" && BarDefaults.isCustomColor(name))
+            color = name;
+        else if (typeof name === "string" && name !== "" && name !== "default")
+            color = Appearance.colors[`col${name.charAt(0).toUpperCase()}${name.slice(1)}`] ?? baseColor;
+        if (typeof opacity === "number" && opacity >= 0 && opacity < 1)
+            color = Appearance.transparentize(color, 1 - opacity);
+        return color;
+    }
+
+    // The bar surface background (BarContent/VerticalBarContent
+    // barBackground): the style's colLayer0 with the surfaceColor override
+    // and surfaceTransparency applied (sentinels keep the theme pipeline,
+    // which already bakes the global [effects] opacity into the palette).
+    function resolvedBarSurfaceColor(baseColor) {
+        return root.resolvedBarAxisColor(root.barAxes.surfaceColor, baseColor, root.barAxes.surfaceTransparency);
+    }
+
+    // The group-capsule layer: widgetTransparency < 1 transparentizes the
+    // resolved capsule color (1.0 = untouched).
+    function resolvedBarWidgetColor(color) {
+        return root.resolvedBarAxisColor("default", color, root.barAxes.widgetTransparency);
+    }
+
+    // Group-capsule outline (D4c widgetOutline*): the segmented mode's
+    // built-in 1px stays the baseline; enabled axes override it.
+    function barWidgetOutlineWidth(baselineWidth) {
+        return root.barAxes.widgetOutlineEnabled ? root.barAxes.widgetOutlineThickness : baselineWidth;
+    }
+
+    function barWidgetOutlineColor(baselineColor) {
+        if (!root.barAxes.widgetOutlineEnabled)
+            return baselineColor;
+        return root.resolvedBarAxisColor(root.barAxes.widgetOutlineColor, baselineColor, root.barAxes.widgetOutlineOpacity);
+    }
+
+    // Bar surface border: borderEnabled=false keeps the style baseline
+    // (Float's built-in 1px); enabled axes draw an explicit border
+    // (thickness 0 turns every border off).
+    function barSurfaceBorderWidth(baselineWidth) {
+        return root.barAxes.borderEnabled ? root.barAxes.borderThickness : baselineWidth;
+    }
+
+    function barSurfaceBorderColor(baselineColor) {
+        if (!root.barAxes.borderEnabled)
+            return baselineColor;
+        return root.resolvedBarAxisColor(root.barAxes.borderColor, baselineColor, root.barAxes.borderOpacity);
+    }
 
     // D4a bar customization engine: the single truth is barConfigs (the
     // [[bar.configs]] array — one entry today, the schema is multi-bar
@@ -1369,89 +1473,211 @@ Singleton {
         setValue("desktopCardGridVisibleWhileDragging", !!value);
     }
 
+    // D4c: bar-level axes write through the configs entry (clone-edit-
+    // reassign + save, the D4a lane machinery). The normalize helpers are
+    // the same ones normalizeBarAxes applies on load, so a write can never
+    // smuggle an out-of-range value into storage.
+    function setBarAxis(key, value) {
+        return root.withBarConfigs(config => {
+            if (config.axes[key] === value)
+                return false;
+            config.axes[key] = value;
+            return true;
+        });
+    }
+
     function setBarPosition(value) {
-        setValue("barPosition", normalizedEdgePosition(value));
+        setBarAxis("position", normalizedEdgePosition(value));
     }
 
     function setBarCornerStyle(value) {
-        setValue("barCornerStyle", normalizedBoundedInt(value, 1, 0, 5));
+        setBarAxis("cornerStyle", normalizedBoundedInt(value, 1, 0, 5));
     }
 
     function setBarBorderless(value) {
-        setValue("barBorderless", normalizedOption(root.barBorderlessModes, value, "pills"));
+        setBarAxis("borderless", BarDefaults.BORDERLESS_MODES.indexOf(String(value)) !== -1 ? String(value) : "pills");
     }
 
     function setBarGroupColor(value) {
-        setValue("barGroupColor", normalizedOption(root.barGroupColorOptions, value, "layer1"));
+        setBarAxis("groupColor", normalizedOption(root.barGroupColorOptions, value, "layer1"));
     }
 
-    // Right-click style editor (BarGroupStylePopup) persistence. One entry per
-    // (borderless mode, widget) pair, matching end4's `bar.widgetStyles` shape,
-    // but owned here so the config store stays the single writer.
-    function barWidgetStyleEntry(mode, widget) {
-        if (!mode || !widget)
-            return undefined;
-        return (root.barWidgetStyles ?? []).find(entry => entry.mode === mode && entry.widget === widget);
+    function setBarAutoHide(value) {
+        setBarAxis("autoHide", value === true);
     }
 
-    function normalizedBarWidgetStyles(raw) {
-        if (!Array.isArray(raw))
-            return [];
-        const modes = root.barBorderlessModes.map(option => option.value);
-        const numericKeys = ["radius", "borderWidth", "padding"];
-        const stringKeys = ["color", "borderColor"];
-        const result = [];
-        for (const candidate of raw) {
-            if (!candidate || typeof candidate !== "object")
-                continue;
-            const mode = String(candidate.mode ?? "");
-            // D4a: the separator rename aliases stored "divisor" styles so a
-            // pre-D4a per-widget style survives the id change.
-            const widget = BarWidgetDefaults.canonicalId(candidate.widget);
-            if (!modes.includes(mode) || widget === "")
-                continue;
-            const entry = {
-                mode: mode,
-                widget: widget
-            };
-            for (const key of numericKeys) {
-                const value = candidate[key];
-                if (typeof value === "number" && isFinite(value) && value >= 0)
-                    entry[key] = value;
-            }
-            for (const key of stringKeys) {
-                const value = candidate[key];
-                if (typeof value === "string" && value !== "")
-                    entry[key] = value;
-            }
-            result.push(entry);
-        }
-        return result;
+    function setBarShowBackground(value) {
+        setBarAxis("showBackground", value === true);
     }
 
-    function setBarWidgetStyle(mode, widget, key, value) {
-        if (!mode || !widget)
+    function setBarScreenList(value) {
+        setBarAxis("screenList", root.normalizedScreenList(Array.isArray(value) ? value : []));
+    }
+
+    function setBarThickness(value) {
+        setBarAxis("barThickness", root.clampedBarInt(value, 28, 64, root.defaultBarThickness));
+    }
+
+    function setBarVerticalThickness(value) {
+        setBarAxis("verticalThickness", root.clampedBarInt(value, 28, 64, root.defaultBarVerticalThickness));
+    }
+
+    function setBarEdgeMargin(value) {
+        setBarAxis("edgeMargin", root.normalizedBoundedInt(value, 0, 0, 48));
+    }
+
+    function setBarSideMargin(value) {
+        setBarAxis("sideMargin", root.normalizedBoundedInt(value, 0, 0, 96));
+    }
+
+    // D4c named axis setters (the settings page calls these; every value
+    // passes the same clamps as the load normalizer, so storage can never
+    // hold an out-of-range value no matter which door wrote it).
+    function setBarSideMarginPercent(value) {
+        setBarAxis("sideMarginPercent", root.normalizedBoundedInt(value, 0, 0, 49));
+    }
+
+    function setBarSpacing(value) {
+        setBarAxis("spacing", root.clampedBarSentinelInt(value, -1, 0, 64));
+    }
+
+    function setBarInnerPadding(value) {
+        setBarAxis("innerPadding", root.clampedBarSentinelInt(value, -1, 0, 64));
+    }
+
+    function setBarWidgetPadding(value) {
+        setBarAxis("widgetPadding", root.clampedBarSentinelInt(value, -1, 0, 32));
+    }
+
+    function setBarSquareCorners(value) {
+        setBarAxis("squareCorners", value === true);
+    }
+
+    function setBarRadius(value) {
+        setBarAxis("radius", root.clampedBarSentinelInt(value, -1, 0, 32));
+    }
+
+    function setBarFontScale(value) {
+        const numeric = Number(value);
+        setBarAxis("fontScale", isFinite(numeric) ? Math.max(0.8, Math.min(1.5, Math.round(numeric * 100) / 100)) : 1);
+    }
+
+    function setBarSurfaceColor(value) {
+        setBarAxis("surfaceColor", typeof value === "string" && value.length > 0 && value.length <= 32 ? value : "default");
+    }
+
+    function setBarSurfaceTransparency(value) {
+        const numeric = Number(value);
+        setBarAxis("surfaceTransparency", !isFinite(numeric) || numeric >= 1 ? -1 : Math.max(0.3, Math.min(1, numeric)));
+    }
+
+    function setBarBorderEnabled(value) {
+        setBarAxis("borderEnabled", value === true);
+    }
+
+    function setBarBorderColor(value) {
+        setBarAxis("borderColor", typeof value === "string" && value !== "" ? value : "outlineVariant");
+    }
+
+    function setBarBorderOpacity(value) {
+        const numeric = Number(value);
+        setBarAxis("borderOpacity", isFinite(numeric) ? Math.max(0.1, Math.min(1, numeric)) : 1);
+    }
+
+    function setBarBorderThickness(value) {
+        setBarAxis("borderThickness", root.clampedBarInt(value, 0, 4, 1));
+    }
+
+    function setBarWidgetTransparency(value) {
+        const numeric = Number(value);
+        setBarAxis("widgetTransparency", !isFinite(numeric) || numeric >= 1 ? 1 : Math.max(0.3, Math.min(1, numeric)));
+    }
+
+    function setBarWidgetOutlineEnabled(value) {
+        setBarAxis("widgetOutlineEnabled", value === true);
+    }
+
+    function setBarWidgetOutlineColor(value) {
+        setBarAxis("widgetOutlineColor", typeof value === "string" && value !== "" ? value : "outline");
+    }
+
+    function setBarWidgetOutlineOpacity(value) {
+        const numeric = Number(value);
+        setBarAxis("widgetOutlineOpacity", isFinite(numeric) ? Math.max(0.1, Math.min(1, numeric)) : 1);
+    }
+
+    function setBarWidgetOutlineThickness(value) {
+        setBarAxis("widgetOutlineThickness", root.clampedBarInt(value, 0, 4, 1));
+    }
+
+    // Sentinel axes (-1 = follow the style baseline) or bounded ints; the
+    // shared clamp for the D4c geometry axes.
+    function clampedBarSentinelInt(value, fallback, min, max) {
+        if (value === -1)
+            return -1;
+        return root.normalizedBoundedInt(value, fallback, min, max);
+    }
+
+    function clampedBarInt(value, min, max, fallback) {
+        const numeric = Number(value);
+        return isFinite(numeric) ? Math.max(min, Math.min(max, Math.round(numeric))) : fallback;
+    }
+
+    // Right-click style editor (BarGroupStylePopup) persistence, D4c
+    // shape: the style keys are plain overrides on the lane entry (uid
+    // addressed, so duplicate widgets style independently — dux per-widget
+    // axis lineage). Writers search every zone; a uid only ever matches
+    // one entry.
+    function setBarEntryStyle(uid, key, value) {
+        if (!uid || !key)
             return;
-        const styles = (root.barWidgetStyles ?? []).map(entry => Object.assign({}, entry));
-        let entry = styles.find(candidate => candidate.mode === mode && candidate.widget === widget);
-        if (!entry) {
-            entry = {
-                mode: mode,
-                widget: widget
-            };
-            styles.push(entry);
-        }
-        if (value === undefined || value === "")
-            delete entry[key];
-        else
-            entry[key] = value;
-        setValue("barWidgetStyles", styles.filter(candidate => Object.keys(candidate).length > 2));
+        root.withBarConfigs(config => {
+            const zones = ["left", "middle", "right"];
+            for (let z = 0; z < zones.length; z += 1) {
+                const lane = config.lanes[zones[z]];
+                for (let i = 0; i < lane.length; i += 1) {
+                    if (lane[i].uid !== uid)
+                        continue;
+                    if (value === undefined || value === "") {
+                        if (lane[i].overrides[key] !== undefined) {
+                            delete lane[i].overrides[key];
+                            return true;
+                        }
+                        return false;
+                    }
+                    if (lane[i].overrides[key] !== value) {
+                        lane[i].overrides[key] = value;
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            return false;
+        });
     }
 
-    function resetBarWidgetStyle(mode, widget) {
-        if (!mode || !widget)
+    function resetBarEntryStyle(uid) {
+        if (!uid)
             return;
-        setValue("barWidgetStyles", (root.barWidgetStyles ?? []).filter(entry => !(entry.mode === mode && entry.widget === widget)));
+        const keys = ["color", "borderColor", "radius", "borderWidth", "padding"];
+        root.withBarConfigs(config => {
+            let changed = false;
+            const zones = ["left", "middle", "right"];
+            for (let z = 0; z < zones.length; z += 1) {
+                const lane = config.lanes[zones[z]];
+                for (let i = 0; i < lane.length; i += 1) {
+                    if (lane[i].uid !== uid)
+                        continue;
+                    keys.forEach(key => {
+                        if (lane[i].overrides[key] !== undefined) {
+                            delete lane[i].overrides[key];
+                            changed = true;
+                        }
+                    });
+                }
+            }
+            return changed;
+        });
     }
 
     // ---- D4a bar lane entry machinery -----------------------------------
@@ -1467,6 +1693,7 @@ Singleton {
             {
                 id: "default",
                 name: "Bar",
+                axes: root.normalizeBarAxes({}),
                 lanes: root.normalizeConfigLanes({})
             }
         ];
@@ -1475,7 +1702,9 @@ Singleton {
     // Normalizes a parsed [[bar.configs]] array. A lane missing from storage
     // reads as the DEFAULT lane; an explicitly empty lane stays empty (the
     // minimal writer omits default-equal lanes only). Single-bar first:
-    // extra entries are dropped on the floor (D4e lifts this).
+    // extra entries are dropped on the floor (D4e lifts this). The bar-level
+    // axes are flat keys on the entry (everything except id/name/lanes),
+    // normalized through the same clamp table the setters use.
     function normalizeBarConfigs(rawConfigs) {
         const source = Array.isArray(rawConfigs) && rawConfigs.length > 0 ? rawConfigs : [
             {}
@@ -1486,9 +1715,57 @@ Singleton {
             {
                 id: typeof bar.id === "string" && bar.id !== "" ? bar.id : "default",
                 name: typeof bar.name === "string" && bar.name !== "" ? bar.name : "Bar",
+                axes: root.normalizeBarAxes(bar),
                 lanes: root.normalizeConfigLanes(rawLanes)
             }
         ];
+    }
+
+    // D4c bar-level axes, normalized against BarDefaults.DEFAULTS. Every
+    // clamp mirrors the pre-D4c flat-key clamps (a migrated value can never
+    // shift by normalization); the new axes use -1 sentinels ("follow the
+    // style baseline") clamped to their adjustable ranges.
+    function normalizeBarAxes(raw) {
+        const d = BarDefaults.DEFAULTS;
+        const scaled = (value, fallback) => {
+            const numeric = Number(value);
+            return isFinite(numeric) ? Math.max(0.8, Math.min(1.5, Math.round(numeric * 100) / 100)) : fallback;
+        };
+        const fraction = (value, fallback) => {
+            const numeric = Number(value);
+            return isFinite(numeric) ? Math.max(0, Math.min(1, numeric)) : fallback;
+        };
+        return {
+            position: normalizedEdgePosition(raw.position),
+            autoHide: raw.autoHide === true,
+            screenList: root.normalizedScreenList(raw.screenList),
+            showBackground: typeof raw.showBackground === "boolean" ? raw.showBackground : true,
+            cornerStyle: root.normalizedBoundedInt(raw.cornerStyle, 1, 0, 5),
+            borderless: BarDefaults.BORDERLESS_MODES.indexOf(raw.borderless) !== -1 ? raw.borderless : "pills",
+            groupColor: normalizedOption(root.barGroupColorOptions, raw.groupColor, "layer1"),
+            barThickness: root.clampedBarInt(raw.barThickness, 28, 64, d.barThickness),
+            verticalThickness: root.clampedBarInt(raw.verticalThickness, 28, 64, d.verticalThickness),
+            edgeMargin: root.normalizedBoundedInt(raw.edgeMargin, 0, 0, 48),
+            sideMargin: root.normalizedBoundedInt(raw.sideMargin, 0, 0, 96),
+            sideMarginPercent: root.normalizedBoundedInt(raw.sideMarginPercent, 0, 0, 49),
+            spacing: root.clampedBarSentinelInt(raw.spacing, -1, 0, 64),
+            innerPadding: root.clampedBarSentinelInt(raw.innerPadding, -1, 0, 64),
+            widgetPadding: root.clampedBarSentinelInt(raw.widgetPadding, -1, 0, 32),
+            squareCorners: raw.squareCorners === true,
+            radius: root.clampedBarSentinelInt(raw.radius, -1, 0, 32),
+            fontScale: scaled(raw.fontScale, 1),
+            surfaceColor: typeof raw.surfaceColor === "string" && raw.surfaceColor.length <= 32 ? raw.surfaceColor : "default",
+            surfaceTransparency: raw.surfaceTransparency === -1 ? -1 : fraction(raw.surfaceTransparency, -1),
+            borderEnabled: raw.borderEnabled === true,
+            borderColor: typeof raw.borderColor === "string" && raw.borderColor !== "" ? raw.borderColor : "outlineVariant",
+            borderOpacity: fraction(raw.borderOpacity, 1),
+            borderThickness: root.clampedBarInt(raw.borderThickness, 0, 4, 1),
+            widgetTransparency: fraction(raw.widgetTransparency, 1),
+            widgetOutlineEnabled: raw.widgetOutlineEnabled === true,
+            widgetOutlineColor: typeof raw.widgetOutlineColor === "string" && raw.widgetOutlineColor !== "" ? raw.widgetOutlineColor : "outline",
+            widgetOutlineOpacity: fraction(raw.widgetOutlineOpacity, 1),
+            widgetOutlineThickness: root.clampedBarInt(raw.widgetOutlineThickness, 0, 4, 1)
+        };
     }
 
     function normalizeConfigLanes(rawLanes) {
@@ -1579,14 +1856,27 @@ Singleton {
             if (JSON.stringify(mine) !== JSON.stringify(dflt))
                 lanes[zone] = mine;
         });
-        if (Object.keys(lanes).length === 0)
-            return null;
+        // Bar-level axes ride the same sparse rule: only deviations from
+        // BarDefaults.DEFAULTS persist (sorted for stable diffs); screenList
+        // compares by content.
+        const axes = {};
+        Object.keys(BarDefaults.DEFAULTS).sort().forEach(key => {
+            const mine = truth.axes[key];
+            const dflt = fallback.axes[key];
+            const same = Array.isArray(mine) ? JSON.stringify(mine) === JSON.stringify(dflt) : mine === dflt;
+            if (!same)
+                axes[key] = mine;
+        });
         const out = {
             id: truth.id
         };
         if (truth.name !== fallback.name)
             out.name = truth.name;
-        out.lanes = lanes;
+        Object.assign(out, axes);
+        if (Object.keys(lanes).length > 0)
+            out.lanes = lanes;
+        if (Object.keys(axes).length === 0 && Object.keys(lanes).length === 0)
+            return null;
         return [out];
     }
 
@@ -1985,40 +2275,7 @@ Singleton {
     // Orchestrated write for the three-lane bar layout. The UI calls this instead
     // of assigning the properties directly, so the schema change goes through the
     // settings backend and only persists when an array actually changed.
-    function setBarThickness(value) {
-        const numeric = Number(value);
-        const clamped = isFinite(numeric) ? Math.max(28, Math.min(64, Math.round(numeric))) : root.defaultBarThickness;
-        if (root.barThickness !== clamped) {
-            root.barThickness = clamped;
-            root.save();
-        }
-    }
-
-    function setBarVerticalThickness(value) {
-        const numeric = Number(value);
-        const clamped = isFinite(numeric) ? Math.max(28, Math.min(64, Math.round(numeric))) : root.defaultBarVerticalThickness;
-        if (root.barVerticalThickness !== clamped) {
-            root.barVerticalThickness = clamped;
-            root.save();
-        }
-    }
-
-    function setBarEdgeMargin(value) {
-        const clamped = root.normalizedBoundedInt(value, 0, 0, 48);
-        if (root.barEdgeMargin !== clamped) {
-            root.barEdgeMargin = clamped;
-            root.save();
-        }
-    }
-
-    function setBarSideMargin(value) {
-        const clamped = root.normalizedBoundedInt(value, 0, 0, 96);
-        if (root.barSideMargin !== clamped) {
-            root.barSideMargin = clamped;
-            root.save();
-        }
-    }
-
+    // (D4c thickness/margin setters live with the bar-axis writers above.)
     function normalizedQuickSettingsComponents(raw) {
         const source = Array.isArray(raw) ? raw : root.defaultQuickSettingsComponents;
         const result = [];
@@ -2365,23 +2622,12 @@ Singleton {
     function barSectionRaw() {
         const sparseConfigs = root.sparseBarConfigs();
         const section = {
-            "position": root.barPosition,
-            "autoHide": root.barAutoHide,
-            "screenList": root.barScreenList.slice(),
-            "showBackground": root.barShowBackground,
-            "cornerStyle": root.barCornerStyle,
-            "borderless": root.barBorderless,
-            "groupColor": root.barGroupColor,
-            "widgetStyles": root.barWidgetStyles.map(entry => Object.assign({}, entry)),
-            "barThickness": root.barThickness,
-            "verticalThickness": root.barVerticalThickness,
-            "edgeMargin": root.barEdgeMargin,
-            "sideMargin": root.barSideMargin,
             "showValues": root.barShowValues,
             "showNames": root.barShowNames,
             "quickSettingsComponents": root.quickSettingsComponents.slice(),
             // Tray shared state only: the per-instance tray axes ride the
-            // lane entries (D4b).
+            // lane entries (D4b). The bar-level axes (position, styles,
+            // thickness, margins...) live on the configs entry (D4c).
             "tray": {
                 "pinnedItems": root.barTrayPinnedItems.slice(),
                 "invertPinnedItems": root.barTrayInvertPinnedItems
@@ -2394,18 +2640,6 @@ Singleton {
 
     function barSectionDefaults() {
         return {
-            "position": "top",
-            "autoHide": false,
-            "screenList": [],
-            "showBackground": true,
-            "cornerStyle": 1,
-            "borderless": "pills",
-            "groupColor": "layer1",
-            "widgetStyles": [],
-            "barThickness": root.defaultBarThickness,
-            "verticalThickness": root.defaultBarVerticalThickness,
-            "edgeMargin": 0,
-            "sideMargin": 0,
             "showValues": true,
             "showNames": false,
             "quickSettingsComponents": root.defaultQuickSettingsComponents.slice(),
@@ -2492,7 +2726,8 @@ Singleton {
         const preIsland = configSection(preSource.island);
         const migration = ConfigMigrations.migrateConfig(parsed, {
             lanes: root.resolveBarLayouts(configSection(preSource.bar), preIsland, typeof preIsland.enabled === "boolean" ? preIsland.enabled : true),
-            defaults: BarWidgetDefaults.DEFAULTS
+            defaults: BarWidgetDefaults.DEFAULTS,
+            barDefaults: BarDefaults.DEFAULTS
         });
         root.configVersionDirty = root.configVersionDirty || migration.changed;
 
@@ -2603,18 +2838,11 @@ Singleton {
         root.horizontalClockDigits = root.normalizedHorizontalClockDigits(horizontalClock.digits);
         root.barShowValues = typeof bar.showValues === "boolean" ? bar.showValues : typeof bar.showMonitorValues === "boolean" ? bar.showMonitorValues : true;
         root.barShowNames = typeof bar.showNames === "boolean" ? bar.showNames : false;
-        root.barPosition = normalizedEdgePosition(bar.position);
-        root.barAutoHide = bar.autoHide === true;
-        root.barScreenList = root.normalizedScreenList(bar.screenList);
-        root.barShowBackground = typeof bar.showBackground === "boolean" ? bar.showBackground : true;
-        root.barCornerStyle = root.normalizedBoundedInt(bar.cornerStyle, 1, 0, 5);
-        root.barBorderless = root.normalizedOption(root.barBorderlessModes, bar.borderless, "pills");
-        root.barGroupColor = normalizedOption(root.barGroupColorOptions, bar.groupColor, "layer1");
-        root.barWidgetStyles = root.normalizedBarWidgetStyles(bar.widgetStyles);
-        root.barThickness = typeof bar.barThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.barThickness))) : root.defaultBarThickness;
-        root.barVerticalThickness = typeof bar.verticalThickness === "number" ? Math.max(28, Math.min(64, Math.round(bar.verticalThickness))) : root.defaultBarVerticalThickness;
-        root.barEdgeMargin = typeof bar.edgeMargin === "number" ? Math.max(0, Math.min(48, Math.round(bar.edgeMargin))) : 0;
-        root.barSideMargin = typeof bar.sideMargin === "number" ? Math.max(0, Math.min(96, Math.round(bar.sideMargin))) : 0;
+        // D4c: the bar-level axes (position/cornerStyle/borderless/thickness/
+        // margins/widgetStyles...) arrive folded onto the [[bar.configs]]
+        // entry by the v5 migration — the flat [bar] keys no longer exist
+        // here. The derived views (barPosition etc.) re-evaluate off the
+        // barConfigs assignment below.
         root.barTrayPinnedItems = root.normalizedTrayPinnedItems(tray.pinnedItems);
         // Absent keys must keep the shipped default (pin new items by
         // default); `=== true` would read a fresh config as "do not pin".

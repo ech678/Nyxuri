@@ -7,6 +7,12 @@
 //   - followFrameColor / frameColor paths dropped (no UI, constant false).
 //   - spectrumClip* / backgroundVisible / empty helpers dropped with the bar
 //     background spectrum.
+//
+// D4c: the style overrides ride the lane entry (uid addressed — duplicate
+// widgets style independently), and the fusion radii come from the lane's
+// SegmentRoles run (hidden end widgets no longer strand the "last" radius
+// on an invisible group). The capsule padding resolves through
+// BarDefaults (sentinel -1 = per-style baseline).
 
 import QtQuick
 import QtQuick.Layouts
@@ -16,25 +22,29 @@ import qs.services
 Item {
     id: root
     property bool vertical: false
-    property int currentIndex: 0
-    property int totalCount: 0
+    // SegmentRoles run role for this group: solo | first | middle | last.
+    // The lane hosts (BarContent/VerticalBarContent) resolve the run over
+    // the whole lane, so a hidden neighbour re-shapes this group's corners
+    // instead of leaving the fusion wrong.
+    property string segmentRole: "solo"
     readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
     property bool paintMaterialPill: false
     property bool paintBackground: true
     property color bgColor: Appearance.colors.colPrimaryContainer
     property string widgetName: ""
     // D4a injection protocol: the lane entry flows through the group into
-    // the loaded widget (the Loader's onLoaded pushes it). The group itself
-    // still keys its style overrides by widgetName.
+    // the loaded widget (the Loader's onLoaded pushes it). The group keys
+    // its own style overrides off the entry too (D4c — uid addressed).
     property var widgetEntry: null
 
     readonly property string borderlessMode: Config.options?.bar.borderless ?? "pills"
+    readonly property bool isFlat: root.borderlessMode === "flat"
+    // In flat the capsule chrome is off by default; a per-instance color
+    // override is the one way a widget gets its background back.
     readonly property bool styleEditable: !root.isMaterial && root.paintBackground && root.widgetName !== ""
     property var stylePreview: ({})
     readonly property var style: {
-        if (root.isMaterial)
-            return ({});
-        const entry = PersonalizationConfig.barWidgetStyleEntry(root.borderlessMode, root.widgetName);
+        const entry = root.widgetEntry && root.widgetEntry.overrides ? root.widgetEntry.overrides : {};
         return Object.assign({}, entry, root.stylePreview);
     }
 
@@ -111,11 +121,11 @@ Item {
     }
 
     function setStyle(key, value) {
-        PersonalizationConfig.setBarWidgetStyle(root.borderlessMode, root.widgetName, key, value);
+        PersonalizationConfig.setBarEntryStyle(root.widgetEntry ? root.widgetEntry.uid : "", key, value);
     }
 
     function resetStyle() {
-        PersonalizationConfig.resetBarWidgetStyle(root.borderlessMode, root.widgetName);
+        PersonalizationConfig.resetBarEntryStyle(root.widgetEntry ? root.widgetEntry.uid : "");
     }
 
     readonly property color resolvedGroupColor: {
@@ -127,29 +137,27 @@ Item {
     readonly property real currentRadius: background.topLeftRadius
     readonly property real currentBorderWidth: background.border.width
 
-    property real padding: root.style.padding ?? ((root.isMaterial && !root.paintMaterialPill) ? 0 : 5)
+    // Per-instance padding override (style popup) beats the bar-level
+    // widgetPadding axis; -1 on the axis falls back to the per-style
+    // baseline (5, or 0 for unpilled material groups).
+    property real padding: root.style.padding ?? PersonalizationConfig.resolvedBarWidgetPadding(root.paintMaterialPill)
 
     readonly property bool isSegmented: Config.options?.bar.borderless === "segmented"
     readonly property bool isPanel: Config.options.bar.cornerStyle === 5
+    // D4c widget-layer axes: widgetTransparency transparentizes whatever
+    // color the chain below resolved; widgetOutline* overrides the
+    // segmented baseline border (defaults keep it untouched).
     readonly property real panelRadius: Appearance.rounding.unsharpenmore + 4
 
     readonly property real fullRadius: root.isPanel ? root.panelRadius : height / 2
     readonly property real midRadius: root.isPanel ? root.panelRadius : root.isSegmented ? 0 : (Config.options.bar.cornerStyle === 2 ? Appearance.rounding.unsharpenmore + 2 : Appearance.rounding.unsharpenmore)
 
-    property real startRadius: {
-        if (totalCount <= 1)
-            return fullRadius;
-        if (currentIndex === 0)
-            return fullRadius;
-        return midRadius;
-    }
-    property real endRadius: {
-        if (totalCount <= 1)
-            return fullRadius;
-        if (currentIndex === totalCount - 1)
-            return fullRadius;
-        return midRadius;
-    }
+    // SegmentRoles run radii: solo keeps the full pill, first/last round
+    // only their outer corners, middle groups take the mid radius. The
+    // per-instance style.radius override (right-click popup) still wins
+    // over all four corners.
+    property real startRadius: root.segmentRole === "first" || root.segmentRole === "solo" ? root.fullRadius : root.midRadius
+    property real endRadius: root.segmentRole === "last" || root.segmentRole === "solo" ? root.fullRadius : root.midRadius
 
     // A widget may hide itself at runtime (Media with no track). The grouping
     // chrome (padding + capsule) is BarGroup's own, so the group has to
@@ -169,6 +177,27 @@ Item {
 
     default property alias items: gridLayout.children
 
+    // The capsule color chain (style overrides > mode semantics > group
+    // color), before the D4c widget-layer transparency applies.
+    readonly property color baseBackgroundColor: {
+        if (!root.paintBackground)
+            return "transparent";
+        const override = root.resolveColorName(root.style.color);
+        if (root.isFlat)
+            return override ?? "transparent";
+        if (override !== undefined)
+            return override;
+        if (root.isMaterial && !root.paintMaterialPill)
+            return "transparent";
+        if (root.isMaterial && root.paintMaterialPill)
+            return root.bgColor;
+        if (root.borderlessMode === "transparent")
+            return "transparent";
+        if (Config.options.bar.cornerStyle === 2 || (root.isSegmented && !Config.options.bar.showBackground))
+            return Appearance.colors.colLayer0;
+        return root.resolvedGroupColor;
+    }
+
     Rectangle {
         id: background
         anchors {
@@ -178,15 +207,17 @@ Item {
             leftMargin: root.vertical ? 4 : 0
             rightMargin: root.vertical ? 4 : 0
         }
-        color: !root.paintBackground ? "transparent" : root.resolveColorName(root.style.color) !== undefined ? root.resolveColorName(root.style.color) : (root.isMaterial && !root.paintMaterialPill) ? "transparent" : (root.isMaterial && root.paintMaterialPill) ? root.bgColor : (Config.options?.bar.borderless === "transparent" ? "transparent" : Config.options.bar.cornerStyle === 2 || (Config.options?.bar.borderless === "segmented" && !Config.options.bar.showBackground) ? Appearance.colors.colLayer0 : root.resolvedGroupColor)
+        color: PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor)
 
-        border.width: root.style.borderWidth ?? (root.paintBackground && root.isSegmented && !root.isMaterial ? 1 : 0)
-        border.color: root.resolveColorName(root.style.borderColor) ?? Appearance.colors.colLayer0Border
+        // Priority: per-instance style override (popup) > bar-level
+        // widgetOutline axes > segmented baseline.
+        border.width: root.style.borderWidth !== undefined ? root.style.borderWidth : PersonalizationConfig.barWidgetOutlineWidth(root.paintBackground && root.isSegmented && !root.isMaterial && !root.isFlat ? 1 : 0)
+        border.color: root.style.borderColor !== undefined ? (root.resolveColorName(root.style.borderColor) ?? Appearance.colors.colLayer0Border) : PersonalizationConfig.barWidgetOutlineColor(Appearance.colors.colLayer0Border)
 
-        topLeftRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.startRadius))
-        bottomLeftRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius))
-        topRightRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
-        bottomRightRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (Config.options?.bar.borderless === "separated" ? root.fullRadius : root.endRadius))
+        topLeftRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.borderlessMode === "separated" ? root.fullRadius : root.vertical ? root.endRadius : root.startRadius))
+        bottomLeftRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.borderlessMode === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
+        topRightRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.borderlessMode === "separated" ? root.fullRadius : root.vertical ? root.startRadius : root.endRadius))
+        bottomRightRadius: root.style.radius ?? ((root.isMaterial && root.paintMaterialPill) ? root.fullRadius : (root.borderlessMode === "separated" ? root.fullRadius : root.endRadius))
 
         Behavior on color {
             animation: Appearance.animation.elementMoveFast.colorAnimation.createObject(this)

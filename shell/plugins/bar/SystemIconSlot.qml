@@ -168,7 +168,7 @@ Item {
             elide: Text.ElideRight
             clip: true
 
-            font.pixelSize: NexusStyle.font.labelSmall
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
             font.features: { "tnum": 1 }
             color: root.hovered && root.isMaterial ? M3Palette.primaryForeground : root.resolvedContentColor
 

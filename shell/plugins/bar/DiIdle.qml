@@ -87,7 +87,7 @@ Item {
             anchors.centerIn: parent
             visible: avatarImage.status !== Image.Ready
             text: "person"
-            iconSize: NexusStyle.font.bodyLarge
+            iconSize: NexusStyle.font.bodyLarge * BarScale.font
             color: Appearance.colors.colOnPrimaryContainer
         }
     }
@@ -107,7 +107,7 @@ Item {
             reveal: !diIdleRoot.systemIconsElsewhere && VolumeService.sourceMuted
             MaterialSymbol {
                 text: "mic_off"
-                iconSize: NexusStyle.font.bodyLarge
+                iconSize: NexusStyle.font.bodyLarge * BarScale.font
                 color: Appearance.colors.colOnLayer0
             }
         }
@@ -116,7 +116,7 @@ Item {
             reveal: !diIdleRoot.systemIconsElsewhere && VolumeService.sinkMuted
             MaterialSymbol {
                 text: "volume_off"
-                iconSize: NexusStyle.font.bodyLarge
+                iconSize: NexusStyle.font.bodyLarge * BarScale.font
                 color: Appearance.colors.colOnLayer0
             }
         }
@@ -125,7 +125,7 @@ Item {
             reveal: !diIdleRoot.systemIconsElsewhere && !NetworkService.connected
             MaterialSymbol {
                 text: "wifi_off"
-                iconSize: NexusStyle.font.bodyLarge
+                iconSize: NexusStyle.font.bodyLarge * BarScale.font
                 color: Appearance.colors.colError
             }
         }
@@ -154,13 +154,13 @@ Item {
                 MaterialSymbol {
                     fill: 0
                     text: WeatherService.hasValidData ? WeatherService.currentIconName : "cloud"
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: Appearance.colors.colOnLayer0
                     Layout.alignment: Qt.AlignVCenter
                 }
 
                 StyledText {
-                    font.pixelSize: di.isMaterial ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium
+                    font.pixelSize: di.isMaterial ? NexusStyle.font.bodyLarge * BarScale.font : NexusStyle.font.bodyMedium * BarScale.font
                     font.features: {
                         "tnum": 1
                     }

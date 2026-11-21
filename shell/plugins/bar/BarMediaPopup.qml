@@ -58,7 +58,7 @@ Rectangle {
                 Layout.fillWidth: true
                 text: root.player?.trackTitle || I18n.tr("No media")
                 font.family: Appearance.font.main
-                font.pixelSize: NexusStyle.font.bodySmall
+                font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                 font.bold: true
                 color: Appearance.colors.colOnLayer1
                 elide: Text.ElideRight
@@ -68,7 +68,7 @@ Rectangle {
                 Layout.fillWidth: true
                 text: root.player?.trackArtist || I18n.tr("Not playing")
                 font.family: Appearance.font.main
-                font.pixelSize: NexusStyle.font.labelSmall
+                font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
                 color: Appearance.colors.colOnLayer2
                 elide: Text.ElideRight
             }

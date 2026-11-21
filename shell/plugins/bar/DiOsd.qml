@@ -55,7 +55,7 @@ Item {
         StyledText {
             Layout.alignment: Qt.AlignVCenter
             text: di.osdValueText()
-            font.pixelSize: di.isMaterial ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium
+            font.pixelSize: di.isMaterial ? NexusStyle.font.bodyLarge * BarScale.font : NexusStyle.font.bodyMedium * BarScale.font
             font.features: {
                 "tnum": 1
             }

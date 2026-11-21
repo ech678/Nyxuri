@@ -243,7 +243,7 @@ Item {
 
                         visible: parent.showCount
                         anchors.centerIn: parent
-                        font.pixelSize: NexusStyle.font.labelSmall
+                        font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
                         color: root.isMaterial ? M3Palette.primary : Appearance.colors.colLayer0
                         text: NotificationService.unread
                     }

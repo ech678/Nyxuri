@@ -2,9 +2,9 @@
 
 > 本页是 bar 自定义引擎（D4 五期）的架构契约：配置 schema、默认值回退、最小化写入、
 > 版本化迁移、部件注册表与属性注入协议。分期交付与验收归
-> [shell/ROADMAP](../../shell/ROADMAP.md) D 卷；D4a/D4b 于 2026-11-21 落地，后续期次
-> 在此页增量补节。运行行为以源码与契约测试（`tests/shell/test_d4a_bar_config.py`、
-> `tests/shell/test_d4b_bar_config.py`）为准。
+> [shell/ROADMAP](../../shell/ROADMAP.md) D 卷；D4a/D4b/D4c 于 2026-11-22 落地，
+> 后续期次在此页增量补节。运行行为以源码与契约测试（`tests/shell/test_d4a_bar_config.py`、
+> `tests/shell/test_d4b_bar_config.py`、`tests/shell/test_d4c_bar_config.py`）为准。
 
 ## 铁原则
 
@@ -37,8 +37,7 @@ right = ["tray", { id = "clock", enabled = false }]  # 混排
 - **单例部件**（island）：全 bar 至多一条，normalize 期去重（岛占通知宿主，第二条
   会偷 islandHost）；其余部件允许同类型多实例（spacer/时钟可重复）。
 
-bar 级几何/样式轴（spacing/胶囊样式/长度模式等）D4c 才迁入 configs 条目；当前仍在
-`[bar]` 扁平键。
+bar 级几何/样式轴已随 D4c 迁入 configs 条目（见「bar 级轴（D4c）」节）。
 
 ## 三层默认值回退 + 单一取值入口（D4a）
 
@@ -111,6 +110,38 @@ legacy 别名在 load/normalize 期归一：`clockWidget→clock`、`sysTray→t
   （保 enabled/overrides），空 = 池内新增。
 - Dashboard 布局卡走 `setBarLayouts` id 替换 API（该编辑器不感知 per-entry 状态，
   属有意边界）；`setBarLayouts` 语义 = 整段替换（禁用/覆盖状态重置）。
+
+## bar 级轴（D4c）
+
+bar 级几何/样式轴以 **configs 条目平键**存储（id/name/lanes 之外的一切键），正典表 =
+`services/BarDefaults.js`（对齐 BarWidgetDefaults 的注册点模式）。**哨兵原则**：
+几何轴默认 `-1`/`"default"`/`1.0`，解析时落回 per-style 硬编码基线（B 卷 end4 验收值，
+由 BarDefaults 的 baseline 函数承载）——默认配置零视觉变化、零写入，显式值只覆写一项。
+
+- 轴表：`spacing`/`innerPadding`/`widgetPadding`（哨兵 −1 = per-style 基线）、
+  `sideMarginPercent`（每侧边距 % 屏宽，0 = 通栏；吃掉 dux barLengthMode 三键）、
+  `squareCorners` + `radius`（bar 壳圆角：显式值 > 方角 > 主题 screenRounding）、
+  `fontScale`（乘算 NexusStyle type scale）、`surfaceColor`/`surfaceTransparency`、
+  `border×4`（bar 面）、`widgetTransparency` + `widgetOutline×4`（部件层）、
+  行为键 position/autoHide/screenList（D4e 多 bar 前置）。
+- **解析出口唯一**：`PersonalizationConfig.resolvedBarSpacing/InnerPadding/WidgetPadding/
+  ShellRadius`（消费面零哨兵分支）；样式上下文 `barStyleContext` 单点。
+- **融合角**：`plugins/bar/SegmentRoles.js`（dux 原件整抄）算 lane 级 run 角色
+  （solo/first/middle/last），宿主经活跃分支 Repeater 的 `hasContent` 供 participation
+  ——隐藏部件（无曲目的 Media）重排邻居圆角、spacer/separator 断 run；BarGroup 以
+  `segmentRole` 取代 totalCount/currentIndex。
+- **flat 第五档**：borderless 词表加 `flat`（无胶囊几何的裸部件；`transparent` 保留
+  「胶囊几何 + 透明填充」语义）。逐部件背景 = 右键弹层样式随条目走（见下）。
+- **字体缩放**：`plugins/bar/BarScale.qml` 单例（qmldir 登记）乘算 bar 表面全部
+  type-scale 读取（115 处绑定 `* BarScale.font`，权值枚举不缩放）；settings 页与
+  双表面卡（dashboard 天气/资源卡）永不缩放。
+- **v5 迁移**：`MIGRATED_BAR_GLOBALS` 显式键名映射（v4 的 [bar] 扁平框轴 → 条目，
+  跳默认、幂等）+ `barWidgetStyles`（per-(mode,widget)）折叠进**当前 borderless 档**
+  的条目 overrides（per-mode 维度随 D4c 退役，样式跟实例走）；头戳升 5，快路径收 2–5。
+- **明确不迁（登记边界）**：`iconScale`（bar 图标槽是 97 处 end4 字面基线，归 D4e
+  密度预设——dux maximizeWidgetIcons 同族）；`shadow×5`（dux 阴影长在其 Frame 翼形
+  窗口基建上，今日窗口内画必裁切，随 D4e 窗口增长基建回归）；island 时钟数字与
+  quickpanel 子目录不参与 fontScale（隐式单例解析不可达 + display 档几何）。
 
 ## 每部件实例轴（D4b）
 
@@ -185,19 +216,25 @@ D4b 把 per-widget 轴从 `[bar]` 扁平键迁到 lane 条目 overrides，交付
 
 ### 明确不迁（登记边界）
 
-- **island\* 轴**：岛设置页独立架构（D3 搁置连带），待 D4c/D4e 处置；岛条目暂无轴。
-- `barWidgetStyles`（右键改色弹层，per-(mode,widget)）= D4c 材料。
+- **island\* 轴**：岛设置页独立架构（D3 搁置连带），待 D4e 处置；岛条目暂无轴。
+- ~~`barWidgetStyles`（右键改色弹层，per-(mode,widget)）~~ **已随 D4c 处置**：折叠进
+  当前 borderless 档的条目 overrides（uid 寻址，重复部件各配各的），per-mode 维度退役。
 - `quickSettingsComponents`（quickpanel 域组件集合）不在 bar 条目轴。
-- overflow/placement/pill background/密度 = D4c/D4d/D4e 材料。
+- overflow/placement = D4d 材料；密度/多 bar = D4e 材料。
 
 ## 证据
 
 - **D4a**：probe `d4a` 节——条目几何（禁用不实例化/lane 塌陷/spacer 注入 40 vs
-  默认 20/单例去重）、迁移（版本/别名/种子/剥除/幂等）、持久化（默认空段/单键/
-  恢复空/configVersion=4）。契约测试 `tests/shell/test_d4a_bar_config.py` 32 例。
+  默认 20/单例去重）、迁移（版本/别名/种子/剥除/幂等）、持久化（默认空段/单键
+  （条目平键形态）/恢复空/configVersion=5）。契约测试 `tests/shell/test_d4a_bar_config.py`。
 - **D4b**：probe `d4b` 节——迁移（v4 折叠/跳默认/剥除/pin 保留/dateFormat 折叠/
   幂等）、双实例隔离（默认态坍缩回字符串）、点击词表（闭合 id、argv 形状、未知
   id 回退）；`d4bSet` IPC 写单轴（b97 系列部件行为随动全部改走条目路径）。
   契约测试 `tests/shell/test_d4b_bar_config.py`（38 例）。
+- **D4c**：probe `d4c` 节——v5 迁移（框轴折叠/跳默认/widgetStyles 当前档折叠+他档丢弃/
+  剥除/幂等）、哨兵解析（spacing 显式覆写/复位回基线/inset=4/padding=5/radius
+  auto→square→override 链）、融合角色（run 融合/隐藏重排/spacer 断 run/live 角标）。
+  契约测试 `tests/shell/test_d4c_bar_config.py`（34 例）；weston 沙箱 probe 全绿
+  （含 d4a/d4b/b96/b97 回归）。
 
 

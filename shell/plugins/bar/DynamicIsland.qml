@@ -470,7 +470,7 @@ Item {
                 StyledText {
                     Layout.alignment: Qt.AlignVCenter
                     text: root.batteryStatusText()
-                    font.pixelSize: NexusStyle.font.bodyMedium
+                    font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
                     font.weight: Font.DemiBold
                     color: root.batteryAlertColor()
                 }
@@ -490,7 +490,7 @@ Item {
                 StyledText {
                     Layout.alignment: Qt.AlignVCenter
                     text: `${Math.round(Battery.percentage * 100)}`
-                    font.pixelSize: NexusStyle.font.bodyMedium
+                    font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
                     font.features: {
                         "tnum": 1
                     }

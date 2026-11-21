@@ -18,7 +18,7 @@ Row {
         fill: 0
         font.weight: Font.DemiBold
         text: root.icon
-        iconSize: NexusStyle.font.bodyLarge
+        iconSize: NexusStyle.font.bodyLarge * BarScale.font
         color: Appearance.colors.colOnSurfaceVariant
     }
 
@@ -27,7 +27,7 @@ Row {
         text: root.label
         font {
             weight: Font.DemiBold
-            pixelSize: NexusStyle.font.bodyLarge
+            pixelSize: NexusStyle.font.bodyLarge * BarScale.font
         }
         color: Appearance.colors.colOnSurfaceVariant
     }

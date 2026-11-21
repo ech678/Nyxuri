@@ -1636,3 +1636,38 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
 - **未验证（作者）**：chip 齿轮进 13 页实机过目、双实例隔离手感、电池功耗行、
   工作区状态色三模式、点击动作实跑（含自定义命令）、v4 升级零感知（本机 live
   配置）。
+
+## D4c bar 级几何与样式（2026-11-22 实现落地）
+
+- **范围拍板过程**：作者基准「跟 dux 对齐、不用管 Noctalia」（2026-11-21 对话）——
+  dux D4c 键域零遗漏对齐（surfaceColor/surfaceCustomColor 补入效果组）；Noctalia
+  特有项（胶囊厚度比/面板重叠/接触阴影/bar 级字体族）登记不拿。执行序修订：
+  D4c 提前于 D5（作者「继续 D4」指令拍板，引擎连贯性优先）。
+- **存储侧**：`services/BarDefaults.js`（新，bar 级轴正典表 + per-style 基线函数 +
+  哨兵解析）；`ConfigMigrations.js` v5（`MIGRATED_BAR_GLOBALS` 框轴折叠 +
+  `WIDGET_STYLE_KEYS` 当前档折叠，跳默认/幂等/头戳 5/快路径 2–5）；
+  `PersonalizationConfig` bar 框属性全转条目派生视图（`setBarAxis` 写通道 +
+  20 个具名 setter + `normalizeBarAxes` 全表钳制），`barSectionRaw` 只剩域数据面
+  （showValues/showNames/quickSettingsComponents/tray）；右键样式 API 退役换
+  `setBarEntryStyle/resetBarEntryStyle`（uid 寻址）。
+- **视觉侧**：`plugins/bar/SegmentRoles.js`（dux 整抄）+ BarGroup `segmentRole`
+  协议（融合角修复：隐藏端组不再吃掉 last 圆角）；BarContent/VerticalBarContent
+  走 `resolvedBarSpacing/InnerPadding`（竖向基线独立：-4/-2）；`shellRadius` 别名
+  ×3 宿主收敛 42 处 screenRounding 消费；BarGroup padding/描边/部件层不透明度
+  轴化（优先级：实例覆写 > bar 轴 > segmented 基线）；flat 第五档（裸部件，
+  transparent 语义保留）。
+- **缩放**：`plugins/bar/BarScale.qml` 单例（qmldir 登记）× 115 处 bar 表面
+  type-scale 绑定（python 扫乘，权值豁免）；settings 页/双表面卡/options 页不缩放；
+  island 子目录与 quickpanel 回退不乘（隐式单例解析不可达——test_qml_structure
+  拦截，岛时钟为 display 档几何，登记边界）。
+- **窗口**：`Bar.qml` `sideMarginPx`（percent → 沿轴屏宽换算，0 = 沿用 px 轴）。
+- **登记边界**：iconScale → D4e 密度（97 处 end4 字面图标槽，B-2 基线）；shadow×5
+  → D4e 窗口增长基建（dux 阴影长在 Frame 翼形窗口上，今日窗口内画必裁切）。
+- **验证**：`test_d4c_bar_config.py` 34 例（轴表哨兵/v5 映射/存储形态/消费面/设置页）
+  + d4a(32)/d4b(38) 版本钉升 5；weston 沙箱 probe 全绿（d4c 三节 + d4a/d4b/b96/b97/
+  六档样式回归）；tests/shell 全量 737 例仅剩 6 个存量失败（test_shell_architecture
+  R 表断言，stash 净树复跑证实与本改动无关）。旧契约更新钉：test_bar_end4（style
+  API/settled 形态）、test_settings_pages（appearance select 4→7）、
+  test_weather_lifecycle（STAMP 5）、test_i18n（zh_CN 22 键，含 TOML 表头序修复）。
+- **未验证（作者）**：见 ROADMAP 验收积压表 D4c 行（三几何轴/% 长度/flat/缩放/
+  效果分组/融合角重排/v5 零感知）。

@@ -59,7 +59,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 1
                     text: "screenshot_region"
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: root.contentColor
                 }
             }
@@ -86,7 +86,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 1
                     text: "colorize"
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: root.contentColor
                 }
             }
@@ -113,7 +113,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
                     text: "keyboard"
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: root.contentColor
                 }
             }
@@ -140,7 +140,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
                     text: "imagesmode"
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: root.contentColor
                 }
             }
@@ -167,7 +167,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
                     text: Pipewire.defaultAudioSource?.audio?.muted ? "mic_off" : "mic"
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: root.contentColor
                 }
             }
@@ -194,7 +194,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
                     text: Appearance.m3colors.darkmode ? "light_mode" : "dark_mode"
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: root.contentColor
                 }
             }
@@ -267,7 +267,7 @@ Item {
                     case PowerProfile.Performance:
                         return "local_fire_department";
                     }
-                    iconSize: NexusStyle.font.bodyLarge
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
                     color: root.contentColor
                 }
             }

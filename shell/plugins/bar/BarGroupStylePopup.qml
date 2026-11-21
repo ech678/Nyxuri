@@ -150,12 +150,12 @@ PopupWindow {
 
                         StyledText {
                             text: root.widgetTitle
-                            font.pixelSize: NexusStyle.font.bodyLarge
+                            font.pixelSize: NexusStyle.font.bodyLarge * BarScale.font
                             color: Appearance.m3colors.m3onSurface
                         }
                         StyledText {
                             text: Translation.tr("Style for %1 mode").arg(root.group.borderlessMode)
-                            font.pixelSize: NexusStyle.font.bodySmall
+                            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                             color: Appearance.colors.colSubtext
                         }
                     }
