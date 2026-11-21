@@ -308,6 +308,55 @@ class TestScratchToggle(unittest.TestCase):
                     "-e", str(env.home / ".config/noctalia/tools/orbit-translate.py"), "--settings",
                 ])
 
+    def test_missioncenter_missing_notifies_and_exits_nonzero(self):
+        with TempEnv() as env:
+            bindir = env.home / "bin"
+            bindir.mkdir()
+            calls = env.home / "calls"
+            notify = bindir / "notify-send"
+            notify.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$CALLS"\n')
+            notify.chmod(0o755)
+            niri = bindir / "niri"
+            niri.write_text('#!/bin/sh\nexit 0\n')
+            niri.chmod(0o755)
+
+            safe_bin = env.home / "safebin"
+            safe_bin.mkdir()
+            for cmd in ("flock", "tr", "printf", "jq", "head", "bash", "sh", "sleep"):
+                p = shutil.which(cmd)
+                if p:
+                    (safe_bin / cmd).symlink_to(p)
+
+            result = subprocess.run(
+                ["bash", str(_TOGGLE), "missioncenter"],
+                capture_output=True, text=True,
+                env={"PATH": f"{bindir}:{safe_bin}", "CALLS": str(calls), "XDG_RUNTIME_DIR": str(env.home), "HOME": str(env.home)},
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("未安装", result.stderr)
+            self.assertEqual(calls.read_text().splitlines(), [
+                "-a", "Nyxuri", "Mission Center", "Mission Center 未安装 / Not installed (sudo pacman -S mission-center)",
+            ])
+
+    def test_missioncenter_present_spawns(self):
+        with TempEnv() as env:
+            bindir = env.home / "bin"
+            bindir.mkdir()
+            calls = env.home / "calls"
+            niri = bindir / "niri"
+            niri.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$CALLS"\n')
+            niri.chmod(0o755)
+            mc = bindir / "missioncenter"
+            mc.write_text('#!/bin/sh\nexit 0\n')
+            mc.chmod(0o755)
+            result = subprocess.run(
+                ["bash", str(_TOGGLE), "missioncenter"],
+                capture_output=True, text=True,
+                env={"PATH": f"{bindir}:/usr/bin:/bin", "CALLS": str(calls), "XDG_RUNTIME_DIR": str(env.home), "HOME": str(env.home)},
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(calls.read_text().splitlines(), ["msg", "action", "spawn", "--", "missioncenter"])
+
     def test_no_shell_string_execution_fallback(self):
         """Menu cmds are data, not shell input: no `bash -c` fallback may exist."""
         src = _TOGGLE.read_text(encoding="utf-8")

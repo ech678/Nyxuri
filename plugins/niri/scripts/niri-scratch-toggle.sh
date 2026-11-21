@@ -132,6 +132,11 @@ case "$TARGET_APP" in
                 niri msg action spawn -- missioncenter
             elif command -v flatpak >/dev/null 2>&1 && flatpak info io.missioncenter.MissionCenter >/dev/null 2>&1; then
                 niri msg action spawn -- flatpak run io.missioncenter.MissionCenter
+            else
+                msg="Mission Center 未安装 / Not installed (sudo pacman -S mission-center)"
+                echo "$msg" >&2
+                command -v notify-send >/dev/null 2>&1 && notify-send -a "Nyxuri" "Mission Center" "$msg"
+                exit 1
             fi
         elif [ -n "$ACTIVE_WS" ] && [ -n "${win_ws:-}" ] && [ "$win_ws" != "$ACTIVE_WS" ]; then
             niri msg action focus-window --id "$win_id"
