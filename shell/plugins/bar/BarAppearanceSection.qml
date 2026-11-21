@@ -247,12 +247,6 @@ ColumnLayout {
         onToggled: PersonalizationConfig.setBarShowBackground(checked)
     }
 
-    PreferenceToggle {
-        text: I18n.tr("Autohide")
-        checked: PersonalizationConfig.barAutoHide
-        onToggled: PersonalizationConfig.setBarAutoHide(checked)
-    }
-
     PreferenceSelect {
         label: I18n.tr("Group color")
         model: PersonalizationConfig.barGroupColorOptions
@@ -409,4 +403,65 @@ ColumnLayout {
     // D4c: per-widget backgrounds live on the right-click style popup
     // (per instance); the shadow axes are D4e material (they need the
     // window-growth infrastructure).
+
+    // Behavior (D4d): the reveal/hide channel, input pass-through and the
+    // popup intent. The auto-hide toggle moved here from Style & Corner.
+    PreferenceHeader {
+        text: I18n.tr("Behavior")
+    }
+
+    PreferenceToggle {
+        first: true
+        text: I18n.tr("Autohide")
+        checked: PersonalizationConfig.barAutoHide
+        onToggled: PersonalizationConfig.setBarAutoHide(checked)
+    }
+
+    PreferenceSlider {
+        label: I18n.tr("Autohide delay")
+        value: root.axes.autoHideDelay
+        valueLabel: root.axes.autoHideDelay <= 0 ? I18n.tr("Off") : Math.round(root.axes.autoHideDelay) + " ms"
+        from: 0
+        to: 1000
+        stepSize: 50
+        enabled: PersonalizationConfig.barAutoHide
+        onMoved: value => PersonalizationConfig.setBarAutoHideDelay(Math.round(value))
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Strict autohide")
+        checked: root.axes.autoHideStrict
+        enabled: PersonalizationConfig.barAutoHide
+        onToggled: PersonalizationConfig.setBarAutoHideStrict(checked)
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Hide over fullscreen")
+        checked: root.axes.hideOnFullscreen
+        onToggled: PersonalizationConfig.setBarHideOnFullscreen(checked)
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Click-through")
+        checked: root.axes.clickThrough
+        onToggled: PersonalizationConfig.setBarClickThrough(checked)
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Hover popouts")
+        checked: root.axes.hoverPopouts
+        onToggled: PersonalizationConfig.setBarHoverPopouts(checked)
+    }
+
+    PreferenceSlider {
+        last: true
+        label: I18n.tr("Hover popout delay")
+        value: root.axes.hoverPopoutDelay
+        valueLabel: Math.round(root.axes.hoverPopoutDelay) + " ms"
+        from: 0
+        to: 800
+        stepSize: 50
+        enabled: root.axes.hoverPopouts
+        onMoved: value => PersonalizationConfig.setBarHoverPopoutDelay(Math.round(value))
+    }
 }

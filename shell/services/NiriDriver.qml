@@ -410,6 +410,8 @@ Singleton {
             workspace_id: rawWindow.workspace_id,
             isFocused: !!rawWindow.is_focused,
             is_focused: !!rawWindow.is_focused,
+            isFullscreen: !!rawWindow.is_fullscreen,
+            is_fullscreen: !!rawWindow.is_fullscreen,
             isFloating: !!rawWindow.is_floating,
             is_floating: !!rawWindow.is_floating,
             isMinimized: !!rawWindow.is_minimized,
@@ -990,6 +992,21 @@ Singleton {
     function windowsForWorkspace(wsId) {
         const numId = Number(wsId);
         return root.windows.filter(w => Number(w.workspaceId || w.workspace_id) === numId);
+    }
+
+    // D4d hideOnFullscreen (bar-config.md): a non-minimized fullscreen
+    // toplevel sits somewhere on the given output. Niri fullscreen windows
+    // cover their whole output, so any workspace of that output counts.
+    function fullscreenToplevelOnScreen(outputName) {
+        const name = String(outputName || "");
+        if (!name || !Array.isArray(root.windows))
+            return false;
+        const ids = {};
+        for (const ws of root.workspaces) {
+            if (ws.output === name)
+                ids[Number(ws.id)] = true;
+        }
+        return root.windows.some(w => w.isFullscreen && !w.isMinimized && ids[Number(w.workspaceId || w.workspace_id)]);
     }
 
     function searchWindows(query) {

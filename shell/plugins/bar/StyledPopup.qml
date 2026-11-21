@@ -13,7 +13,15 @@ LazyLoader {
     property bool hoverActivates: true
     property bool closeOnOutsideClick: false
     property bool popupHovered: false
-    property int hoverOpenDelay: 400
+    // D4d: the intent delay is the bar-level hoverPopoutDelay axis (150ms
+    // default, D4d-1 decision — the old 400ms hardcode retired with it).
+    property int hoverOpenDelay: PersonalizationConfig.barAxes.hoverPopoutDelay
+    // D4d: explicit-open path for click-driven popups (the lane overflow
+    // button). The hover machinery stays untouched; pinnedOpen simply
+    // forces active. Callers must move hosted items back OUT of the popup
+    // content before clearing pinnedOpen — the window (and its content
+    // tree) is destroyed on deactivate.
+    property bool pinnedOpen: false
     default property Item contentItem
     property real popupBackgroundMargin: 0
 
@@ -55,7 +63,7 @@ LazyLoader {
         onTriggered: root._hoverHold = false
     }
 
-    active: root._hoverHold
+    active: root._hoverHold || root.pinnedOpen
 
     onActiveChanged: {
         if (!root.active)

@@ -123,9 +123,9 @@ Singleton {
                     readonly property int swapWarningThreshold: 90
                 }
 
-                readonly property QtObject tooltips: QtObject {
-                    readonly property bool clickToShow: false
-                }
+                // D4d: the old tooltips hardcode retired with the
+                // hoverPopouts axis (PersonalizationConfig.barAxes) — the
+                // popup intent now has one truth.
 
                 readonly property QtObject media: QtObject {
                     readonly property string preferredPlayer: ""

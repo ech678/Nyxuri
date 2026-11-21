@@ -30,7 +30,7 @@ MouseArea {
     implicitWidth: !Battery.available ? 0 : vertical ? Appearance.sizes.verticalBarWidth : batteryProgress.valueBarWidth + 8 + (powerLabel.visible ? powerLabel.implicitWidth + 4 : 0)
     implicitHeight: !Battery.available ? 0 : vertical ? batteryProgress.valueBarWidth + 8 : Appearance.sizes.barHeight
 
-    readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
+    readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
     hoverEnabled: !root.clickForDetails
 
     // D4b click axes: a consumed dispatch ends here; "default"/"none" fall

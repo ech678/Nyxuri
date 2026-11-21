@@ -19,6 +19,7 @@ import "services/BarWidgetDefaults.js" as BarWidgetDefaults
 import "services/BarDefaults.js" as BarDefaults
 import "plugins/bar" as BarPlugin
 import "plugins/bar/SegmentRoles.js" as SegmentRoles
+import "plugins/bar/OverflowLayout.js" as OverflowLayout
 
 ShellRoot {
     id: probeRoot
@@ -1439,6 +1440,180 @@ ShellRoot {
                     "right": content.rightSegmentRoles
                 } : null
             });
+        }
+
+        // D4d: behavior axes round-trip through the named setters — every
+        // default preserves the pre-D4d behavior and the sparse writer only
+        // persists deviations.
+        function d4dBehavior(): string {
+            const before = PersonalizationConfig.barAxes;
+            PersonalizationConfig.setBarAutoHideDelay(300);
+            PersonalizationConfig.setBarAutoHideStrict(true);
+            PersonalizationConfig.setBarHideOnFullscreen(true);
+            PersonalizationConfig.setBarClickThrough(true);
+            PersonalizationConfig.setBarHoverPopoutDelay(250);
+            const axes = PersonalizationConfig.barAxes;
+            const sparse = JSON.stringify(PersonalizationConfig.sparseBarConfigs());
+            PersonalizationConfig.setBarAutoHideDelay(0);
+            PersonalizationConfig.setBarAutoHideStrict(false);
+            PersonalizationConfig.setBarHideOnFullscreen(false);
+            PersonalizationConfig.setBarClickThrough(false);
+            PersonalizationConfig.setBarHoverPopoutDelay(150);
+            const after = PersonalizationConfig.barAxes;
+            return JSON.stringify({
+                "defaultsPreserved": before.autoHideDelay === 0 && before.autoHideStrict === false && before.hideOnFullscreen === false && before.clickThrough === false && before.hoverPopouts === true && before.hoverPopoutDelay === 150,
+                "delayLive": axes.autoHideDelay === 300,
+                "strictLive": axes.autoHideStrict === true,
+                "fullscreenLive": axes.hideOnFullscreen === true,
+                "clickThroughLive": axes.clickThrough === true,
+                "hoverDelayLive": axes.hoverPopoutDelay === 250,
+                "sparseDeviationsOnly": sparse.indexOf("autoHideDelay") !== -1 && sparse.indexOf("hoverPopouts") === -1,
+                "reset": after.autoHideDelay === 0 && after.autoHideStrict === false && after.hideOnFullscreen === false && after.clickThrough === false && after.hoverPopoutDelay === 150
+            });
+        }
+
+        // D4d: the forked dux resolver, unit-run against hand-computed
+        // expectations (placement vocabulary, priority yield, flexible
+        // shrink, pinned/always semantics, hysteresis restore).
+        function d4dOverflowResolve(): string {
+            const placementPinned = OverflowLayout.placement({
+                widgetId: "island"
+            });
+            const placementSection = OverflowLayout.placement({
+                widgetId: "clock",
+                overflowMode: "section"
+            }, "bar");
+            const placementAuto = OverflowLayout.placement({
+                widgetId: "clock"
+            }, "auto");
+            const placementAlways = OverflowLayout.placement({
+                widgetId: "clock",
+                overflowMode: "always"
+            });
+            const sections = {
+                left: [{
+                    size: 100,
+                    min: 100,
+                    mode: "bar",
+                    priority: 0
+                }, {
+                    size: 200,
+                    min: 100,
+                    mode: "auto",
+                    priority: -5
+                }, {
+                    size: 120,
+                    min: 120,
+                    mode: "auto",
+                    priority: 5
+                }],
+                center: [{
+                    size: 80,
+                    min: 80,
+                    mode: "auto",
+                    priority: 0
+                }],
+                right: [{
+                    size: 90,
+                    min: 90,
+                    mode: "always",
+                    priority: 0
+                }, {
+                    size: 70,
+                    min: 70,
+                    mode: "auto",
+                    priority: 0
+                }]
+            };
+            const options = {
+                length: 400,
+                start: 0,
+                end: 0,
+                spacing: 4,
+                triggerSize: 28,
+                positions: {
+                    left: 3,
+                    center: 1,
+                    right: 0
+                },
+                restoreMargin: 4
+            };
+            const cramped = OverflowLayout.resolve(JSON.parse(JSON.stringify(sections)), options);
+            const roomy = OverflowLayout.resolve(JSON.parse(JSON.stringify(sections)), Object.assign({}, options, {
+                length: 2000
+            }), cramped.hidden);
+            return JSON.stringify({
+                "pinnedStays": placementPinned === "bar" && placementSection === "bar",
+                "autoDefault": placementAuto === "auto",
+                "alwaysVocabulary": placementAlways === "always",
+                "priorityFallback": OverflowLayout.priority({}) === 0 && OverflowLayout.priority({
+                    overflowPriority: 3
+                }) === 3,
+                "alwaysHidden": cramped.hidden.right.indexOf(0) !== -1,
+                "barNeverHides": cramped.hidden.left.indexOf(0) === -1,
+                // The LOWER priority value yields (hides) first; at this
+                // crush the -5 entry is guaranteed hidden (the +5 may join
+                // it — membership order is unobservable, hidden sorts).
+                "lowPriorityYieldsFirst": cramped.hidden.left.indexOf(1) !== -1,
+                "hysteresisRestores": roomy.hidden.left.length === 0 && roomy.hidden.center.length === 0,
+                "alwaysStaysHidden": roomy.hidden.right.indexOf(0) !== -1
+            });
+        }
+
+        // D4d: the live engine on the staged content — shrink the stage so
+        // the lanes cannot fit, then dump the resolver output and cycle the
+        // lane overflow popup (relocation in both directions). Separate IPC
+        // calls on purpose: the resolver debounces on a 1ms timer.
+        function d4dOverflowScene(width: int, height: int): string {
+            stage.width = width;
+            stage.height = height;
+            return "SCENE";
+        }
+
+        function d4dOverflowDump(): string {
+            const content = barLoader.item;
+            if (!content)
+                return JSON.stringify({
+                    "ready": false
+                });
+            const hiddenIds = content.overflowHiddenIds;
+            // The active branch's host only: both branch hosts share the
+            // hidden groups, and the inactive one's own `visible` stays
+            // true (its parent row hides instead).
+            const host = probeRoot.findNodes(content, child => child.overflowGroups !== undefined && typeof child.toggle === "function" && child.visible && child.parent && child.parent.visible && child.overflowGroups.length > 0, [])[0] ?? null;
+            let popupCycle = null;
+            if (host && host.overflowGroups.length > 0) {
+                const group = host.overflowGroups[0];
+                const homeParent = group.widgetLoader ? group.widgetLoader.parent : null;
+                host.toggle();
+                const relocatedParent = group.widgetLoader ? group.widgetLoader.parent : null;
+                const opened = host.open && relocatedParent !== null && relocatedParent !== homeParent;
+                host.toggle();
+                const restoredParent = group.widgetLoader ? group.widgetLoader.parent : null;
+                const closed = !host.open && restoredParent !== null && restoredParent === homeParent;
+                popupCycle = {
+                    "relocated": opened,
+                    "restored": closed,
+                    "debug": {
+                        "hostOpen": host.open,
+                        "loader": group.widgetLoader !== null,
+                        "home": homeParent ? homeParent.toString().slice(0, 40) : null,
+                        "relocated": relocatedParent ? relocatedParent.toString().slice(0, 40) : null
+                    }
+                };
+            }
+            return JSON.stringify({
+                "ready": true,
+                "hiddenIds": hiddenIds,
+                "buttonFound": host !== null,
+                "popupCycle": popupCycle
+            });
+        }
+
+        function d4dOverflowReset(): string {
+            stage.width = Qt.binding(() => probeRoot.probeWidth);
+            stage.height = Qt.binding(() => probeRoot.probeHeight);
+            return "RESET";
         }
 
         function b97Dump(): string {

@@ -88,7 +88,16 @@ Item {
     }
 
     Layout.fillHeight: true
-    implicitWidth: !root.shouldShow ? 0 : vertical ? Appearance.sizes.verticalBarWidth : Math.max(root.mediaMinWidth, Math.min((isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8), root.mediaMaxWidth))
+    // D4d flexible protocol (bar-config.md D4d): the overflow resolver's
+    // shrink phase allots between naturalPrimarySize and minimumPrimarySize
+    // BEFORE anything leaves the bar; allottedPrimarySize (-1 = none) is the
+    // resolver's decision and clamps inside [min, max] exactly like a
+    // natural width. The natural size is the UNCLAMPED row width — the
+    // resolver must see the true want, not the already-clamped implicit.
+    property real allottedPrimarySize: -1
+    readonly property real naturalPrimarySize: !root.shouldShow ? 0 : root.vertical ? root.implicitHeight : Math.max(root.mediaMinWidth, (isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8))
+    readonly property real minimumPrimarySize: !root.shouldShow ? 0 : root.vertical ? root.implicitHeight : root.mediaMinWidth
+    implicitWidth: !root.shouldShow ? 0 : vertical ? Appearance.sizes.verticalBarWidth : Math.max(root.mediaMinWidth, Math.min((root.allottedPrimarySize > 0 ? root.allottedPrimarySize : (isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8)), root.mediaMaxWidth))
     implicitHeight: vertical ? (isMaterial ? 32 : mediaCircProg.implicitHeight) : Appearance.sizes.barHeight
 
     Timer {
@@ -209,7 +218,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton | Qt.RightButton | Qt.LeftButton
-        hoverEnabled: !Config.options.bar.m3.tooltips.clickToShow
+        hoverEnabled: PersonalizationConfig.barAxes.hoverPopouts
         onPressed: event => {
             if (event.button === Qt.MiddleButton)
                 activePlayer?.togglePlaying();

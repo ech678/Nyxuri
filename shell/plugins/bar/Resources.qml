@@ -53,7 +53,7 @@ BarWidgetSwitcherArea {
         modules: ["cpu", "memory", "disk"]
     }
 
-    readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
+    readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
     hoverEnabled: true
 
     onClicked: mouse => {

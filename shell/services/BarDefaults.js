@@ -55,7 +55,28 @@ var DEFAULTS = {
     widgetOutlineEnabled: false,
     widgetOutlineColor: "outline",
     widgetOutlineOpacity: 1.0,
-    widgetOutlineThickness: 1
+    widgetOutlineThickness: 1,
+    // D4d behavior axes (bar-config.md D4d). Defaults preserve the pre-D4d
+    // behavior exactly: hide-on-leave is immediate (delay 0), popups pin
+    // the reveal (strict off), the bar stays on the Top layer under
+    // fullscreen windows, the whole bar eats input, and widget popouts
+    // open on hover — the ONE deliberate change is the intent timing:
+    // hoverPopoutDelay 150 per the D4d decision (the old 400ms was a
+    // StyledPopup hardcode, not a ratified default).
+    autoHideDelay: 0,
+    autoHideStrict: false,
+    hideOnFullscreen: false,
+    clickThrough: false,
+    hoverPopouts: true,
+    hoverPopoutDelay: 150,
+    // Per-lane overflow default (the "section" fallback of the per-widget
+    // overflowMode entry axis): "auto" = widgets may leave the bar into the
+    // lane's overflow popout when space runs out, "bar" = the lane never
+    // overflows. Lane names follow the Nyxuri vocabulary (middle, not dux's
+    // center).
+    leftOverflowMode: "auto",
+    middleOverflowMode: "auto",
+    rightOverflowMode: "auto"
     // NOTE (registered boundary): the dux shadow axes (intensity/opacity/
     // color/direction) are D4e material — they ride dux's Frame wing
     // geometry (a window larger than the bar), which we do not have; a
@@ -66,7 +87,24 @@ var DEFAULTS = {
 // Axis keys that are NOT style/geometry (behavior or screen routing) —
 // kept on the entry for D4e multi-bar, but never resolved through the
 // style math below.
-var BEHAVIOR_KEYS = ["position", "autoHide", "screenList"];
+var BEHAVIOR_KEYS = [
+    "position",
+    "autoHide",
+    "autoHideDelay",
+    "autoHideStrict",
+    "hideOnFullscreen",
+    "clickThrough",
+    "hoverPopouts",
+    "hoverPopoutDelay",
+    "leftOverflowMode",
+    "middleOverflowMode",
+    "rightOverflowMode",
+    "screenList"
+];
+
+// Lane overflow-mode vocabulary (D4d): the per-lane default the per-widget
+// "section" overflowMode falls back to.
+var LANE_OVERFLOW_MODES = ["auto", "bar"];
 
 // borderless vocabulary gains "flat" in D4c: no capsule backgrounds at
 // all (bare widgets on the bar surface — the old "transparent" keeps its

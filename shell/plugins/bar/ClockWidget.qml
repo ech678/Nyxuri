@@ -222,7 +222,7 @@ BarWidgetSwitcher {
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
+        readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
         hoverEnabled: true
         // D4b click axes: a consumed dispatch ends here; "default"/"none"
         // fall through to the built-in popup behavior.

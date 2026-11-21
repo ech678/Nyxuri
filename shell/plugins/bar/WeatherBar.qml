@@ -42,7 +42,7 @@ MouseArea {
     implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
 
     acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
-    readonly property bool clickForDetails: Config.options?.bar?.m3?.tooltips?.clickToShow ?? false
+    readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
     hoverEnabled: true
 
     onClicked: mouse => {

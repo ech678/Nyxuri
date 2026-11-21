@@ -20,6 +20,7 @@ import qs.commons.i18n
 import qs.ui
 import "BarWidgetFiles.js" as BarWidgetFiles
 import "SegmentRoles.js" as SegmentRoles
+import "OverflowLayout.js" as OverflowLayout
 
 Item {
     id: root
@@ -51,6 +52,12 @@ Item {
     // evaluate to 0, not to its capsule padding. The probe asserts this.
     readonly property real laneLeftWidth: leftLane.width
     readonly property real laneRightWidth: rightLane.width
+    // D4d click-through mask surfaces: the three lane items (an empty lane
+    // collapses to zero width, so its region vanishes) — Bar.qml's input
+    // mask unions exactly these when the clickThrough axis is on.
+    readonly property Item laneMaskLeft: leftLane
+    readonly property Item laneMaskMiddle: absoluteCenter
+    readonly property Item laneMaskRight: rightLane
     // B9.6 probe surface: the raw middle-row width, so the island-hug branch
     // (frame width = row - 4, not row + 10) is assertable at runtime.
     readonly property real middleRowImplicitWidth: middleRow.implicitWidth
@@ -78,6 +85,142 @@ Item {
     readonly property var leftSegmentRoles: root.laneSegmentRoles(root.effectiveLeftLayout, leftGroups, leftMaterialGroups)
     readonly property var middleSegmentRoles: root.laneSegmentRoles(root.effectiveMiddleLayout, middleGroups, middleMaterialGroups)
     readonly property var rightSegmentRoles: root.laneSegmentRoles(root.effectiveRightLayout, rightGroups, rightMaterialGroups)
+
+    // D4d overflow engine (bar-config.md D4d): measures the ACTIVE branch's
+    // groups, resolves through the forked dux OverflowLayout (hidden sets +
+    // flexible allotments + hysteresis) and pushes the results back onto the
+    // groups. Debounced on a zero timer like dux; the measurement binding
+    // re-evaluates when widget implicit sizes, entries or the branch flip.
+    // Lane names map middle -> dux "center" at this boundary only.
+    readonly property real overflowLength: contentContainer.width
+    readonly property real overflowTriggerSize: root.isMaterial ? leftOverflowHostMaterial.implicitWidth : leftOverflowHost.implicitWidth
+    readonly property var overflowPlan: ({
+        left: root.overflowMeasure(root.effectiveLeftLayout, leftGroups, leftMaterialGroups, "left"),
+        center: root.overflowMeasure(root.effectiveMiddleLayout, middleGroups, middleMaterialGroups, "middle"),
+        right: root.overflowMeasure(root.effectiveRightLayout, rightGroups, rightMaterialGroups, "right")
+    })
+    // Debounce on a 1ms timer (LIFE007's allowed non-zero interval; NOT
+    // Qt.callLater — a callLater scheduled by the initial binding evaluation
+    // fires mid-incubation, before the engine methods are installed on the
+    // object, which crashed the probe window).
+    onOverflowPlanChanged: overflowTimer.restart()
+    onOverflowLengthChanged: overflowTimer.restart()
+    onRowSpacingChanged: overflowTimer.restart()
+    onIsMaterialChanged: overflowTimer.restart()
+    property var overflowPrevious: ({
+        left: [],
+        center: [],
+        right: []
+    })
+    // Resolver outputs for the lane hosts (active-branch hidden groups, lane
+    // order) and the probe.
+    property var overflowHiddenGroupsLeft: []
+    property var overflowHiddenGroupsMiddle: []
+    property var overflowHiddenGroupsRight: []
+    readonly property var overflowHiddenIds: {
+        const ids = [];
+        const collect = groups => {
+            for (let i = 0; i < groups.length; i += 1)
+                ids.push(groups[i].widgetName);
+        };
+        collect(root.overflowHiddenGroupsLeft);
+        collect(root.overflowHiddenGroupsMiddle);
+        collect(root.overflowHiddenGroupsRight);
+        return ids;
+    }
+
+    function overflowMeasure(entries, plainRepeater, materialRepeater, zone) {
+        const repeater = root.isMaterial ? materialRepeater : plainRepeater;
+        const fallback = PersonalizationConfig.barAxes[zone + "OverflowMode"] === "bar" ? "bar" : "auto";
+        const list = [];
+        for (let i = 0; i < entries.length; i += 1) {
+            const group = repeater && repeater.count === entries.length ? repeater.itemAt(i) : null;
+            // dux placement/priority read the axes as TOP-LEVEL entry keys;
+            // our storage nests them in overrides, so flatten per call.
+            const flat = Object.assign({
+                widgetId: entries[i].widgetId
+            }, entries[i].overrides || {});
+            list.push({
+                size: group ? group.overflowEntrySize : 0,
+                min: group ? group.overflowEntryMin : 0,
+                mode: OverflowLayout.placement(flat, fallback),
+                priority: OverflowLayout.priority(flat)
+            });
+        }
+        return list;
+    }
+
+    function resolveOverflow() {
+        const length = root.overflowLength;
+        if (!(length > 0))
+            return;
+        const result = OverflowLayout.resolve(root.overflowPlan, {
+            length: length,
+            start: root.laneMargin,
+            end: root.laneMargin,
+            spacing: root.isMaterial ? 3 : root.rowSpacing,
+            triggerSize: root.overflowTriggerSize,
+            positions: {
+                left: root.effectiveLeftLayout.length,
+                center: root.effectiveMiddleLayout.length,
+                right: 0
+            },
+            restoreMargin: 4
+        }, root.overflowPrevious);
+        root.overflowPrevious = result.hidden;
+        root.applyOverflow(root.effectiveLeftLayout, leftGroups, leftMaterialGroups, result.hidden.left, result.sizes.left, "left");
+        root.applyOverflow(root.effectiveMiddleLayout, middleGroups, middleMaterialGroups, result.hidden.center, result.sizes.center, "middle");
+        root.applyOverflow(root.effectiveRightLayout, rightGroups, rightMaterialGroups, result.hidden.right, result.sizes.right, "right");
+    }
+
+    // Assign only on real membership changes: a fresh array identity on
+    // every resolve would fire the hosts' onOverflowGroupsChanged and close
+    // an open popup whenever any widget resizes (clock text, media title).
+    function sameGroups(a, b) {
+        if (!Array.isArray(a) || a.length !== (b ? b.length : -1))
+            return false;
+        for (let i = 0; i < a.length; i += 1) {
+            if (a[i] !== b[i])
+                return false;
+        }
+        return true;
+    }
+
+    function applyOverflow(entries, plainRepeater, materialRepeater, hidden, sizes, zone) {
+        const hiddenGroups = [];
+        for (let i = 0; i < entries.length; i += 1) {
+            const isHidden = hidden.indexOf(i) !== -1;
+            const plainGroup = plainRepeater && plainRepeater.count === entries.length ? plainRepeater.itemAt(i) : null;
+            const materialGroup = materialRepeater && materialRepeater.count === entries.length ? materialRepeater.itemAt(i) : null;
+            if (plainGroup && plainGroup.inOverflow !== isHidden)
+                plainGroup.inOverflow = isHidden;
+            if (materialGroup && materialGroup.inOverflow !== isHidden)
+                materialGroup.inOverflow = isHidden;
+            const group = root.isMaterial ? materialGroup : plainGroup;
+            if (!group)
+                continue;
+            if (isHidden && group.overflowWidget)
+                hiddenGroups.push(group);
+            // Flexible allotment (resolver shrink phase): inflexible widgets
+            // ignore it; sizes[i] is the lane consumption, the widget takes
+            // it minus the capsule padding.
+            group.setOverflowAllotment(sizes && sizes[i] !== undefined ? sizes[i] - group.padding * 2 : -1);
+        }
+        if (zone === "left" && !root.sameGroups(hiddenGroups, root.overflowHiddenGroupsLeft))
+            root.overflowHiddenGroupsLeft = hiddenGroups;
+        else if (zone === "middle" && !root.sameGroups(hiddenGroups, root.overflowHiddenGroupsMiddle))
+            root.overflowHiddenGroupsMiddle = hiddenGroups;
+        else if (zone === "right" && !root.sameGroups(hiddenGroups, root.overflowHiddenGroupsRight))
+            root.overflowHiddenGroupsRight = hiddenGroups;
+    }
+
+    Timer {
+        id: overflowTimer
+        interval: 1
+        repeat: false
+        onTriggered: root.resolveOverflow()
+    }
+
 
     // D4a: the lane model is normalized entry objects off the barConfigs
     // truth. filterLayout keeps the system gates (no tray host without
@@ -325,6 +468,13 @@ Item {
                         delegate: leftMaterialGroupDelegate
                     }
 
+                    LaneOverflowHost {
+                        id: leftOverflowHostMaterial
+                        Layout.fillHeight: true
+                        visible: root.overflowHiddenGroupsLeft.length > 0
+                        overflowGroups: root.overflowHiddenGroupsLeft
+                    }
+
                     Component {
                         id: leftMaterialGroupDelegate
                         BarGroup {
@@ -370,6 +520,13 @@ Item {
                     id: leftGroups
                     model: root.effectiveLeftLayout
                     delegate: leftBarGroupDelegate
+                }
+
+                LaneOverflowHost {
+                    id: leftOverflowHost
+                    Layout.fillHeight: true
+                    visible: root.overflowHiddenGroupsLeft.length > 0
+                    overflowGroups: root.overflowHiddenGroupsLeft
                 }
 
                 Component {
@@ -439,6 +596,13 @@ Item {
                         delegate: middleMaterialGroupDelegate
                     }
 
+                    LaneOverflowHost {
+                        id: middleOverflowHostMaterial
+                        Layout.fillHeight: true
+                        visible: root.overflowHiddenGroupsMiddle.length > 0
+                        overflowGroups: root.overflowHiddenGroupsMiddle
+                    }
+
                     Component {
                         id: middleMaterialGroupDelegate
                         BarGroup {
@@ -485,6 +649,13 @@ Item {
                     id: middleGroups
                     model: root.effectiveMiddleLayout
                     delegate: middleBarGroupDelegate
+                }
+
+                LaneOverflowHost {
+                    id: middleOverflowHost
+                    Layout.fillHeight: true
+                    visible: root.overflowHiddenGroupsMiddle.length > 0
+                    overflowGroups: root.overflowHiddenGroupsMiddle
                 }
 
                 Component {
@@ -547,6 +718,13 @@ Item {
                     anchors.centerIn: parent
                     spacing: 3
 
+                    LaneOverflowHost {
+                        id: rightOverflowHostMaterial
+                        Layout.fillHeight: true
+                        visible: root.overflowHiddenGroupsRight.length > 0
+                        overflowGroups: root.overflowHiddenGroupsRight
+                    }
+
                     Repeater {
                         id: rightMaterialGroups
                         model: root.effectiveRightLayout
@@ -583,6 +761,13 @@ Item {
                 visible: !root.isMaterial
                 anchors.fill: parent
                 spacing: root.rowSpacing
+
+                LaneOverflowHost {
+                    id: rightOverflowHost
+                    Layout.fillHeight: true
+                    visible: root.overflowHiddenGroupsRight.length > 0
+                    overflowGroups: root.overflowHiddenGroupsRight
+                }
 
                 Repeater {
                     id: rightGroups

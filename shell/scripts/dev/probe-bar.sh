@@ -497,6 +497,24 @@ if ipc d4cRoles >/dev/null 2>&1; then
     d4c_roles_state=$(ipc d4cRoles 2>/dev/null || true)
 fi
 
+# D4d: behavior axes round-trip + the overflow engine (resolver unit run,
+# then the live cramped stage with a popup cycle, then the reset restore).
+d4d_behavior_state=""
+d4d_overflow_resolve_state=""
+d4d_overflow_cramped_state=""
+d4d_overflow_reset_state=""
+if ipc d4dBehavior >/dev/null 2>&1; then
+    d4d_behavior_state=$(ipc d4dBehavior 2>/dev/null || true)
+fi
+if ipc d4dOverflowResolve >/dev/null 2>&1; then
+    d4d_overflow_resolve_state=$(ipc d4dOverflowResolve 2>/dev/null || true)
+fi
+if ipc d4dOverflowScene 300 300 >/dev/null 2>&1; then
+    d4d_overflow_cramped_state=$(ipc d4dOverflowDump 2>/dev/null || true)
+    ipc d4dOverflowReset >/dev/null 2>&1 || true
+    d4d_overflow_reset_state=$(ipc d4dOverflowDump 2>/dev/null || true)
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -699,7 +717,7 @@ ipc cornerStyle 1 >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" <<'PY'
 import json
 import re
 import sys
@@ -718,7 +736,9 @@ import sys
  d4a_entries_spacers, d4a_entries_disabled, d4a_singletons,
  d4a_migration_state, d4a_persistence_state, d4b_migration_state,
  d4b_instances_state, d4b_click_vocabulary, d4c_migration_state,
- d4c_sentinels_state, d4c_roles_state) = sys.argv[1:65]
+ d4c_sentinels_state, d4c_roles_state, d4d_behavior_state,
+ d4d_overflow_resolve_state, d4d_overflow_cramped_state,
+ d4d_overflow_reset_state) = sys.argv[1:69]
 
 
 def load_tsv(path):
@@ -1482,12 +1502,52 @@ d4c_roles_ok = bool(
 )
 d4c_ok = d4c_migration_ok and d4c_sentinels_ok and d4c_roles_ok
 
+d4d_behavior = json.loads(d4d_behavior_state) if d4d_behavior_state.strip() else {}
+d4d_overflow_resolve = json.loads(d4d_overflow_resolve_state) if d4d_overflow_resolve_state.strip() else {}
+d4d_overflow_cramped = json.loads(d4d_overflow_cramped_state) if d4d_overflow_cramped_state.strip() else {}
+d4d_overflow_reset = json.loads(d4d_overflow_reset_state) if d4d_overflow_reset_state.strip() else {}
+d4d_behavior_ok = bool(
+    d4d_behavior.get("defaultsPreserved") is True
+    and d4d_behavior.get("delayLive") is True
+    and d4d_behavior.get("strictLive") is True
+    and d4d_behavior.get("fullscreenLive") is True
+    and d4d_behavior.get("clickThroughLive") is True
+    and d4d_behavior.get("hoverDelayLive") is True
+    and d4d_behavior.get("sparseDeviationsOnly") is True
+    and d4d_behavior.get("reset") is True
+)
+d4d_overflow_resolve_ok = bool(
+    d4d_overflow_resolve.get("pinnedStays") is True
+    and d4d_overflow_resolve.get("autoDefault") is True
+    and d4d_overflow_resolve.get("alwaysVocabulary") is True
+    and d4d_overflow_resolve.get("priorityFallback") is True
+    and d4d_overflow_resolve.get("alwaysHidden") is True
+    and d4d_overflow_resolve.get("barNeverHides") is True
+    and d4d_overflow_resolve.get("lowPriorityYieldsFirst") is True
+    and d4d_overflow_resolve.get("hysteresisRestores") is True
+    and d4d_overflow_resolve.get("alwaysStaysHidden") is True
+)
+d4d_overflow_cramped_ok = bool(
+    d4d_overflow_cramped.get("ready") is True
+    and isinstance(d4d_overflow_cramped.get("hiddenIds"), list)
+    and len(d4d_overflow_cramped.get("hiddenIds", [])) > 0
+    and d4d_overflow_cramped.get("buttonFound") is True
+    and isinstance(d4d_overflow_cramped.get("popupCycle"), dict)
+    and d4d_overflow_cramped.get("popupCycle", {}).get("relocated") is True
+    and d4d_overflow_cramped.get("popupCycle", {}).get("restored") is True
+)
+d4d_overflow_reset_ok = bool(
+    d4d_overflow_reset.get("ready") is True
+    and d4d_overflow_reset.get("hiddenIds") == []
+)
+d4d_ok = d4d_behavior_ok and d4d_overflow_resolve_ok and d4d_overflow_cramped_ok and d4d_overflow_reset_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1685,6 +1745,28 @@ report = {
             "runFused": d4c_roles.get("runFused"),
             "hiddenReShapes": d4c_roles.get("hiddenReShapes"),
             "spacerBreaks": d4c_roles.get("spacerBreaks"),
+        },
+    },
+    "d4d": {
+        "ok": d4d_ok,
+        "behavior": {
+            "ok": d4d_behavior_ok,
+            "defaultsPreserved": d4d_behavior.get("defaultsPreserved"),
+            "sparseDeviationsOnly": d4d_behavior.get("sparseDeviationsOnly"),
+            "reset": d4d_behavior.get("reset"),
+        },
+        "overflowResolve": {
+            "ok": d4d_overflow_resolve_ok,
+            "alwaysHidden": d4d_overflow_resolve.get("alwaysHidden"),
+            "lowPriorityYieldsFirst": d4d_overflow_resolve.get("lowPriorityYieldsFirst"),
+            "hysteresisRestores": d4d_overflow_resolve.get("hysteresisRestores"),
+        },
+        "overflowLive": {
+            "ok": d4d_overflow_cramped_ok,
+            "hiddenIds": d4d_overflow_cramped.get("hiddenIds"),
+            "buttonFound": d4d_overflow_cramped.get("buttonFound"),
+            "popupCycle": d4d_overflow_cramped.get("popupCycle"),
+            "resetCleared": d4d_overflow_reset_ok,
         },
     },
     "b96": {

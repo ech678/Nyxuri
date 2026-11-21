@@ -24,6 +24,9 @@ Item {
     readonly property var entry: PersonalizationConfig.barEntryByUid(root.widgetUid)
     readonly property string widgetId: root.entry ? root.entry.widgetId : ""
     readonly property bool entryAlive: root.entry !== null
+    // dux OverflowLayout.pinned: spacer/separator/island never leave the
+    // bar, so their editor pages carry no overflow group.
+    readonly property bool showOverflowGroup: root.entryAlive && ["spacer", "separator", "island"].indexOf(root.widgetId) === -1
 
     BarWidgetCatalog {
         id: widgetCatalog
@@ -101,6 +104,54 @@ Item {
                     label: I18n.tr("Lane")
                     value: root.zoneLabel
                     icon: "view_agenda"
+                }
+
+                // D4d shared overflow group (bar-config.md D4d): entry axes
+                // every widget owns — the resolver's placement vocabulary and
+                // yield order. Pinned widgets (spacer/separator/island) never
+                // overflow, so the group hides for them.
+                PreferenceHeader {
+                    visible: root.showOverflowGroup
+                    text: I18n.tr("Overflow")
+                }
+
+                PreferenceSelect {
+                    visible: root.showOverflowGroup
+                    first: true
+                    label: I18n.tr("When the bar is full")
+                    model: [
+                        {
+                            "value": "section",
+                            "label": I18n.tr("Follow lane")
+                        },
+                        {
+                            "value": "auto",
+                            "label": I18n.tr("May collapse into the overflow menu")
+                        },
+                        {
+                            "value": "bar",
+                            "label": I18n.tr("Always stay in the bar")
+                        },
+                        {
+                            "value": "always",
+                            "label": I18n.tr("Always in the overflow menu")
+                        }
+                    ]
+                    currentValue: root.entry && root.entry.overrides && root.entry.overrides.overflowMode !== undefined ? root.entry.overrides.overflowMode : "section"
+                    inputRegionService: PopupInputRegionService
+                    onSelected: value => root.set("overflowMode", String(value) === "section" ? undefined : String(value))
+                }
+
+                PreferenceSlider {
+                    visible: root.showOverflowGroup
+                    last: true
+                    label: I18n.tr("Overflow priority")
+                    value: root.entry && root.entry.overrides && root.entry.overrides.overflowPriority !== undefined ? root.entry.overrides.overflowPriority : 0
+                    valueLabel: Math.round(root.entry && root.entry.overrides && root.entry.overrides.overflowPriority !== undefined ? root.entry.overrides.overflowPriority : 0)
+                    from: -10
+                    to: 10
+                    stepSize: 1
+                    onMoved: value => root.set("overflowPriority", Math.round(value) === 0 ? undefined : Math.round(value))
                 }
 
                 Loader {

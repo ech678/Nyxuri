@@ -2,9 +2,10 @@
 
 > 本页是 bar 自定义引擎（D4 五期）的架构契约：配置 schema、默认值回退、最小化写入、
 > 版本化迁移、部件注册表与属性注入协议。分期交付与验收归
-> [shell/ROADMAP](../../shell/ROADMAP.md) D 卷；D4a/D4b/D4c 于 2026-11-22 落地，
+> [shell/ROADMAP](../../shell/ROADMAP.md) D 卷；D4a/D4b/D4c/D4d 于 2026-11-22 落地，
 > 后续期次在此页增量补节。运行行为以源码与契约测试（`tests/shell/test_d4a_bar_config.py`、
-> `tests/shell/test_d4b_bar_config.py`、`tests/shell/test_d4c_bar_config.py`）为准。
+> `tests/shell/test_d4b_bar_config.py`、`tests/shell/test_d4c_bar_config.py`、
+> `tests/shell/test_d4d_bar_config.py`）为准。
 
 ## 铁原则
 
@@ -143,6 +144,69 @@ bar 级几何/样式轴以 **configs 条目平键**存储（id/name/lanes 之外
   窗口基建上，今日窗口内画必裁切，随 D4e 窗口增长基建回归）；island 时钟数字与
   quickpanel 子目录不参与 fontScale（隐式单例解析不可达 + display 档几何）。
 
+## 行为与溢出（D4d）
+
+行为轴与溢出系统，2026-11-22 落地。**默认全部 = D4d 前现行行为**，唯一例外：
+`hoverPopoutDelay` 默认 150ms（D4d-1 拍板对齐 D2 intent 语义；旧 400ms 是
+StyledPopup 硬编码，不是被认可的默认）。全部新键、无改名——**无 configVersion
+迁移**（版本链停在 5）。
+
+### 轴表（`BarDefaults.DEFAULTS` 增量）
+
+| 轴 | 默认 | 语义 |
+| --- | --- | --- |
+| `autoHideDelay` | 0 | 离开宽限（hide grace）：指针离开后延迟收起，0=立即（现行） |
+| `autoHideStrict` | false | 严格模式：**只解除弹层类锚定**（右键菜单/媒体弹层不再钉住 bar）；sidebar/快捷面板类保持锚定（几何上从 bar 生长，藏了断锚）——D4d-2 拍板 |
+| `hideOnFullscreen` | false | 输出上有全屏 toplevel 时抬 Overlay 层并入 autoHide 通道（边缘条揭示）；默认关=现行 Top 层被全屏覆盖 |
+| `clickThrough` | false | 输入掩码缩到三条 lane 矩形：空隙点击穿透到窗口；边缘滚轴/ScrollHint 在此模式下失效（登记边界） |
+| `hoverPopouts` | true | 部件弹层 hover 打开（吸收退役的 tooltips 硬编码；false=点击打开） |
+| `hoverPopoutDelay` | 150 | 弹层 intent 时长（D2 同源 150ms） |
+| `left/middle/rightOverflowMode` | "auto" | 每 lane 溢出默认（词表 auto/bar），是逐部件 `section` 模式的回退值 |
+
+条目轴（overrides 自由键，无需注册）：`overflowMode("section"/auto/bar/always)`、
+`overflowPriority(数，低者先让位)`。
+
+### 溢出系统（dux `OverflowLayout.js` + `CenterLayout.js` verbatim 整抄）
+
+- **解算器**：两个 JS 原样入库（头注 Fork & Trim；契约测试钉 verbatim）。核心
+  `resolve(sections, options, previous)`：flexible 先收缩（shrink-to-fit）再按
+  priority 让位、`always` 直接入溢出、pinned（spacer/separator/island）永不离开、
+  迟滞恢复（restoreMargin + previous 状态）。lane 名 middle↔center 在宿主边界映射。
+- **引擎**（BarContent/VerticalBarContent 各一）：活跃分支 Repeater 测量 →
+  `resolve()`（1ms Timer 防抖——**禁 Qt.callLater**：初始绑定求值排入的 callLater
+  会在孵化完成前触发，引擎方法尚未挂载，probe 实证崩溃）→ 隐藏集回写
+  `BarGroup.inOverflow`（融合角经 SegmentRoles 参与度自动重排）+ flexible 配给
+  （`allottedPrimarySize`）。
+- **测量协议**（BarGroup）：`overflowEntrySize/Min` 从部件本体读（组自身 implicit
+  在溢出后塌 0，不能喂解算器）；flexible 部件暴露 `naturalPrimarySize`/
+  `minimumPrimarySize`（现仅 Media：natural=未钳制行宽、min=minWidth 轴）。
+  dux `placement()/priority()` 读**顶层**键，宿主测量时把 overrides 摊平传入。
+- **迁居协议**：部件 Loader 在「lane 组 ↔ 溢出弹层」间 re-parent，**实例永不销毁**
+  （状态保留、服务租约不断）。`BarGroup.widgetLoader` 在完成期一次性捕获——
+  children 绑定会在迁居瞬间判 null（恢复变 no-op、部件随弹窗销毁，probe 实证）。
+- **溢出按钮**（`LaneOverflowHost.qml`，dux SectionOverflow 换血）：BarGroup 胶囊
+  chevron（`expanderIcon` 随 bar 边转向），按钮位用 dux 默认（right/bottom lane 首、
+  余者尾=面向屏中心内侧）；弹层复用 StyledPopup（D4d-3 拍板，`pinnedOpen` 显式开
+  路径）。**关闭必先迁回再灭活**——弹窗树随 LazyLoader 销毁。溢出弹层无滚动
+  （隐藏集按构造很小，登记边界）。
+- **按钮插入位不暴露设置**（登记边界，用 dux 默认）。
+
+### 全屏检测
+
+`NiriDriver._enrichWindow` 透传 `is_fullscreen`；`fullscreenToplevelOnScreen(output)`
+经 `CompositorDriver` 门面（单一状态源原则）。Bar.qml 据此切 `WlrLayer.Overlay`。
+
+### clickThrough × autoHide 组合
+
+移植 dux `gapEnterSuppressed`/`inEdgeStrip`/`revealSettle` 语义：隐藏态掩码=边缘
+条，揭示须真抵达边缘条（带宽 15%、最小 8px）；掩码随滑入动画扩张会制造伪 enter，
+隐藏在 settle 窗口（600ms）内顺延。
+
+### hoverPopouts 换绑
+
+六消费者（clock/resources/battery/networkspeed/weather/media）从退役硬编码换到
+`!PersonalizationConfig.barAxes.hoverPopouts`；StyledPopup `hoverOpenDelay` 吃轴。
+
 ## 每部件实例轴（D4b）
 
 D4b 把 per-widget 轴从 `[bar]` 扁平键迁到 lane 条目 overrides，交付部件实例编辑页。
@@ -220,7 +284,8 @@ D4b 把 per-widget 轴从 `[bar]` 扁平键迁到 lane 条目 overrides，交付
 - ~~`barWidgetStyles`（右键改色弹层，per-(mode,widget)）~~ **已随 D4c 处置**：折叠进
   当前 borderless 档的条目 overrides（uid 寻址，重复部件各配各的），per-mode 维度退役。
 - `quickSettingsComponents`（quickpanel 域组件集合）不在 bar 条目轴。
-- overflow/placement = D4d 材料；密度/多 bar = D4e 材料。
+- ~~overflow/placement = D4d 材料~~ **已随 D4d 落地**：`overflowMode`/`overflowPriority`
+  条目轴 + lane 溢出默认轴（见「行为与溢出（D4d）」节）；密度/多 bar = D4e 材料。
 
 ## 证据
 
@@ -236,5 +301,11 @@ D4b 把 per-widget 轴从 `[bar]` 扁平键迁到 lane 条目 overrides，交付
   auto→square→override 链）、融合角色（run 融合/隐藏重排/spacer 断 run/live 角标）。
   契约测试 `tests/shell/test_d4c_bar_config.py`（34 例）；weston 沙箱 probe 全绿
   （含 d4a/d4b/b96/b97 回归）。
+- **D4d**：probe `d4d` 节——行为轴往返（默认保现行/稀疏写入/复位）、解算器单跑
+  （词表/priority 让位/always/pinned/迟滞恢复）、实况挤压（300px 舞台：隐藏集含
+  侧栏全部非 pinned 部件、island 留守、按钮在场、弹层迁居-迁回双程、复位清零）。
+  契约测试 `tests/shell/test_d4d_bar_config.py`（30 例）；weston 沙箱 probe 全绿。
+  实机项归作者：溢出按钮手感、穿透空隙点击、strict 收起节奏、全屏进出 reveal、
+  150ms 弹层体感。
 
 

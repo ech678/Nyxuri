@@ -27,6 +27,12 @@ Item {
     // the whole lane, so a hidden neighbour re-shapes this group's corners
     // instead of leaving the fusion wrong.
     property string segmentRole: "solo"
+    // D4d overflow: the entry moved into the lane's overflow popout. The
+    // group collapses exactly like a self-hidden widget (run participation
+    // drops out, so neighbours re-fuse) while its widget Loader stays
+    // alive — the instance is relocated (lane group <-> overflow popup),
+    // never destroyed.
+    property bool inOverflow: false
     readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
     property bool paintMaterialPill: false
     property bool paintBackground: true
@@ -167,11 +173,68 @@ Item {
     // asking to come back. Widgets that hide themselves expose
     // `barWidgetVisible`; anything else counts as shown. A widget that is not
     // loaded yet also counts as content so the bar does not flicker while the
-    // Loader instantiates.
+    // Loader instantiates. D4d: an overflowed group reports no content even
+    // though its Loader may sit emptied in the lane (the widget is parked in
+    // the overflow popup) — "not loaded" must not resurrect it.
     // qmllint disable missing-property
-    readonly property bool hasContent: root.loadedWidget === null || !("barWidgetVisible" in root.loadedWidget) || root.loadedWidget.barWidgetVisible
+    readonly property bool hasContent: root.inOverflow ? false : (root.loadedWidget === null || !("barWidgetVisible" in root.loadedWidget) || root.loadedWidget.barWidgetVisible)
     // qmllint enable missing-property
     visible: root.hasContent
+
+    // D4d measurement protocol (dux SectionEntry lineage): what the resolver
+    // needs is the size the LANE would consume, read off the widget itself —
+    // the group's own implicitWidth collapses to 0 while overflowed, so it
+    // cannot feed the resolver (hysteresis still measures parked widgets).
+    // Flexible widgets expose naturalPrimarySize/minimumPrimarySize (Media);
+    // everything else measures at its current implicit size.
+    readonly property var overflowWidget: root.widgetLoader ? root.widgetLoader.item : null
+    readonly property real overflowEntrySize: {
+        const widget = root.overflowWidget;
+        if (!widget)
+            return 0;
+        if ("barWidgetVisible" in widget && !widget.barWidgetVisible)
+            return 0;
+        const natural = "naturalPrimarySize" in widget ? widget.naturalPrimarySize : (root.vertical ? widget.implicitHeight : widget.implicitWidth);
+        return (natural || 0) + root.padding * 2;
+    }
+    readonly property real overflowEntryMin: {
+        const widget = root.overflowWidget;
+        if (!widget || !("minimumPrimarySize" in widget))
+            return root.overflowEntrySize;
+        return Math.min(widget.minimumPrimarySize + root.padding * 2, root.overflowEntrySize);
+    }
+
+    // The widget Loader (gridLayout.children[0]) relocates between its lane
+    // group and the overflow popup while the entry is overflowed. A bound
+    // lookup over `children` dies mid-relocation (the binding re-evaluates
+    // to null the moment the loader leaves the layout, so restoreWidget
+    // would find nothing and the loader would ride the popup window into
+    // destruction) — capture the reference once at completion instead.
+    property Item widgetLoader: null
+    Component.onCompleted: {
+        if (gridLayout.children.length > 0)
+            root.widgetLoader = gridLayout.children[0];
+    }
+
+    function setWidgetHost(host: Item): void {
+        const loader = root.widgetLoader;
+        if (!loader || loader.parent === host)
+            return;
+        loader.parent = host;
+    }
+
+    function restoreWidget(): void {
+        root.setWidgetHost(gridLayout);
+    }
+
+    // Flexible allotment (resolver shrink phase): forwarded to widgets that
+    // accept one; everything else ignores it.
+    function setOverflowAllotment(size: real): void {
+        const widget = root.overflowWidget;
+        if (widget !== null && "allottedPrimarySize" in widget)
+            widget.allottedPrimarySize = size;
+    }
+
     implicitWidth: !root.hasContent ? 0 : vertical && root.isMaterial ? Appearance.sizes.baseVerticalBarWidth - 6 : (root.contentWidth + padding * 2)
     implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : Appearance.sizes.baseBarHeight
 

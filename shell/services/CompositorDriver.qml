@@ -132,6 +132,12 @@ Singleton {
         return NiriDriver.windowsForWorkspace(wsId);
     }
 
+    // D4d hideOnFullscreen (bar-config.md D4d): consumers bind this; the
+    // truth is NiriDriver's single window/workspace state source.
+    function fullscreenToplevelOnScreen(outputName) {
+        return NiriDriver.fullscreenToplevelOnScreen(outputName);
+    }
+
     function searchWindows(query) {
         return NiriDriver.searchWindows(query);
     }

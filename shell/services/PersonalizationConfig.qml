@@ -1610,6 +1610,39 @@ Singleton {
         setBarAxis("widgetOutlineThickness", root.clampedBarInt(value, 0, 4, 1));
     }
 
+    // D4d behavior axes (bar-config.md D4d). Same clamps as the load
+    // normalizer; the lane overflow default takes the Nyxuri lane names.
+    function setBarAutoHideDelay(value) {
+        setBarAxis("autoHideDelay", root.clampedBarInt(value, 0, 2000, 0));
+    }
+
+    function setBarAutoHideStrict(value) {
+        setBarAxis("autoHideStrict", value === true);
+    }
+
+    function setBarHideOnFullscreen(value) {
+        setBarAxis("hideOnFullscreen", value === true);
+    }
+
+    function setBarClickThrough(value) {
+        setBarAxis("clickThrough", value === true);
+    }
+
+    function setBarHoverPopouts(value) {
+        setBarAxis("hoverPopouts", value !== false);
+    }
+
+    function setBarHoverPopoutDelay(value) {
+        setBarAxis("hoverPopoutDelay", root.clampedBarInt(value, 0, 1000, 150));
+    }
+
+    function setBarLaneOverflowMode(lane, value) {
+        const zone = ["left", "middle", "right"].indexOf(lane) !== -1 ? lane : "";
+        if (!zone)
+            return;
+        setBarAxis(zone + "OverflowMode", normalizedOption(BarDefaults.LANE_OVERFLOW_MODES, value, "auto"));
+    }
+
     // Sentinel axes (-1 = follow the style baseline) or bounded ints; the
     // shared clamp for the D4c geometry axes.
     function clampedBarSentinelInt(value, fallback, min, max) {
@@ -1764,7 +1797,20 @@ Singleton {
             widgetOutlineEnabled: raw.widgetOutlineEnabled === true,
             widgetOutlineColor: typeof raw.widgetOutlineColor === "string" && raw.widgetOutlineColor !== "" ? raw.widgetOutlineColor : "outline",
             widgetOutlineOpacity: fraction(raw.widgetOutlineOpacity, 1),
-            widgetOutlineThickness: root.clampedBarInt(raw.widgetOutlineThickness, 0, 4, 1)
+            widgetOutlineThickness: root.clampedBarInt(raw.widgetOutlineThickness, 0, 4, 1),
+            // D4d behavior axes: every clamp accepts the default through the
+            // same door (load or setter), and the hover-popout default is
+            // opt-OUT (`!== false`) because the pre-D4d behavior was
+            // hover-opens.
+            autoHideDelay: root.clampedBarInt(raw.autoHideDelay, 0, 2000, 0),
+            autoHideStrict: raw.autoHideStrict === true,
+            hideOnFullscreen: raw.hideOnFullscreen === true,
+            clickThrough: raw.clickThrough === true,
+            hoverPopouts: raw.hoverPopouts !== false,
+            hoverPopoutDelay: root.clampedBarInt(raw.hoverPopoutDelay, 0, 1000, 150),
+            leftOverflowMode: normalizedOption(BarDefaults.LANE_OVERFLOW_MODES, raw.leftOverflowMode, "auto"),
+            middleOverflowMode: normalizedOption(BarDefaults.LANE_OVERFLOW_MODES, raw.middleOverflowMode, "auto"),
+            rightOverflowMode: normalizedOption(BarDefaults.LANE_OVERFLOW_MODES, raw.rightOverflowMode, "auto")
         };
     }
 

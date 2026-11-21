@@ -101,9 +101,12 @@ class MediaFillContractTest(unittest.TestCase):
     def test_iNir_clamp_formula_unchanged(self):
         """The width authority stays the iNiR clamp; only the inner layout
         adapted. Defaults keep the user's chosen 160/300 (D4b: the clamp
-        bounds are the media entry's min/maxWidth axes)."""
+        bounds are the media entry's min/maxWidth axes). D4d feeds the
+        resolver's allotment through the SAME clamp (allottedPrimarySize
+        replaces the natural width inside min(); the skeleton and the
+        bounds are untouched)."""
         content = read(os.path.join(BAR_DIR, "Media.qml"))
-        self.assertIn("Math.max(root.mediaMinWidth, Math.min((isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8), root.mediaMaxWidth))", content)
+        self.assertIn("Math.max(root.mediaMinWidth, Math.min((root.allottedPrimarySize > 0 ? root.allottedPrimarySize : (isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8)), root.mediaMaxWidth))", content)
         self.assertIn('BarWidgetDefaults.option("media", root.widgetEntry, "minWidth")', content)
         self.assertIn('BarWidgetDefaults.option("media", root.widgetEntry, "maxWidth")', content)
         defaults = read(os.path.join(SHELL, "services", "BarWidgetDefaults.js"))
