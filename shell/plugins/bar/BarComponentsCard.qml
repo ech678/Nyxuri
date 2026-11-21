@@ -103,6 +103,8 @@ ColumnLayout {
             StyledText {
                 id: zoneLeadingLabel
 
+                Layout.alignment: Qt.AlignTop
+                Layout.topMargin: 10
                 Layout.preferredWidth: 120
                 text: root.horizontalBar ? I18n.tr("Left") : I18n.tr("Top")
                 color: Appearance.m3colors.m3onSurface
@@ -142,6 +144,8 @@ ColumnLayout {
             StyledText {
                 id: zoneMiddleLabel
 
+                Layout.alignment: Qt.AlignTop
+                Layout.topMargin: 10
                 Layout.preferredWidth: 120
                 text: I18n.tr("Center")
                 color: Appearance.m3colors.m3onSurface
@@ -182,6 +186,8 @@ ColumnLayout {
             StyledText {
                 id: zoneTrailingLabel
 
+                Layout.alignment: Qt.AlignTop
+                Layout.topMargin: 10
                 Layout.preferredWidth: 120
                 text: root.horizontalBar ? I18n.tr("Right") : I18n.tr("Bottom")
                 color: Appearance.m3colors.m3onSurface
@@ -224,6 +230,8 @@ ColumnLayout {
             StyledText {
                 id: quickSettingsLabel
 
+                Layout.alignment: Qt.AlignTop
+                Layout.topMargin: 10
                 Layout.preferredWidth: 120
                 text: I18n.tr("Quick settings")
                 color: Appearance.m3colors.m3onSurface

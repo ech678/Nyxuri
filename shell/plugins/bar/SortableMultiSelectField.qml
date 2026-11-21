@@ -20,12 +20,22 @@ FocusScope {
     property bool allowDuplicates: false
     property int highlightedIndex: 0
     property bool expanded: false
+    // Adaptive multi-line wrap mode: shows all components at once, eliminates
+    // keyhole scrolling issues. Can be toggled to compact single-row mode.
+    property bool wrapMode: true
     property real fieldHeight: 40
     property real itemHeight: 40
     property real menuItemSpacing: 4
     property int maxVisibleItems: 6
     property real scrollTargetX: 0
     property real autoScrollVelocity: 0
+
+    // Non-destructive drop indicator position (never mutates chipModel during drag)
+    property int dropIndicatorIndex: -1
+    property bool dropIndicatorVisible: false
+    property real dropIndicatorX: 0
+    property real dropIndicatorY: 0
+
     readonly property Item popupParentItem: root.Window.window ? root.Window.window.contentItem : null
     readonly property real menuPadding: 6
     readonly property real menuGap: 6
@@ -143,59 +153,100 @@ FocusScope {
         root.synchronizeEntries(entries);
     }
 
+    function getRemainingChips() {
+        const remaining = [];
+        const count = root.wrapMode ? flowRepeater.count : chipModel.count;
+        for (let i = 0; i < count; i += 1) {
+            const chip = root.wrapMode ? flowRepeater.itemAt(i) : chipList.itemAtIndex(i);
+            if (chip && !chip.isDragged)
+                remaining.push(chip);
+        }
+        return remaining;
+    }
+
+    function updateDropIndicatorGeometry(targetIndex) {
+        const remaining = root.getRemainingChips();
+        if (remaining.length === 0) {
+            if (root.wrapMode) {
+                root.dropIndicatorX = 6;
+                root.dropIndicatorY = (fieldFrame.height - 24) / 2;
+            } else {
+                root.dropIndicatorX = 6;
+                root.dropIndicatorY = (chipViewport.height - 24) / 2;
+            }
+            return;
+        }
+
+        const index = Math.max(0, Math.min(remaining.length, targetIndex));
+        if (root.wrapMode) {
+            if (index < remaining.length) {
+                const chip = remaining[index];
+                root.dropIndicatorX = Math.max(2, chip.x - 4);
+                root.dropIndicatorY = chip.y + (chip.height - 24) / 2;
+            } else {
+                const lastChip = remaining[remaining.length - 1];
+                root.dropIndicatorX = lastChip.x + lastChip.width + 2;
+                root.dropIndicatorY = lastChip.y + (lastChip.height - 24) / 2;
+            }
+        } else {
+            if (index < remaining.length) {
+                const chip = remaining[index];
+                root.dropIndicatorX = chip.x - chipList.contentX - 4;
+                root.dropIndicatorY = (chipViewport.height - 24) / 2;
+            } else {
+                const lastChip = remaining[remaining.length - 1];
+                root.dropIndicatorX = lastChip.x + lastChip.width - chipList.contentX + 2;
+                root.dropIndicatorY = (chipViewport.height - 24) / 2;
+            }
+        }
+    }
+
     function showDropPreview(componentKey, sourceZone, targetZone, targetIndex) {
-        const source = Array.isArray(root.values) ? root.values : [];
-        const entries = [];
-        for (let index = 0; index < source.length; index += 1) {
-            const value = source[index];
-            const isDraggedComponent = root.valueKey(value) === componentKey;
-            const movingWithinThisZone = root.zone === sourceZone && root.zone === targetZone;
-            if (isDraggedComponent && movingWithinThisZone)
-                continue;
-
-            if (isDraggedComponent && root.zone !== sourceZone)
-                continue;
-
-            entries.push({
-                "entryKey": root.valueKey(value),
-                "componentId": root.valueId(value),
-                "enabled": root.valueEnabled(value),
-                "placeholder": false
-            });
+        if (root.zone !== targetZone) {
+            root.dropIndicatorVisible = false;
+            root.dropIndicatorIndex = -1;
+            return;
         }
-        if (root.zone === targetZone) {
-            const insertionIndex = Math.max(0, Math.min(entries.length, targetIndex));
-            const draggedId = root.dragCoordinator ? root.dragCoordinator.componentId : "";
-            entries.splice(insertionIndex, 0, {
-                "entryKey": "preview",
-                "componentId": draggedId,
-                "enabled": true,
-                "placeholder": true
-            });
-        }
-        root.synchronizeEntries(entries);
+        root.dropIndicatorIndex = targetIndex;
+        root.dropIndicatorVisible = true;
+        root.updateDropIndicatorGeometry(root.dropIndicatorIndex);
     }
 
     function clearDropPreview() {
-        root.synchronizeValues();
+        root.dropIndicatorVisible = false;
+        root.dropIndicatorIndex = -1;
         root.autoScrollVelocity = 0;
     }
 
     function insertionIndexAt(coordinatorItem, sceneX, sceneY) {
-        const local = chipList.mapFromItem(coordinatorItem, sceneX, sceneY);
-        const contentPosition = local.x + chipList.contentX;
-        let insertionIndex = 0;
-        for (let index = 0; index < chipModel.count; index += 1) {
-            const delegateItem = chipList.itemAtIndex(index);
-            if (!delegateItem || delegateItem.placeholder || delegateItem.isDragged)
-                continue;
-
-            if (contentPosition < delegateItem.x + delegateItem.width / 2)
-                return insertionIndex;
-
-            insertionIndex += 1;
+        if (root.wrapMode) {
+            const local = chipFlow.mapFromItem(coordinatorItem, sceneX, sceneY);
+            let before = 0;
+            for (let index = 0; index < flowRepeater.count; index += 1) {
+                const chip = flowRepeater.itemAt(index);
+                if (!chip || chip.isDragged)
+                    continue;
+                const halfH = chip.height / 2;
+                const cx = chip.x + chip.width / 2;
+                const cy = chip.y + halfH;
+                if (cy < local.y - halfH || (Math.abs(cy - local.y) <= halfH && cx < local.x))
+                    before += 1;
+            }
+            return before;
+        } else {
+            const local = chipList.mapFromItem(coordinatorItem, sceneX, sceneY);
+            const contentPosition = local.x + chipList.contentX;
+            let before = 0;
+            for (let index = 0; index < chipModel.count; index += 1) {
+                const chip = chipList.itemAtIndex(index);
+                if (!chip || chip.isDragged)
+                    continue;
+                const cx = chip.x + chip.width / 2;
+                if (contentPosition > cx)
+                    before += 1;
+            }
+            return before;
         }
-        return insertionIndex;
     }
 
     function containsScenePoint(coordinatorItem, sceneX, sceneY) {
@@ -204,25 +255,32 @@ FocusScope {
     }
 
     function updateAutoScroll(coordinatorItem, sceneX) {
+        if (root.wrapMode) {
+            root.autoScrollVelocity = 0;
+            return;
+        }
         const local = chipViewport.mapFromItem(coordinatorItem, sceneX, 0);
         const edgeSize = 44;
         if (local.x < edgeSize && chipList.contentX > 0)
-            root.autoScrollVelocity = -Math.min(8, (edgeSize - local.x) / edgeSize * 8);
+            root.autoScrollVelocity = -Math.min(12, (edgeSize - local.x) / edgeSize * 12);
         else if (local.x > chipViewport.width - edgeSize && chipList.contentX < root.maxContentX())
-            root.autoScrollVelocity = Math.min(8, (local.x - chipViewport.width + edgeSize) / edgeSize * 8);
+            root.autoScrollVelocity = Math.min(12, (local.x - chipViewport.width + edgeSize) / edgeSize * 12);
         else
             root.autoScrollVelocity = 0;
     }
 
     function stepAutoScroll() {
-        if (root.autoScrollVelocity === 0)
+        if (root.autoScrollVelocity === 0 || root.wrapMode)
             return;
 
         chipList.contentX = root.clampContentX(chipList.contentX + root.autoScrollVelocity);
         root.scrollTargetX = chipList.contentX;
+        root.updateDropIndicatorGeometry(root.dropIndicatorIndex);
     }
 
     function maxContentX() {
+        if (root.wrapMode || !chipList)
+            return 0;
         return Math.max(0, chipList.contentWidth - chipList.width);
     }
 
@@ -231,25 +289,60 @@ FocusScope {
     }
 
     function handleWheel(wheelEvent) {
+        if (root.wrapMode) {
+            wheelEvent.accepted = false;
+            return;
+        }
+
+        const maxContent = root.maxContentX();
+        if (maxContent <= 0) {
+            wheelEvent.accepted = false;
+            return;
+        }
+
         const pixelX = Number(wheelEvent.pixelDelta.x);
         const pixelY = Number(wheelEvent.pixelDelta.y);
         const angleX = Number(wheelEvent.angleDelta.x);
         const angleY = Number(wheelEvent.angleDelta.y);
+
         let delta = 0;
         if (isFinite(pixelX) && pixelX !== 0)
             delta = -pixelX;
-        else if (isFinite(pixelY) && pixelY !== 0)
-            delta = -pixelY;
         else if (isFinite(angleX) && angleX !== 0)
             delta = -angleX;
-        else if (isFinite(angleY) && angleY !== 0)
-            delta = -angleY;
-        if (delta === 0)
-            return;
+        else if (wheelEvent.modifiers & Qt.ShiftModifier) {
+            if (isFinite(pixelY) && pixelY !== 0)
+                delta = -pixelY;
+            else if (isFinite(angleY) && angleY !== 0)
+                delta = -angleY;
+        } else {
+            if (isFinite(pixelY) && pixelY !== 0)
+                delta = -pixelY;
+            else if (isFinite(angleY) && angleY !== 0)
+                delta = -angleY;
 
-        const base = scrollAnimation.running ? root.scrollTargetX : chipList.contentX;
-        root.scrollTargetX = root.clampContentX(base + delta);
+            const curX = chipList.contentX;
+            if ((delta < 0 && curX <= 0) || (delta > 0 && curX >= maxContent)) {
+                wheelEvent.accepted = false;
+                return;
+            }
+        }
+
+        if (delta === 0) {
+            wheelEvent.accepted = false;
+            return;
+        }
+
+        const base = root.scrollTargetX;
+        const nextX = root.clampContentX(base + delta);
+        if (nextX === chipList.contentX) {
+            wheelEvent.accepted = false;
+            return;
+        }
+
+        root.scrollTargetX = nextX;
         chipList.contentX = root.scrollTargetX;
+        root.updateDropIndicatorGeometry(root.dropIndicatorIndex);
         wheelEvent.accepted = true;
     }
 
@@ -262,7 +355,7 @@ FocusScope {
         optionsPopup.width = root.width;
         optionsPopup.height = root.listTargetHeight;
         optionsPopup.x = Math.max(margin, Math.min(origin.x, root.popupParentItem.width - optionsPopup.width - margin));
-        const belowY = origin.y + root.fieldHeight + root.menuGap;
+        const belowY = origin.y + fieldFrame.height + root.menuGap;
         const aboveY = origin.y - optionsPopup.height - root.menuGap;
         optionsPopup.y = belowY + optionsPopup.height <= root.popupParentItem.height - margin ? belowY : Math.max(margin, aboveY);
         return true;
@@ -322,7 +415,7 @@ FocusScope {
     }
 
     implicitWidth: 360
-    implicitHeight: fieldHeight
+    implicitHeight: fieldFrame.height
     activeFocusOnTab: true
     onValuesChanged: synchronizeValues()
     Component.onCompleted: synchronizeValues()
@@ -344,9 +437,18 @@ FocusScope {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: root.fieldHeight
+        height: root.wrapMode ? Math.max(root.fieldHeight, chipFlow.childrenRect.height + 14) : root.fieldHeight
         clip: true
+        radius: Appearance.rounding.small
         color: root.expanded || fieldTap.pressed ? Appearance.colors.colLayer2Active : fieldHover.hovered ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2
+
+        Behavior on height {
+            NumberAnimation {
+                duration: Appearance.animation.expressiveFastSpatial.duration
+                easing.type: Appearance.animation.expressiveFastSpatial.type
+                easing.bezierCurve: Appearance.animation.expressiveFastSpatial.bezierCurve
+            }
+        }
 
         Item {
             id: chipViewport
@@ -355,219 +457,184 @@ FocusScope {
 
             anchors {
                 left: parent.left
-                right: arrowIcon.left
+                right: wrapToggleButton.left
                 top: parent.top
                 bottom: parent.bottom
                 leftMargin: 8
-                rightMargin: 8
+                rightMargin: 6
+                topMargin: root.wrapMode ? 6 : 0
+                bottomMargin: root.wrapMode ? 6 : 0
             }
 
-            ListView {
-                id: chipList
+            // Wrap mode: Flow layout showing all components cleanly
+            Flow {
+                id: chipFlow
 
-                anchors.fill: parent
-                orientation: ListView.Horizontal
+                visible: root.wrapMode
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.verticalCenter: chipModel.count <= 2 ? parent.verticalCenter : undefined
+                anchors.top: chipModel.count <= 2 ? undefined : parent.top
                 spacing: 6
-                model: chipModel
-                clip: true
-                boundsBehavior: Flickable.StopAtBounds
-                interactive: false
 
-                Behavior on contentX {
-                    enabled: !root.dragActive
+                Repeater {
+                    id: flowRepeater
 
-                    NumberAnimation {
-                        id: scrollAnimation
+                    model: chipModel
+                    delegate: chipDelegateComponent
+                }
+            }
 
-                        alwaysRunToEnd: false
-                        duration: Appearance.animation.scroll.duration
-                        easing.type: Appearance.animation.scroll.type
-                        easing.bezierCurve: Appearance.animation.scroll.bezierCurve
-                    }
+            // Compact mode: Single-line horizontal scroll with left/right buttons & indicator
+            Item {
+                id: singleLineContainer
+
+                visible: !root.wrapMode
+                anchors.fill: parent
+
+                ListView {
+                    id: chipList
+
+                    anchors.fill: parent
+                    orientation: ListView.Horizontal
+                    spacing: 6
+                    model: chipModel
+                    clip: true
+                    cacheBuffer: 2000
+                    boundsBehavior: Flickable.StopAtBounds
+                    interactive: true
+
+                    delegate: chipDelegateComponent
                 }
 
-                delegate: Item {
-                    id: chipDelegate
+                // Left scroll button
+                Item {
+                    id: scrollLeftButton
 
-                    required property string entryKey
-                    required property string componentId
-                    required property bool placeholder
-                    required property bool enabled
-                    // D4a: identity is the entry uid (duplicate widget ids are
-                    // legal), so only the dragged chip hides.
-                    readonly property bool ownsActiveDrag: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentUid === chipDelegate.entryKey && root.dragCoordinator.sourceZone === root.zone
-                    readonly property bool isDragged: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentUid === chipDelegate.entryKey && !placeholder
-                    readonly property bool canToggleEnabled: root.entryValues && !placeholder
-                    readonly property real naturalWidth: Math.max(88, chipLabel.implicitWidth + (chipDelegate.canToggleEnabled ? 94 : 70))
-
-                    width: placeholder && root.dragCoordinator ? root.dragCoordinator.dragWidth : isDragged ? 0 : naturalWidth
-                    height: chipList.height
-                    opacity: isDragged ? 0 : 1
+                    visible: !root.wrapMode && chipList.contentX > 4
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 24
+                    height: 24
+                    z: 50
 
                     Rectangle {
-                        id: chipSurface
-
-                        width: chipDelegate.placeholder ? parent.width : chipDelegate.naturalWidth
-                        height: 30
-                        anchors.centerIn: parent
-                        radius: Appearance.rounding.small
-                        color: chipDelegate.placeholder ? Appearance.colors.colLayer2Active : chipHover.hovered ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colPrimaryContainer
-                        // A disabled entry keeps its slot and geometry, only
-                        // the surface recedes (D4a enabled axis).
-                        opacity: chipDelegate.placeholder ? 0.45 : chipDelegate.enabled ? 1 : 0.45
+                        anchors.fill: parent
+                        radius: width / 2
+                        color: Appearance.colors.colLayer1
+                        opacity: scrollLeftHover.hovered ? 0.95 : 0.8
+                        border.width: 1
+                        border.color: Appearance.colors.colOutlineVariant
 
                         MaterialSymbol {
-                            id: chipIcon
-
-                            anchors.left: parent.left
-                            anchors.leftMargin: 10
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: root.iconFor(chipDelegate.componentId)
-                            iconSize: 17
-                            fill: 1
-                            color: Appearance.colors.colOnPrimaryContainer
-                            visible: !chipDelegate.placeholder
+                            anchors.centerIn: parent
+                            text: "chevron_left"
+                            iconSize: 16
+                            color: Appearance.colors.colOnLayer1
                         }
+                    }
 
-                        Text {
-                            id: chipLabel
-
-                            text: root.labelFor(chipDelegate.componentId)
-                            color: Appearance.colors.colOnPrimaryContainer
-                            font.family: Fonts.ui
-                            font.pixelSize: NexusStyle.font.bodySmall
-                            font.weight: Font.Medium
-                            visible: !chipDelegate.placeholder
-                            elide: Text.ElideRight
-
-                            anchors {
-                                left: chipIcon.right
-                                right: chipDelegate.canToggleEnabled ? enabledToggle.left : closeButton.left
-                                leftMargin: 6
-                                rightMargin: 4
-                                verticalCenter: parent.verticalCenter
-                            }
+                    TapHandler {
+                        onTapped: {
+                            root.scrollTargetX = root.clampContentX(chipList.contentX - 150);
+                            chipList.contentX = root.scrollTargetX;
+                            root.updateDropIndicatorGeometry(root.dropIndicatorIndex);
                         }
+                    }
 
-                        Item {
-                            id: enabledToggle
-
-                            anchors.right: closeButton.left
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 24
-                            height: 30
-                            visible: chipDelegate.canToggleEnabled
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: chipDelegate.enabled ? "visibility" : "visibility_off"
-                                iconSize: 16
-                                fill: 0
-                                color: Appearance.colors.colOnPrimaryContainer
-                            }
-
-                            MouseArea {
-                                id: enabledMouse
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: mouse => {
-                                    mouse.accepted = true;
-                                    root.enabledToggled(chipDelegate.entryKey);
-                                }
-                            }
-                        }
-
-                        Item {
-                            id: closeButton
-
-                            anchors.right: parent.right
-                            anchors.verticalCenter: parent.verticalCenter
-                            width: 30
-                            height: 30
-                            visible: !chipDelegate.placeholder
-
-                            MaterialSymbol {
-                                anchors.centerIn: parent
-                                text: "close"
-                                iconSize: 17
-                                color: Appearance.colors.colOnPrimaryContainer
-                            }
-
-                            MouseArea {
-                                id: closeMouse
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: mouse => {
-                                    mouse.accepted = true;
-                                    root.removed(chipDelegate.entryKey);
-                                }
-                            }
-                        }
-
-                        HoverHandler {
-                            id: chipHover
-                        }
-
-                        MouseArea {
-                            enabled: !chipDelegate.placeholder
-                            cursorShape: dragHandler.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-                            onClicked: mouse => {
-                                return mouse.accepted = true;
-                            }
-
-                            anchors {
-                                left: parent.left
-                                right: closeButton.left
-                                top: parent.top
-                                bottom: parent.bottom
-                            }
-                        }
-
-                        DragHandler {
-                            id: dragHandler
-
-                            enabled: root.dragCoordinator !== null && (!chipDelegate.placeholder || chipDelegate.ownsActiveDrag) && (!closeMouse.containsMouse || chipDelegate.ownsActiveDrag) && (!enabledMouse.containsMouse || chipDelegate.ownsActiveDrag)
-                            target: null
-                            dragThreshold: 8
-                            onActiveChanged: {
-                                if (active)
-                                    root.dragCoordinator.beginDrag(root, chipDelegate.entryKey, chipDelegate.componentId, root.labelFor(chipDelegate.componentId), root.iconFor(chipDelegate.componentId), chipDelegate.naturalWidth, centroid.scenePosition);
-                                else if (root.dragCoordinator && root.dragCoordinator.dragActive && root.dragCoordinator.componentUid === chipDelegate.entryKey)
-                                    root.dragCoordinator.finishDrag();
-                            }
-                            onTranslationChanged: {
-                                if (active)
-                                    root.dragCoordinator.updateDrag(centroid.scenePosition);
-                            }
-                        }
+                    HoverHandler {
+                        id: scrollLeftHover
                     }
                 }
 
-                move: Transition {
-                    ElementMoveAnimation {
-                        property: "x"
+                // Right scroll button
+                Item {
+                    id: scrollRightButton
+
+                    visible: !root.wrapMode && chipList.contentX < root.maxContentX() - 4
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 24
+                    height: 24
+                    z: 50
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: width / 2
+                        color: Appearance.colors.colLayer1
+                        opacity: scrollRightHover.hovered ? 0.95 : 0.8
+                        border.width: 1
+                        border.color: Appearance.colors.colOutlineVariant
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: "chevron_right"
+                            iconSize: 16
+                            color: Appearance.colors.colOnLayer1
+                        }
+                    }
+
+                    TapHandler {
+                        onTapped: {
+                            root.scrollTargetX = root.clampContentX(chipList.contentX + 150);
+                            chipList.contentX = root.scrollTargetX;
+                            root.updateDropIndicatorGeometry(root.dropIndicatorIndex);
+                        }
+                    }
+
+                    HoverHandler {
+                        id: scrollRightHover
                     }
                 }
 
-                moveDisplaced: Transition {
-                    ElementMoveAnimation {
-                        property: "x"
+                // Slim scrollbar indicator
+                Rectangle {
+                    id: scrollTrack
+
+                    visible: !root.wrapMode && root.maxContentX() > 0
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: 2
+                    color: "transparent"
+
+                    Rectangle {
+                        id: scrollThumb
+
+                        x: root.maxContentX() > 0 ? (chipList.contentX / root.maxContentX()) * Math.max(0, scrollTrack.width - width) : 0
+                        width: chipList.contentWidth > 0 ? Math.max(20, (chipViewport.width / chipList.contentWidth) * scrollTrack.width) : 0
+                        height: 2
+                        radius: 1
+                        color: Appearance.colors.colPrimary
+                        opacity: 0.4
+                    }
+                }
+            }
+
+            // Drop indicator capsule (smoothly slides to target slot, zero model thrashing)
+            Rectangle {
+                id: dropIndicatorLine
+
+                visible: root.dropIndicatorVisible
+                x: root.dropIndicatorX
+                y: root.dropIndicatorY
+                width: 3
+                height: 24
+                radius: 1.5
+                color: Appearance.colors.colPrimary
+                z: 100
+
+                Behavior on x {
+                    NumberAnimation {
+                        duration: 90
+                        easing.type: Easing.OutQuad
                     }
                 }
 
-                addDisplaced: Transition {
-                    ElementMoveAnimation {
-                        property: "x"
-                    }
-                }
-
-                removeDisplaced: Transition {
-                    ElementMoveAnimation {
-                        property: "x"
+                Behavior on y {
+                    NumberAnimation {
+                        duration: 90
+                        easing.type: Easing.OutQuad
                     }
                 }
             }
@@ -581,6 +648,168 @@ FocusScope {
             }
         }
 
+        Component {
+            id: chipDelegateComponent
+
+            Item {
+                id: chipDelegate
+
+                required property string entryKey
+                required property string componentId
+                required property bool placeholder
+                required property bool enabled
+                readonly property bool ownsActiveDrag: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentUid === chipDelegate.entryKey && root.dragCoordinator.sourceZone === root.zone
+                readonly property bool isDragged: root.dragActive && root.dragCoordinator && root.dragCoordinator.componentUid === chipDelegate.entryKey && !placeholder
+                readonly property bool canToggleEnabled: root.entryValues && !placeholder
+                readonly property real naturalWidth: Math.max(88, chipLabel.implicitWidth + (chipDelegate.canToggleEnabled ? 94 : 70))
+
+                width: naturalWidth
+                height: 30
+
+                Rectangle {
+                    id: chipSurface
+
+                    anchors.fill: parent
+                    radius: Appearance.rounding.small
+                    color: chipDelegate.isDragged ? Appearance.colors.colLayer2Active : chipHover.hovered ? Appearance.colors.colPrimaryContainerHover : Appearance.colors.colPrimaryContainer
+                    opacity: chipDelegate.isDragged ? 0.25 : chipDelegate.enabled ? 1 : 0.45
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Appearance.animation.expressiveFastEffects.duration
+                            easing.type: Appearance.animation.expressiveFastEffects.type
+                            easing.bezierCurve: Appearance.animation.expressiveFastEffects.bezierCurve
+                        }
+                    }
+
+                    MaterialSymbol {
+                        id: chipIcon
+
+                        anchors.left: parent.left
+                        anchors.leftMargin: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.iconFor(chipDelegate.componentId)
+                        iconSize: 17
+                        fill: 1
+                        color: Appearance.colors.colOnPrimaryContainer
+                    }
+
+                    Text {
+                        id: chipLabel
+
+                        text: root.labelFor(chipDelegate.componentId)
+                        color: Appearance.colors.colOnPrimaryContainer
+                        font.family: Fonts.ui
+                        font.pixelSize: NexusStyle.font.bodySmall
+                        font.weight: Font.Medium
+                        elide: Text.ElideRight
+
+                        anchors {
+                            left: chipIcon.right
+                            right: chipDelegate.canToggleEnabled ? enabledToggle.left : closeButton.left
+                            leftMargin: 6
+                            rightMargin: 4
+                            verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    Item {
+                        id: enabledToggle
+
+                        anchors.right: closeButton.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 24
+                        height: 30
+                        visible: chipDelegate.canToggleEnabled
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: chipDelegate.enabled ? "visibility" : "visibility_off"
+                            iconSize: 16
+                            fill: 0
+                            color: Appearance.colors.colOnPrimaryContainer
+                        }
+
+                        MouseArea {
+                            id: enabledMouse
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: mouse => {
+                                mouse.accepted = true;
+                                root.enabledToggled(chipDelegate.entryKey);
+                            }
+                        }
+                    }
+
+                    Item {
+                        id: closeButton
+
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 30
+                        height: 30
+
+                        MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: "close"
+                            iconSize: 17
+                            color: Appearance.colors.colOnPrimaryContainer
+                        }
+
+                        MouseArea {
+                            id: closeMouse
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: mouse => {
+                                mouse.accepted = true;
+                                root.removed(chipDelegate.entryKey);
+                            }
+                        }
+                    }
+
+                    HoverHandler {
+                        id: chipHover
+                    }
+
+                    MouseArea {
+                        cursorShape: dragHandler.active ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+                        onClicked: mouse => {
+                            return mouse.accepted = true;
+                        }
+
+                        anchors {
+                            left: parent.left
+                            right: closeButton.left
+                            top: parent.top
+                            bottom: parent.bottom
+                        }
+                    }
+
+                    DragHandler {
+                        id: dragHandler
+
+                        enabled: root.dragCoordinator !== null && (!closeMouse.containsMouse || chipDelegate.ownsActiveDrag) && (!enabledMouse.containsMouse || chipDelegate.ownsActiveDrag)
+                        target: null
+                        dragThreshold: 8
+                        onActiveChanged: {
+                            if (active)
+                                root.dragCoordinator.beginDrag(root, chipDelegate.entryKey, chipDelegate.componentId, root.labelFor(chipDelegate.componentId), root.iconFor(chipDelegate.componentId), chipDelegate.naturalWidth, centroid.scenePosition);
+                            else if (root.dragCoordinator && root.dragCoordinator.dragActive && root.dragCoordinator.componentUid === chipDelegate.entryKey)
+                                root.dragCoordinator.finishDrag();
+                        }
+                        onTranslationChanged: {
+                            if (active)
+                                root.dragCoordinator.updateDrag(centroid.scenePosition);
+                        }
+                    }
+                }
+            }
+        }
+
         Text {
             visible: chipModel.count === 0
             text: I18n.tr("No components selected")
@@ -590,10 +819,38 @@ FocusScope {
 
             anchors {
                 left: parent.left
-                right: arrowIcon.left
+                right: wrapToggleButton.left
                 leftMargin: 14
                 rightMargin: 8
                 verticalCenter: parent.verticalCenter
+            }
+        }
+
+        Item {
+            id: wrapToggleButton
+
+            anchors.right: arrowIcon.left
+            anchors.rightMargin: 4
+            anchors.verticalCenter: arrowIcon.verticalCenter
+            width: 26
+            height: 26
+
+            MaterialSymbol {
+                anchors.centerIn: parent
+                text: root.wrapMode ? "view_stream" : "view_agenda"
+                iconSize: 18
+                color: wrapHover.hovered ? Appearance.colors.colPrimary : Appearance.colors.colOnLayer2
+                opacity: 0.8
+            }
+
+            HoverHandler {
+                id: wrapHover
+            }
+
+            TapHandler {
+                onTapped: {
+                    root.wrapMode = !root.wrapMode;
+                }
             }
         }
 
@@ -602,7 +859,9 @@ FocusScope {
 
             anchors.right: parent.right
             anchors.rightMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: root.wrapMode ? parent.top : undefined
+            anchors.topMargin: root.wrapMode ? 10 : 0
+            anchors.verticalCenter: root.wrapMode ? undefined : parent.verticalCenter
             text: "expand_more"
             iconSize: 20
             color: Appearance.colors.colOnLayer2
