@@ -13,6 +13,7 @@
 | **媒体 marquee 循环滚动 / 锁宽**（iNiR 经典 bar `lockMediaWidth` 方案） | D1 媒体宽度钳制落地后，观感仍不满意（长歌名 elide 信息损失大）再引入 | 先按 D1 对齐 iNiR barM3 clamp + elide；marquee 是增强不是修复 |
 | **密度预设**（dux `DensityPresets` 四档，只迁移用户未改过的键） | D4b 几何轴全套落地后作为其收尾项 | 单一 spacing/padding 体系（design-system 8 档）先立，预设是几何轴之上的编排 |
 | **per-screen token 配置层**（caelestia `monitors/<name>/` 覆盖） | 真实多屏用户需求出现（不同 DPI/缩放的屏组合） | 全局 token 单层；`barScreenList` 已按屏选 bar，token 分屏另议 |
+| **D3 撑大岛联动试点**（Clavis Keystone 三窗口架构 + SDF 融合） | D5 联动层铺开时同规格 morph+blur 观感不足，或作者重启岛屿风格评审 | end4 岛为唯一现行形态；试点设计留档 [shell/ROADMAP](../shell/ROADMAP.md) D3 节；SDF 融合（出生律重武器档）恢复验证前不启用（D-6，2026-11-21） |
 
 ## 这次重构已落地（主动覆盖延迟）
 

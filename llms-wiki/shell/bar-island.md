@@ -55,8 +55,9 @@
 
 ## 岛屿定案与联动试点（D-3，2026-11-21）
 
-- **终局**：end4 岛为默认形态；Clavis 撑大岛为 opt-in 可选风格，兼联动机制试点
-  （D3 阶段），不催办不关闭。定案与分期见 [shell/ROADMAP](../../shell/ROADMAP.md)。
+- **终局**：end4 岛为默认且唯一现行形态；Clavis 撑大岛 opt-in 风格试点**暂时放弃**
+  （D-6，2026-11-21，恢复触发条件见 [delayed-decisions](../delayed-decisions.md)）。
+  定案与分期见 [shell/ROADMAP](../../shell/ROADMAP.md)。
 - **Keystone 机制摘要**（references/clavis-15403b9，整抄剪裁来源）：三窗口架构——
   全屏交互窗（`exclusiveZone: -1`，承接展开与动画）+ 贴边细条预留窗（只预留收起态
   厚度，桌面工作区不随展开变化）+ 1×1 键盘窗（避免重 map 掉帧）。撑大 = 窗内 Item

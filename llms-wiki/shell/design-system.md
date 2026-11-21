@@ -128,7 +128,7 @@ bar 的 end4 `elementMove*` 家族（200/320/400）映射入上述档位。出�
 3. **材质连续**：打开时继承源胶囊的色/圆角/边框规格，闭合时归还。
 4. **机制按最便宜够用选型**：窗内生长（已在同窗）→ 跨窗锚定几何+同文法（不同窗但
    看起来长出来）→ 同窗共生+SDF 融合（重武器，clavis `long_split.frag.qsb` 纯 QML
-   ShaderEffect，经 D3 试点验证后才启用）。
+   ShaderEffect，D3 试点暂时放弃，恢复验证前不启用）。
 
 ## 表面来源映射表（Fork & Trim）
 
@@ -138,7 +138,7 @@ bar 的 end4 `elementMove*` 家族（200/320/400）映射入上述档位。出�
 | bar 视觉/几何 | end4-pC | B 卷基线 |
 | bar 数据面/托盘 | iNiR | B9.1 已抄 |
 | 字号/圆角/间距/色彩/动效数值 | caelestia tokens.hpp | 本页即契约 |
-| 联动机制库 | caelestia drawers（同窗架构）+ clavis keystone（全屏窗+mask+SDF） | D3 试点 |
+| 联动机制库 | caelestia drawers（同窗架构）+ clavis keystone（全屏窗+mask+SDF） | D3 试点（暂时放弃） |
 | quicksettings / sidebar | caelestia sidebar/popouts + iNiR | **D5 定母体** |
 | lock / session | 候选 caelestia lock/session | **D5 定母体** |
 | launcher | orbit 自研（保留） | 吃宪法与出生律 |
