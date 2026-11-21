@@ -76,10 +76,13 @@ Item {
         }
     }
 
-    implicitWidth: root.vertical ? root.slotSize : (root.expanded ? root.expandedSize : root.slotSize)
-    implicitHeight: root.vertical ? (root.expanded ? root.expandedSize : root.slotSize) : root.slotSize
+    property real animatedWidth: root.vertical ? root.slotSize : (root.expanded ? root.expandedSize : root.slotSize)
+    property real animatedHeight: root.vertical ? (root.expanded ? root.expandedSize : root.slotSize) : root.slotSize
 
-    Behavior on implicitWidth {
+    implicitWidth: Math.round(root.animatedWidth)
+    implicitHeight: Math.round(root.animatedHeight)
+
+    Behavior on animatedWidth {
         NumberAnimation {
             duration: 200
             easing.type: Easing.BezierSpline
@@ -87,7 +90,7 @@ Item {
         }
     }
 
-    Behavior on implicitHeight {
+    Behavior on animatedHeight {
         NumberAnimation {
             duration: 200
             easing.type: Easing.BezierSpline

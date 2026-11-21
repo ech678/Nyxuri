@@ -38,13 +38,21 @@ class SystemIconSlotContractTest(unittest.TestCase):
         self.assertIn("readonly property int slotSize: 26", self.slot)
         self.assertIn("readonly property int expandedSize: 54", self.slot)
         self.assertIn("readonly property int intentDelay: 150", self.slot)
-        self.assertIn("implicitWidth: root.vertical ? root.slotSize : (root.expanded ? root.expandedSize : root.slotSize)", self.slot)
-        self.assertIn("implicitHeight: root.vertical ? (root.expanded ? root.expandedSize : root.slotSize) : root.slotSize", self.slot)
+        self.assertIn("property real animatedWidth: root.vertical ? root.slotSize : (root.expanded ? root.expandedSize : root.slotSize)", self.slot)
+        self.assertIn("property real animatedHeight: root.vertical ? (root.expanded ? root.expandedSize : root.slotSize) : root.slotSize", self.slot)
+        self.assertIn("implicitWidth: Math.round(root.animatedWidth)", self.slot)
+        self.assertIn("implicitHeight: Math.round(root.animatedHeight)", self.slot)
 
     def test_motion_duration_is_200ms(self):
         # D-2 specifies 200ms duration with standard motion curve
         self.assertGreaterEqual(self.slot.count("duration: 200"), 2)
         self.assertIn("Appearance.animationCurves.standard", self.slot)
+
+    def test_integer_pixel_alignment_prevents_jitter(self):
+        # Animated dimensions are rounded to integer pixels to prevent layout
+        # aliasing jitter against right-anchored and centered bar containers.
+        self.assertIn("Math.round(root.animatedWidth)", self.slot)
+        self.assertIn("Math.round(root.animatedHeight)", self.slot)
 
     def test_intent_delay_timer(self):
         self.assertIn("id: intentTimer", self.slot)
