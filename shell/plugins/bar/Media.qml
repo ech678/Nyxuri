@@ -41,6 +41,8 @@ Item {
     readonly property string cleanedTitle: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
     readonly property string popupMode: Config.options?.media?.popupMode ?? "dock"
     property bool barMediaPopupVisible: false
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
 
     readonly property string artUrl: MprisController.artUrlOf(activePlayer) ?? ""
     readonly property string trackTitle: MprisController.titleOf(activePlayer) ?? ""
@@ -218,7 +220,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton | Qt.RightButton | Qt.LeftButton
-        hoverEnabled: PersonalizationConfig.barAxes.hoverPopouts
+        hoverEnabled: root.barAxes.hoverPopouts
         onPressed: event => {
             if (event.button === Qt.MiddleButton)
                 activePlayer?.togglePlaying();

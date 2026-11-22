@@ -70,6 +70,11 @@ Item {
         if (root.isPrimaryScreen) {
             ActionGateway.islandHost = root;
             Qt.callLater(function () {
+                // Deferred: the host may be torn down between queue and run
+                // (lane rebuilds recreate the island); a dead instance must
+                // not touch services (probe caught the null conversion).
+                if (ActionGateway.islandHost !== root)
+                    return;
                 root._lastVolume = VolumeService.sinkVolume;
                 root._lastBrightness = BrightnessService.brightnessValue;
                 root._osdReady = true;

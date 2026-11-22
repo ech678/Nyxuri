@@ -171,8 +171,10 @@ class EngineTest(unittest.TestCase):
             self.assertIn("OverflowLayout.placement(flat, fallback)", host)
 
     def test_lane_default_resolves_through_the_axes(self):
+        # D4e: per-bar — the hosts resolve the lane default through their
+        # own entry's axes (root.axes), never the settings-facing views.
         for host in (self.content, self.vertical):
-            self.assertIn('PersonalizationConfig.barAxes[zone + "OverflowMode"]', host)
+            self.assertIn('root.axes[zone + "OverflowMode"]', host)
 
     def test_buttons_mount_in_all_six_rows(self):
         # Left/middle lanes host the button at the END (inner edge = towards
@@ -276,16 +278,23 @@ class HoverPopoutsTest(unittest.TestCase):
         self.assertEqual(hits, [], f"clickToShow survived in: {hits}")
 
     def test_consumers_bind_the_axis(self):
+        # D4e: the read goes through the owning bar (widgetBar injection,
+        # per-bar) with the settings-facing entry as the standalone
+        # fallback — same axis, scoped.
         for name in self.CONSUMERS[:-1]:
             source = read(os.path.join(BAR_DIR, name))
-            self.assertIn("!PersonalizationConfig.barAxes.hoverPopouts", source, name)
-        self.assertIn("PersonalizationConfig.barAxes.hoverPopouts", read(os.path.join(BAR_DIR, "Media.qml")))
+            self.assertIn("property var widgetBar: null", source, name)
+            self.assertIn("readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes", source, name)
+            self.assertIn("!root.barAxes.hoverPopouts", source, name)
+        self.assertIn("hoverEnabled: root.barAxes.hoverPopouts", read(os.path.join(BAR_DIR, "Media.qml")))
 
     def test_styled_popup_pinned_open_and_axis_delay(self):
         popup = read(os.path.join(BAR_DIR, "StyledPopup.qml"))
         self.assertIn("property bool pinnedOpen: false", popup)
         self.assertIn("active: root._hoverHold || root.pinnedOpen", popup)
-        self.assertIn("property int hoverOpenDelay: PersonalizationConfig.barAxes.hoverPopoutDelay", popup)
+        self.assertIn("property var widgetBar: null", popup)
+        self.assertIn("readonly property var barAxes: widgetBar ? widgetBar.axes : PersonalizationConfig.barAxes", popup)
+        self.assertIn("property int hoverOpenDelay: root.barAxes.hoverPopoutDelay", popup)
         self.assertNotIn("hoverOpenDelay: 400", popup)
 
 
@@ -307,16 +316,18 @@ class BarBehaviorTest(unittest.TestCase):
     def test_strict_gates_only_popup_holds(self):
         # D4d-2: context menu + media popup unpin under strict; the sidebar
         # and control panel holds stay pinned (they grow from the bar edge).
-        self.assertIn("!barRoot.strictHide)\n                            barRoot.contextMenuHold = true", self.bar)
-        self.assertIn("!barRoot.strictHide)\n                            barRoot.mediaControlsHold = true", self.bar)
+        # D4e: the window body nests deeper under the per-bar host chain.
+        self.assertIn("!barRoot.strictHide)\n                                                barRoot.contextMenuHold = true", self.bar)
+        self.assertIn("!barRoot.strictHide)\n                                                barRoot.mediaControlsHold = true", self.bar)
         self.assertIn("GlobalStates.sidebarLeftPresentationOutput === barRoot.outputName)", self.bar)
-        self.assertNotIn("!barRoot.strictHide)\n                            barRoot.controlPanelHold = true", self.bar)
+        self.assertNotIn("!barRoot.strictHide)\n                                                barRoot.controlPanelHold = true", self.bar)
 
     def test_fullscreen_raise(self):
         self.assertIn("readonly property bool fullscreenAutoHide:", self.bar)
         self.assertIn("CompositorDriver.fullscreenToplevelOnScreen(barRoot.outputName)", self.bar)
         self.assertIn("barRoot.fullscreenAutoHide ? WlrLayer.Overlay : WlrLayer.Top", self.bar)
-        self.assertIn("Config.options?.bar?.autoHide?.enable ?? false) || barRoot.fullscreenAutoHide", self.bar)
+        # D4e: autoHide is a per-entry axis (barRoot.axes), not the bridge.
+        self.assertIn("(barRoot.axes.autoHide === true) || barRoot.fullscreenAutoHide", self.bar)
 
     def test_fullscreen_state_face(self):
         self.assertIn("isFullscreen: !!rawWindow.is_fullscreen,", self.niri)

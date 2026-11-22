@@ -1616,6 +1616,139 @@ ShellRoot {
             return "RESET";
         }
 
+        // D4e e1: multi-bar storage. Self-contained (resets to the factory
+        // bar first, restores at the end): a second entry survives with a
+        // generated id, its default lanes carry no island (the shared
+        // singleton bucket), uids stay unique across bars, per-id mutations
+        // stay isolated (selection routes the setters), the sparse section
+        // carries every entry while multi (a pristine sibling persists as
+        // its id — dropping it would delete that bar), sparse -> normalize
+        // round-trips, the island cannot be re-added from a foreign editor,
+        // and delete protects the factory entry and the last bar.
+        function d4eStore(): string {
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            const singleSparse = PersonalizationConfig.sparseBarConfigs();
+            const secondId = PersonalizationConfig.addBarConfig();
+            const twoCount = PersonalizationConfig.barConfigs.length;
+            const second = PersonalizationConfig.barConfigs[1];
+            const secondMiddle = second.lanes.middle.map(entry => entry.widgetId);
+            const islandOwners = PersonalizationConfig.barConfigs.filter(config => ["left", "middle", "right"].some(zone => config.lanes[zone].some(entry => entry.widgetId === "island"))).map(config => config.id);
+            const uids = [];
+            PersonalizationConfig.barConfigs.forEach(config => ["left", "middle", "right"].forEach(zone => config.lanes[zone].forEach(entry => uids.push(entry.uid))));
+            const uniqueUids = uids.filter((uid, index) => uids.indexOf(uid) === index);
+            // Route the editor to bar 2: entry + override + a position flip
+            // land on bar 2 only.
+            PersonalizationConfig.selectedBarId = secondId;
+            PersonalizationConfig.addBarEntry("right", "clock");
+            const clockUid = PersonalizationConfig.barLayoutEntriesRight.find(entry => entry.widgetId === "clock").uid;
+            PersonalizationConfig.setBarEntryOverride(clockUid, "dateFormat", "ddd");
+            PersonalizationConfig.setBarPosition("left");
+            const islandBlockedMove = PersonalizationConfig.moveBarComponent("island", "left", 0) === false;
+            const islandBlockedAdd = PersonalizationConfig.addBarEntry("left", "island") === false;
+            const sparseTwo = PersonalizationConfig.sparseBarConfigs();
+            const roundTrip = PersonalizationConfig.normalizeBarConfigs(sparseTwo);
+            // Back on bar 1 the views show the untouched factory state.
+            PersonalizationConfig.selectedBarId = "default";
+            const defaultRight = PersonalizationConfig.barLayoutEntriesRight.map(entry => entry.widgetId);
+            const defaultPosition = String(PersonalizationConfig.barPosition);
+            const refusedDefault = PersonalizationConfig.deleteBarConfig("default") === false;
+            PersonalizationConfig.deleteBarConfig(secondId);
+            const backToOne = PersonalizationConfig.barConfigs.length === 1;
+            const refusedLast = PersonalizationConfig.deleteBarConfig("default") === false;
+            const result = JSON.stringify({
+                "singleNull": singleSparse === null,
+                "secondId": secondId,
+                "twoCount": twoCount,
+                "secondMiddle": secondMiddle,
+                "islandOwners": islandOwners,
+                "uidUnique": uids.length === uniqueUids.length,
+                "sparseIds": sparseTwo.map(entry => entry.id),
+                "bar1PristineIdentity": JSON.stringify(sparseTwo[0]) === JSON.stringify({
+                    "id": "default"
+                }),
+                "bar2HasPosition": sparseTwo[1].position === "left",
+                "bar2HasClockOverride": JSON.stringify(sparseTwo[1].lanes.right).indexOf("dateFormat") !== -1,
+                "roundTripIds": roundTrip.map(config => config.id),
+                "roundTripIslandOwners": roundTrip.filter(config => ["left", "middle", "right"].some(zone => config.lanes[zone].some(entry => entry.widgetId === "island"))).map(config => config.id),
+                "islandBlockedMove": islandBlockedMove,
+                "islandBlockedAdd": islandBlockedAdd,
+                "defaultRightUntouched": JSON.stringify(defaultRight) === JSON.stringify(PersonalizationConfig.defaultBarLayoutRight),
+                "defaultPositionUntouched": defaultPosition === "top",
+                "refusedDefault": refusedDefault,
+                "backToOne": backToOne,
+                "refusedLast": refusedLast
+            });
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            return result;
+        }
+
+        // D4e e2: the window host topology (window mode). Scene "two" adds a
+        // second bottom bar whose lanes are clock-only; dump reports the
+        // host topology and the LAST-registered window's content — the
+        // probe seam takes the newest window, which is the second bar's,
+        // so the dump proves lanes render per entry. Scene "off" disables
+        // the second entry (its windows must drop to zero). Scene "clean"
+        // restores the factory single bar.
+        function d4eWindowsSet(scene: string): string {
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
+            if (scene === "two" || scene === "off") {
+                const secondId = PersonalizationConfig.addBarConfig();
+                PersonalizationConfig.selectedBarId = secondId;
+                PersonalizationConfig.setBarPosition("bottom");
+                PersonalizationConfig.setBarLayouts(["clock"], [], []);
+                if (scene === "off")
+                    PersonalizationConfig.setBarEnabled(secondId, false);
+            }
+            return "OK";
+        }
+
+        function d4eWindowsDump(): string {
+            const barScope = windowLoader.item;
+            const report = barScope && barScope.probeHostReport ? JSON.parse(barScope.probeHostReport()) : [];
+            // Per-entry content: the second bar's own window, not the
+            // newest-registration seam (signature sort decides that one).
+            const second = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("bar2") : null;
+            const content = second ? second.barContent : null;
+            return JSON.stringify({
+                "hosts": report,
+                "secondEdge": second ? String(second.edge) : "",
+                "secondLeftIds": content ? content.effectiveLeftLayout.map(entry => entry.widgetId) : [],
+                "secondRightIds": content ? content.effectiveRightLayout.map(entry => entry.widgetId) : []
+            });
+        }
+
+        // D4e e1: the rebuild signature moves ONLY on routing changes — a
+        // style axis edit keeps it byte-identical, a position flip and an
+        // enable toggle move it.
+        function d4eSignature(): string {
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            const secondId = PersonalizationConfig.addBarConfig();
+            PersonalizationConfig.selectedBarId = secondId;
+            const base = PersonalizationConfig.barLayoutStateJson();
+            PersonalizationConfig.setBarThickness(40);
+            const afterStyle = PersonalizationConfig.barLayoutStateJson();
+            PersonalizationConfig.setBarPosition("bottom");
+            const afterPosition = PersonalizationConfig.barLayoutStateJson();
+            PersonalizationConfig.setBarEnabled(secondId, false);
+            const afterDisable = PersonalizationConfig.barLayoutStateJson();
+            const result = JSON.stringify({
+                "styleStable": afterStyle === base,
+                "positionMoved": afterPosition !== base,
+                "disableMoved": afterDisable !== afterPosition,
+                "twoEntries": JSON.parse(base).length === 2
+            });
+            PersonalizationConfig.setBarEnabled(secondId, true);
+            PersonalizationConfig.deleteBarConfig(secondId);
+            PersonalizationConfig.setBarLayouts(PersonalizationConfig.defaultBarLayoutLeft.slice(), PersonalizationConfig.defaultBarLayoutMiddle.slice(), PersonalizationConfig.defaultBarLayoutRight.slice());
+            PersonalizationConfig.selectedBarId = "";
+            return result;
+        }
+
         function b97Dump(): string {
             const content = barLoader.item;
             if (!content)

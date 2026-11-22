@@ -35,19 +35,25 @@ Item {
     // Orientation marker: Bar.qml's probe helpers and the runtime probe read
     // this instead of guessing from the screen edge.
     readonly property bool vertical: true
-    readonly property bool onRight: Config.options.bar.edge === "right"
+    // D4e per-bar host: the window injects its entry's config; standalone
+    // mounts (the probe harness, direct file:// loads) fall back to the
+    // settings-facing entry. Every bar-level read below resolves through
+    // this, never the global views.
+    property var barConfig: PersonalizationConfig.activeBarConfig()
+    readonly property var axes: root.barConfig ? root.barConfig.axes : BarDefaults.DEFAULTS
+    readonly property bool onRight: root.axes.position === "right"
 
     readonly property real barPadding: 0
-    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
-    readonly property bool isMaterialHug: PersonalizationConfig.barIsMaterialHug
-    readonly property bool isPanel: PersonalizationConfig.barIsPanel
+    readonly property bool isMaterial: root.axes.cornerStyle === 3 || root.axes.cornerStyle === 4
+    readonly property bool isMaterialHug: root.axes.cornerStyle === 4
+    readonly property bool isPanel: root.axes.cornerStyle === 5
     // Same inset relationship as the horizontal lanes (ROADMAP B9.0); the
     // per-style values are the baseline under the D4c innerPadding axis.
-    readonly property real laneMargin: PersonalizationConfig.resolvedBarInnerPadding()
+    readonly property real laneMargin: PersonalizationConfig.resolvedBarInnerPadding(root.axes)
 
     readonly property color materialPillBgColor: Appearance.colors.colLayer0
     // D4c bar shell radius axis (see BarContent.shellRadius).
-    readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding)
+    readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, root.axes)
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
 
@@ -105,7 +111,7 @@ Item {
 
     function overflowMeasure(entries, plainRepeater, materialRepeater, zone) {
         const repeater = root.isMaterial ? materialRepeater : plainRepeater;
-        const fallback = PersonalizationConfig.barAxes[zone + "OverflowMode"] === "bar" ? "bar" : "auto";
+        const fallback = root.axes[zone + "OverflowMode"] === "bar" ? "bar" : "auto";
         const list = [];
         for (let i = 0; i < entries.length; i += 1) {
             const group = repeater && repeater.count === entries.length ? repeater.itemAt(i) : null;
@@ -204,9 +210,9 @@ Item {
         return filtered;
     }
 
-    readonly property var effectiveLeftLayout: filterLayout(PersonalizationConfig.barLayoutEntriesLeft)
-    readonly property var effectiveMiddleLayout: filterLayout(PersonalizationConfig.barLayoutEntriesMiddle)
-    readonly property var effectiveRightLayout: filterLayout(PersonalizationConfig.barLayoutEntriesRight)
+    readonly property var effectiveLeftLayout: filterLayout(root.barConfig ? root.barConfig.lanes.left : [])
+    readonly property var effectiveMiddleLayout: filterLayout(root.barConfig ? root.barConfig.lanes.middle : [])
+    readonly property var effectiveRightLayout: filterLayout(root.barConfig ? root.barConfig.lanes.right : [])
     readonly property bool leftLaneFilled: root.effectiveLeftLayout.length > 0
     readonly property bool centerLaneFilled: root.effectiveMiddleLayout.length > 0
     readonly property bool rightLaneFilled: root.effectiveRightLayout.length > 0
@@ -236,6 +242,8 @@ Item {
     function injectWidgetEntry(loader, entry) {
         if (loader.item && loader.item.widgetEntry !== undefined)
             loader.item.widgetEntry = entry;
+        if (loader.item && loader.item.widgetBar !== undefined)
+            loader.item.widgetBar = root.barConfig;
     }
 
     function shouldPaintMaterialPill(name) {
@@ -255,11 +263,11 @@ Item {
         id: barBackground
         objectName: "barBackground"
         anchors.fill: parent
-        anchors.margins: Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
-        color: (!root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0) : "transparent"
-        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: PersonalizationConfig.barSurfaceBorderWidth(!root.centerOnly && Config.options.bar.cornerStyle === 1 ? 1 : 0)
-        border.color: PersonalizationConfig.barSurfaceBorderColor(Config.options.bar.cornerStyle === 1 && !Config.options.bar.m3.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8))
+        anchors.margins: root.axes.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
+        color: (!root.centerOnly && root.axes.showBackground === true && root.axes.cornerStyle !== 2 && !root.isMaterial) ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.axes) : "transparent"
+        radius: root.axes.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+        border.width: PersonalizationConfig.barSurfaceBorderWidth(!root.centerOnly && root.axes.cornerStyle === 1 ? 1 : 0)
+        border.color: PersonalizationConfig.barSurfaceBorderColor(root.axes.cornerStyle === 1 && root.axes.showBackground !== true ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8))
     }
 
     // center-only
@@ -274,20 +282,20 @@ Item {
 
     Rectangle {
         id: centerPill
-        visible: root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2
+        visible: root.centerOnly && root.axes.showBackground === true && root.axes.cornerStyle !== 2
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         height: absoluteCenter.hasContent ? middleCol.implicitHeight + 10 : 0
-        width: parent.width - (Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
+        width: parent.width - (root.axes.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
         color: root.isMaterial ? "transparent" : Appearance.colors.colLayer0
-        radius: Config.options.bar.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+        radius: root.axes.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
+        border.width: root.axes.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
-        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !root.onRight ? 0 : radius
-        topRightRadius: Config.options.bar.cornerStyle === 0 && !root.onRight ? root.shellRadius : radius
-        bottomLeftRadius: Config.options.bar.cornerStyle === 0 && root.onRight ? 0 : radius
-        topLeftRadius: Config.options.bar.cornerStyle === 0 && root.onRight ? root.shellRadius : radius
+        bottomRightRadius: root.axes.cornerStyle === 0 && !root.onRight ? 0 : radius
+        topRightRadius: root.axes.cornerStyle === 0 && !root.onRight ? root.shellRadius : radius
+        bottomLeftRadius: root.axes.cornerStyle === 0 && root.onRight ? 0 : radius
+        topLeftRadius: root.axes.cornerStyle === 0 && root.onRight ? root.shellRadius : radius
     }
 
     Item {
@@ -332,6 +340,7 @@ Item {
                     }
 
                     LaneOverflowHost {
+                        widgetBar: root.barConfig
                         id: topOverflowHostMaterial
                         Layout.fillWidth: true
                         vertical: true
@@ -342,6 +351,7 @@ Item {
                     Component {
                         id: topMaterialGroupDelegate
                         BarGroup {
+                            barAxes: root.axes
                             Layout.fillWidth: true
                             vertical: true
                             segmentRole: root.leftSegmentRoles[index] ?? "solo"
@@ -388,6 +398,7 @@ Item {
                 }
 
                 LaneOverflowHost {
+                    widgetBar: root.barConfig
                     id: topOverflowHost
                     Layout.fillWidth: true
                     vertical: true
@@ -398,6 +409,7 @@ Item {
                 Component {
                     id: topGroupDelegate
                     BarGroup {
+                        barAxes: root.axes
                         Layout.fillWidth: true
                         vertical: true
                         segmentRole: root.leftSegmentRoles[index] ?? "solo"
@@ -465,6 +477,7 @@ Item {
                     }
 
                     LaneOverflowHost {
+                        widgetBar: root.barConfig
                         id: centerOverflowHostMaterial
                         Layout.fillWidth: true
                         vertical: true
@@ -475,6 +488,7 @@ Item {
                     Component {
                         id: centerMaterialGroupDelegate
                         BarGroup {
+                            barAxes: root.axes
                             Layout.fillWidth: true
                             vertical: true
                             segmentRole: root.middleSegmentRoles[index] ?? "solo"
@@ -521,6 +535,7 @@ Item {
                 }
 
                 LaneOverflowHost {
+                    widgetBar: root.barConfig
                     id: middleOverflowHost
                     Layout.fillWidth: true
                     vertical: true
@@ -531,6 +546,7 @@ Item {
                 Component {
                     id: middleGroupDelegate
                     BarGroup {
+                        barAxes: root.axes
                         Layout.fillWidth: true
                         vertical: true
                         segmentRole: root.middleSegmentRoles[index] ?? "solo"
@@ -594,6 +610,7 @@ Item {
                     spacing: 3
 
                     LaneOverflowHost {
+                        widgetBar: root.barConfig
                         id: bottomOverflowHostMaterial
                         Layout.fillWidth: true
                         vertical: true
@@ -610,6 +627,7 @@ Item {
                     Component {
                         id: bottomMaterialGroupDelegate
                         BarGroup {
+                            barAxes: root.axes
                             Layout.fillWidth: true
                             vertical: true
                             segmentRole: root.rightSegmentRoles[index] ?? "solo"
@@ -639,6 +657,7 @@ Item {
                 spacing: root.laneSpacing
 
                 LaneOverflowHost {
+                    widgetBar: root.barConfig
                     id: bottomOverflowHost
                     Layout.fillWidth: true
                     vertical: true
@@ -655,6 +674,7 @@ Item {
                 Component {
                     id: bottomGroupDelegate
                     BarGroup {
+                        barAxes: root.axes
                         Layout.fillWidth: true
                         vertical: true
                         segmentRole: root.rightSegmentRoles[index] ?? "solo"
@@ -681,5 +701,5 @@ Item {
     // mode and less on the segmented one.
     // end4's vertical spacing baseline; the D4c spacing axis overrides it
     // (sentinel -1 = the per-mode values below).
-    readonly property real laneSpacing: PersonalizationConfig.resolvedBarSpacing(true)
+    readonly property real laneSpacing: PersonalizationConfig.resolvedBarSpacing(true, root.axes)
 }

@@ -31,6 +31,30 @@ class StateLayerUnificationTest(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(BAR_DIR, "StateLayer.qml")))
         self.assertFalse(os.path.exists(os.path.join(BAR_DIR, "StateOverlay.qml")))
 
+    def test_animation_tokens_resolve(self):
+        # Every Appearance.animation.<token> reference must name a token the
+        # Animations ladder actually defines. end4 carried elementMoveSmall;
+        # the M3 ladder never did, so the Workspaces port silently ran dead
+        # animations and warned at runtime (fixed in D4e by mapping to
+        # elementMoveFast = the same expressiveFastSpatial values).
+        animations = read(os.path.join(SHELL, "commons", "Animations.qml"))
+        block = animations[animations.index("animation: QtObject {"):]
+        defined = set(re.findall(r"readonly property QtObject (\w+):", block))
+        self.assertIn("elementMoveFast", defined)
+        self.assertNotIn("elementMoveSmall", defined)
+        referenced = {}
+        for root_dir, dirs, files in os.walk(SHELL):
+            if any(part in root_dir for part in ("references", "native")):
+                continue
+            for name in files:
+                if not name.endswith((".qml", ".js")):
+                    continue
+                content = read(os.path.join(root_dir, name))
+                for token in re.findall(r"Appearance\.animation\.(\w+)", content):
+                    referenced.setdefault(token, []).append(name)
+        unknown = {token: files for token, files in referenced.items() if token not in defined}
+        self.assertEqual(unknown, {}, f"unknown animation tokens: {unknown}")
+
     def test_ui_state_layer_carries_drag_state(self):
         content = read(os.path.join(UI_DIR, "StateLayer.qml"))
         self.assertIn("property bool dragged: false", content)

@@ -259,13 +259,13 @@ ButtonMouseArea {
                         implicitHeight: root.vertical ? undirectionalLength : undirectionalWidth
 
                         Behavior on undirectionalWidth {
-                            animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this)
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
                         Behavior on undirectionalLength {
-                            animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this)
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
                         Behavior on undirectionalOffset {
-                            animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this)
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
                     }
                 }
@@ -366,7 +366,7 @@ ButtonMouseArea {
                             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
                         Behavior on cornerMargin {
-                            animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this)
+                            animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                         }
                     }
 
@@ -396,7 +396,7 @@ ButtonMouseArea {
                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                             }
                             Behavior on scale {
-                                animation: Appearance.animation.elementMoveSmall.numberAnimation.createObject(this)
+                                animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                             }
 
                             maskEnabled: true

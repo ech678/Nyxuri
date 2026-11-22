@@ -73,7 +73,8 @@ class BarEnd4ContractTest(unittest.TestCase):
         # instead of the read-only Config bridge.
         self.assertIn("BarGroupStylePopup", content, "BarGroup must wire the right-click style editor")
         self.assertIn("PersonalizationConfig.setBarEntryStyle", content, "widget styles must persist via the entry (D4c uid protocol)")
-        self.assertIn("PersonalizationConfig.barIsMaterial", content, "material treatment comes from the single source")
+        # D4e: material treatment derives from the injected per-bar axes.
+        self.assertIn("root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4", content, "material treatment comes from the per-bar axes")
         self.assertIn("resolvedGroupColor", content, "BarGroup must consume bar.groupColor")
         self.assertIn("paintBackground", content, "BarGroup must honour paintBackground")
         self.assertIn("isSegmented", content, "BarGroup must implement segmented borders")
@@ -87,11 +88,11 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("hostScale", content, "the iNiR compression clamp is retired (NaN source)")
         self.assertNotIn("centerHostX", content, "the iNiR compression clamp is retired (NaN source)")
         self.assertIn('"island"', content, "island must be in the material-pill blacklist")
-        # D4a: lanes consume the entry views off PersonalizationConfig (the
-        # Config bridge still serves derived id views to vendor consumers).
-        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", content)
-        self.assertIn("PersonalizationConfig.barLayoutEntriesMiddle", content)
-        self.assertIn("PersonalizationConfig.barLayoutEntriesRight", content)
+        # D4a/D4e: lanes consume the entry objects off the host's OWN bar
+        # config (multi-bar: the settings-facing views are editor-only).
+        self.assertIn("filterLayout(root.barConfig ? root.barConfig.lanes.left : [])", content)
+        self.assertIn("filterLayout(root.barConfig ? root.barConfig.lanes.middle : [])", content)
+        self.assertIn("filterLayout(root.barConfig ? root.barConfig.lanes.right : [])", content)
         # B9.3: the island is a layout member, not a second config gate.
         self.assertNotIn("PersonalizationConfig.islandEnabled", content)
         self.assertNotIn('filtered.filter(name => name !== "island")', content)
@@ -459,8 +460,10 @@ class VerticalAndMarginContractTest(unittest.TestCase):
     def test_bar_window_branches_on_orientation(self):
         content = read_bar_file("Bar.qml")
         self.assertIn("contentLoader", content)
-        self.assertIn("VerticalBarContent {}", content)
-        self.assertIn("BarContent {}", content)
+        self.assertIn("VerticalBarContent {", content)
+        self.assertIn("BarContent {", content)
+        # D4e: the content instance receives its own bar entry.
+        self.assertIn("barConfig: barRoot.barConfig", content)
         self.assertIn("BarGeometry.margins", content)
         self.assertIn("BarGeometry.exclusiveZone", content)
         self.assertNotIn("barContent.centerOnly", content,

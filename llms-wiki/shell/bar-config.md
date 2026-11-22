@@ -208,7 +208,6 @@ StyledPopup 硬编码，不是被认可的默认）。全部新键、无改名�
 `!PersonalizationConfig.barAxes.hoverPopouts`；StyledPopup `hoverOpenDelay` 吃轴。
 
 ## 每部件实例轴（D4b）
-
 D4b 把 per-widget 轴从 `[bar]` 扁平键迁到 lane 条目 overrides，交付部件实例编辑页。
 **每个默认值 = D4b 前的现行行为**：迁移键照搬原值，新轴默认现视觉——引擎不另立审美。
 
@@ -286,6 +285,88 @@ D4b 把 per-widget 轴从 `[bar]` 扁平键迁到 lane 条目 overrides，交付
 - `quickSettingsComponents`（quickpanel 域组件集合）不在 bar 条目轴。
 - ~~overflow/placement = D4d 材料~~ **已随 D4d 落地**：`overflowMode`/`overflowPriority`
   条目轴 + lane 溢出默认轴（见「行为与溢出（D4d）」节）；密度/多 bar = D4e 材料。
+
+## 多 bar 存储 / 窗口 / 轴穿线（D4e e1–e3）
+
+D4e 落地时单 bar 闸门解除。三段交付按引擎连贯性落地（e1 存储 → e2 窗口 →
+e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）与岛接入、
+密度/iconScale 属后续 e4–e6，本页届时增量。
+
+### e1 存储解锁
+
+- `normalizeBarConfigs` 保留全部条目：id 去重（首个赢，无 id 条目按序生成
+  确定性 id `default` / `bar<n>`），**单例（island）跨整个数组去重**——共享
+  `usedSingletons` 桶依次传给每个条目的 lanes 归一化，第一个条目赢。
+- 条目根新增 `enabled`（机械键，与 id/name 同级，非样式轴）；稀疏写只在
+  `enabled === false` 时落键。**多条目时每个条目必须落盘**（纯净兄弟条目以
+  `{id}` 持久化——丢弃它会删掉那条 bar）；单条且全默认整段消失（快照不破）。
+- **uid 带 bar 域**：`widgetId@barId.zoneindex`，跨 bar 唯一；迁移/替换 lane
+  重新生成（会话身份，不持久化）。
+- `selectedBarId` 会话态（不持久化，"" = 首条，失效回退首条）：设置面编辑哪条；
+  **窗口层实例化全部条目，选择只是编辑器概念**。
+- 变更核心 `withBarConfig(barId, mutator)`（mutator 收到条目与整个数组——
+  跨 bar 单例守卫要看见兄弟）；`withBarConfigs` 路由到 settings-facing 条目。
+  存储 API：`addBarConfig`（生成空闲 id，默认 lanes 尊重单例归属）、
+  `deleteBarConfig`（拒绝 factory 条目与最后一条）、`setBarEnabled`、
+  `renameBarConfig`。
+- 单例守卫全链覆盖：`setBarLayouts`/`setBarLaneEntries`/`addBarEntry`/
+  `moveBarComponent` 的加路径都按 `singletonIdsInUse` 拒绝宿主外的第二个岛
+  （顺带修掉旧洞：同 bar 他 lane 编辑器可加第二个岛，直到下次 reload 才去重）。
+- `islandInLayout` 扫描整个数组（通知槽仲裁真值）。
+- **无 configVersion 迁移**：旧文件天然单条（D4a 起就只写单元素），数组 schema
+  早已就位。
+
+### e2 窗口多实例
+
+- `Bar.qml`：Scope 持 IPC/签名/装载序；**`Item{ Repeater }`**（Repeater 需要
+  Item 父级才能物化 delegate——Scope 是非视觉 QObject，挂 Scope 下 count 有值但
+  delegate 为 null，无任何错误日志，probe 实测）→ delegate Item（持 `barConfig`
+  实时绑定 + `enabled` + 就绪位）→ **delegate 内声明**的 `Component`
+  （delegate 局部 id 按声明作用域词法解析，声明在文档级会静默拿不到 `barHost`）
+  → Item → Variants（该条目 screenList 的屏）→ LazyLoader → PanelWindow。
+  每窗口根持 `barConfig`/`axes`（`BarDefaults.DEFAULTS` 兜底信号重建空隙）。
+- **签名重建**：`barLayoutStateJson()`（id/enabled/position/screenList，横向先
+  按 id 排序）变化才重建窗口；样式编辑经 barConfig 绑定热更新。
+- 装载序：横向 bar 先 claim exclusive zone，纵向等
+  `horizontalReady >= horizontalWanted`（dux ShellCore 语义）。
+- 屏幕热插拔靠 Variants model 重算跟随；**不搬** dux 恢复风暴机制（登记边界）。
+- 遗留边界：`Appearance.sizes` 厚度链（barThickness/barStyleBoost）、fontScale
+  （BarScale 单例，104 处）与经 Config 桥消费的样式叶仍跟随
+  settings-facing 条目（= 首条/ui 选择条目）——随 e6 叶级清扫完成 per-bar。
+
+### e3 轴穿线与解算层
+
+- `PersonalizationConfig`：`barStyleContextOf(axes)` + `resolvedBar*` /
+  `barStyleContext` / `barWidgetOutline*` / `barSurfaceBorder*` 全部接受可选
+  `axes` 尾参（缺省 = settings-facing 条目）——宿主与 BarGroup 传自己的。
+- 内容宿主（BarContent/VerticalBarContent）：`barConfig` 注入（默认绑定
+  active 保证 probe/独立装载可用，窗口覆写）；`axes` 别名；lanes 视图直接读
+  `barConfig.lanes.*`；`isMaterial/isMaterialHug/isPanel`、laneMargin、
+  shellRadius、背景色、rowSpacing/laneSpacing、overflow 回退、`onRight` 全部走
+  自己的 axes。**盲替换踩过的坑**：`!Config.options.bar.bottom` 这类前缀取反
+  必须改成 `position !== "bottom"`（`!string === "bottom"` 恒 false，圆角几何
+  静默坏掉）。
+- BarGroup：`barAxes` 注入（12 个实例化点传 `root.axes`）；borderless/groupColor/
+  isMaterial/cornerStyle 判定、capsule padding/color、描边全部走 `barAxes`。
+- 部件级：`injectWidgetEntry` 顺手推 `widgetBar`（第二注入，D4a 协议扩展）；
+  hoverPopouts 六消费者、StyledPopup 延迟与弹层锚定轴（barEdge/edgeMargin/
+  cornerStyle）、LaneOverflowHost 转发全部按"自己的 bar 优先，缺省回退
+  settings-facing"解析。
+- **顺带修掉的既有 bug**（probe 撞出）：Workspaces 5 处 `elementMoveSmall`
+  令牌在 Nyxuri Animations 阶梯不存在（end4 同名令牌 = expressiveFastSpatial =
+  Nyxuri `elementMoveFast`，动画此前静默失效 + 运行时 TypeError）；DynamicIsland
+  的 `Qt.callLater` 补宿主守卫（销毁竞态下不得碰服务）。门禁：`test_d1`
+  新增「全库 `Appearance.animation.<token>` 必须落在 Animations.qml 令牌表」。
+
+### D4e e1–e3 证据
+
+- probe `d4e` 节（store / signature / windows 三段）：双 bar 存储往返、
+  uid 唯一、单例归属、跨 bar 守卫、per-entry 稀疏写、回环归一；签名只随路由
+  变化；窗口场景 `two`（bottombar 自带 clock-only lanes，窗口各 1、内容按条目）、
+  `off`（禁用条目窗口归零）、`clean`（复原单 bar）。scene 模式全绿。
+- 契约测试 `tests/shell/test_d4e_bar_config.py`（16 例）+ d4a–d4d 及
+  bar_end4/shell_architecture 的钉随形态升级；全量 784 例绿。
+- 实机待验：多 bar 排布手感、屏幕集合、双 bar 弹层锚定。
 
 ## 证据
 

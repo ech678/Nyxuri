@@ -30,7 +30,9 @@ MouseArea {
     implicitWidth: !Battery.available ? 0 : vertical ? Appearance.sizes.verticalBarWidth : batteryProgress.valueBarWidth + 8 + (powerLabel.visible ? powerLabel.implicitWidth + 4 : 0)
     implicitHeight: !Battery.available ? 0 : vertical ? batteryProgress.valueBarWidth + 8 : Appearance.sizes.barHeight
 
-    readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    readonly property bool clickForDetails: !root.barAxes.hoverPopouts
     hoverEnabled: !root.clickForDetails
 
     // D4b click axes: a consumed dispatch ends here; "default"/"none" fall
@@ -113,6 +115,7 @@ MouseArea {
 
     BatteryPopup {
         id: batteryPopup
+        widgetBar: root.widgetBar
         hoverTarget: root
         hoverActivates: !root.clickForDetails
         closeOnOutsideClick: root.clickForDetails

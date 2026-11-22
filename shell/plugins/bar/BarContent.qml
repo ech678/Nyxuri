@@ -26,21 +26,27 @@ Item {
     id: root
     implicitHeight: Appearance.sizes.barHeight
     width: parent.width
+    // D4e per-bar host: the window injects its entry's config; standalone
+    // mounts (the probe harness, direct file:// loads) fall back to the
+    // settings-facing entry. Every bar-level read below resolves through
+    // this, never the global views.
+    property var barConfig: PersonalizationConfig.activeBarConfig()
+    readonly property var axes: root.barConfig ? root.barConfig.axes : BarDefaults.DEFAULTS
     readonly property real barPadding: 0
-    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
-    readonly property bool isMaterialHug: PersonalizationConfig.barIsMaterialHug
-    readonly property bool isPanel: PersonalizationConfig.barIsPanel
+    readonly property bool isMaterial: root.axes.cornerStyle === 3 || root.axes.cornerStyle === 4
+    readonly property bool isMaterialHug: root.axes.cornerStyle === 4
+    readonly property bool isPanel: root.axes.cornerStyle === 5
     // end4 lane inset (references/end4-pC/modules/ii/bar/BarContent.qml:193):
     // Material hug sits flush, the Material pill keeps its 5px outer gutter,
     // Float and Panel inset 4, every other style 8. D4c: the per-style values
     // are the baseline under the innerPadding axis (sentinel -1 = these).
-    readonly property real laneMargin: PersonalizationConfig.resolvedBarInnerPadding()
+    readonly property real laneMargin: PersonalizationConfig.resolvedBarInnerPadding(root.axes)
 
     readonly property color materialPillBgColor: Appearance.colors.colLayer0
     // D4c bar shell radius axis: -1 keeps the theme's screen rounding,
     // squareCorners flattens, an explicit value overrides — one alias per
     // host keeps every corner expression on a single source.
-    readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding)
+    readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, root.axes)
     readonly property real centerPillX: centerPill.x
     readonly property real centerPillWidth: centerPill.width
     // Probe surface (scripts/dev/probe-bar.sh): the optical centre lane and its
@@ -131,7 +137,7 @@ Item {
 
     function overflowMeasure(entries, plainRepeater, materialRepeater, zone) {
         const repeater = root.isMaterial ? materialRepeater : plainRepeater;
-        const fallback = PersonalizationConfig.barAxes[zone + "OverflowMode"] === "bar" ? "bar" : "auto";
+        const fallback = root.axes[zone + "OverflowMode"] === "bar" ? "bar" : "auto";
         const list = [];
         for (let i = 0; i < entries.length; i += 1) {
             const group = repeater && repeater.count === entries.length ? repeater.itemAt(i) : null;
@@ -237,9 +243,9 @@ Item {
         return filtered;
     }
 
-    readonly property var effectiveLeftLayout: filterLayout(PersonalizationConfig.barLayoutEntriesLeft)
-    readonly property var effectiveMiddleLayout: filterLayout(PersonalizationConfig.barLayoutEntriesMiddle)
-    readonly property var effectiveRightLayout: filterLayout(PersonalizationConfig.barLayoutEntriesRight)
+    readonly property var effectiveLeftLayout: filterLayout(root.barConfig ? root.barConfig.lanes.left : [])
+    readonly property var effectiveMiddleLayout: filterLayout(root.barConfig ? root.barConfig.lanes.middle : [])
+    readonly property var effectiveRightLayout: filterLayout(root.barConfig ? root.barConfig.lanes.right : [])
     readonly property bool leftLaneFilled: root.effectiveLeftLayout.length > 0
     readonly property bool centerLaneFilled: root.effectiveMiddleLayout.length > 0
     readonly property bool rightLaneFilled: root.effectiveRightLayout.length > 0
@@ -261,6 +267,8 @@ Item {
     function injectWidgetEntry(loader, entry) {
         if (loader.item && loader.item.widgetEntry !== undefined)
             loader.item.widgetEntry = entry;
+        if (loader.item && loader.item.widgetBar !== undefined)
+            loader.item.widgetBar = root.barConfig;
     }
 
     function shouldPaintMaterialPill(name) {
@@ -333,11 +341,11 @@ Item {
         id: barBackground
         objectName: "barBackground"
         anchors.fill: parent
-        anchors.margins: Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
-        color: (!centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2 && !root.isMaterial) ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0) : "transparent"
-        radius: Config.options.bar.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: PersonalizationConfig.barSurfaceBorderWidth(!centerOnly && Config.options.bar.cornerStyle === 1 ? 1 : 0)
-        border.color: PersonalizationConfig.barSurfaceBorderColor(Config.options.bar.cornerStyle === 1 && !Config.options.bar.m3.showBackground ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8))
+        anchors.margins: root.axes.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
+        color: (!centerOnly && root.axes.showBackground === true && root.axes.cornerStyle !== 2 && !root.isMaterial) ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.axes) : "transparent"
+        radius: root.axes.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
+        border.width: PersonalizationConfig.barSurfaceBorderWidth(!centerOnly && root.axes.cornerStyle === 1 ? 1 : 0)
+        border.color: PersonalizationConfig.barSurfaceBorderColor(root.axes.cornerStyle === 1 && root.axes.showBackground !== true ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8))
     }
 
     // center-only
@@ -352,23 +360,23 @@ Item {
 
     Rectangle {
         id: centerPill
-        visible: root.centerOnly && Config.options.bar.m3.showBackground && Config.options.bar.cornerStyle !== 2
+        visible: root.centerOnly && root.axes.showBackground === true && root.axes.cornerStyle !== 2
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
         // end4: when the island occupies the middle lane the frame hugs it
         // (-4/+8) at full height instead of the +10 padding and inset height.
         readonly property bool islandInMiddle: PersonalizationConfig.islandInLayout && root.effectiveMiddleLayout.some(entry => entry.widgetId === "island")
-        width: absoluteCenter.hasContent ? (centerPill.islandInMiddle ? (Config.options.bar.cornerStyle === 1 ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4) : middleRow.implicitWidth + 10) : 0
-        height: parent.height - (!centerPill.islandInMiddle && Config.options.bar.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
+        width: absoluteCenter.hasContent ? (centerPill.islandInMiddle ? (root.axes.cornerStyle === 1 ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4) : middleRow.implicitWidth + 10) : 0
+        height: parent.height - (!centerPill.islandInMiddle && root.axes.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
         color: root.isMaterial ? "transparent" : Appearance.colors.colLayer0
-        radius: Config.options.bar.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
-        border.width: Config.options.bar.cornerStyle === 1 ? 1 : 0
+        radius: root.axes.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
+        border.width: root.axes.cornerStyle === 1 ? 1 : 0
         border.color: Appearance.colors.colLayer0Border
 
-        bottomLeftRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? root.shellRadius : radius
-        bottomRightRadius: Config.options.bar.cornerStyle === 0 && !Config.options.bar.bottom ? root.shellRadius : radius
-        topLeftRadius: Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom ? root.shellRadius : radius
-        topRightRadius: Config.options.bar.cornerStyle === 0 && Config.options.bar.bottom ? root.shellRadius : radius
+        bottomLeftRadius: root.axes.cornerStyle === 0 && root.axes.position !== "bottom" ? root.shellRadius : radius
+        bottomRightRadius: root.axes.cornerStyle === 0 && root.axes.position !== "bottom" ? root.shellRadius : radius
+        topLeftRadius: root.axes.cornerStyle === 0 && root.axes.position === "bottom" ? root.shellRadius : radius
+        topRightRadius: root.axes.cornerStyle === 0 && root.axes.position === "bottom" ? root.shellRadius : radius
     }
 
     Item {
@@ -454,8 +462,8 @@ Item {
 
                 topLeftRadius: root.isMaterialHug ? 0 : radius
                 bottomLeftRadius: root.isMaterialHug ? 0 : radius
-                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                topRightRadius: (root.isMaterialHug && root.axes.position === "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomRightRadius: (root.isMaterialHug && root.axes.position !== "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: leftMaterialRow
@@ -469,6 +477,7 @@ Item {
                     }
 
                     LaneOverflowHost {
+                        widgetBar: root.barConfig
                         id: leftOverflowHostMaterial
                         Layout.fillHeight: true
                         visible: root.overflowHiddenGroupsLeft.length > 0
@@ -478,6 +487,7 @@ Item {
                     Component {
                         id: leftMaterialGroupDelegate
                         BarGroup {
+                            barAxes: root.axes
                             Layout.fillHeight: true
                             segmentRole: root.leftSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
@@ -503,10 +513,10 @@ Item {
                 id: leftRightOutwardCorner
                 visible: root.isMaterialHug && leftLane.hasContent
                 x: leftMaterialPill.x + leftMaterialPill.width
-                y: Config.options.bar.bottom ? parent.height - implicitSize : 0
+                y: root.axes.position === "bottom" ? parent.height - implicitSize : 0
                 implicitSize: root.shellRadius
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
+                corner: root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
             }
 
             // Non-material layout
@@ -523,6 +533,7 @@ Item {
                 }
 
                 LaneOverflowHost {
+                    widgetBar: root.barConfig
                     id: leftOverflowHost
                     Layout.fillHeight: true
                     visible: root.overflowHiddenGroupsLeft.length > 0
@@ -532,6 +543,7 @@ Item {
                 Component {
                     id: leftBarGroupDelegate
                     BarGroup {
+                        barAxes: root.axes
                         Layout.fillHeight: true
                         segmentRole: root.leftSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
@@ -564,10 +576,10 @@ Item {
                 id: centerLeftOutwardCorner
                 visible: root.isMaterialHug && absoluteCenter.hasContent
                 x: centerMaterialPill.x - implicitSize
-                y: Config.options.bar.bottom ? parent.height - implicitSize : 0
+                y: root.axes.position === "bottom" ? parent.height - implicitSize : 0
                 implicitSize: root.shellRadius
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
+                corner: root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
             }
 
             // Material pill wrapper
@@ -580,10 +592,10 @@ Item {
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                topRightRadius: (root.isMaterialHug && Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                topLeftRadius: (root.isMaterialHug && root.axes.position === "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                topRightRadius: (root.isMaterialHug && root.axes.position === "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomLeftRadius: (root.isMaterialHug && root.axes.position !== "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomRightRadius: (root.isMaterialHug && root.axes.position !== "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: centerMaterialRow
@@ -597,6 +609,7 @@ Item {
                     }
 
                     LaneOverflowHost {
+                        widgetBar: root.barConfig
                         id: middleOverflowHostMaterial
                         Layout.fillHeight: true
                         visible: root.overflowHiddenGroupsMiddle.length > 0
@@ -606,6 +619,7 @@ Item {
                     Component {
                         id: middleMaterialGroupDelegate
                         BarGroup {
+                            barAxes: root.axes
                             Layout.fillHeight: true
                             segmentRole: root.middleSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
@@ -632,10 +646,10 @@ Item {
                 id: centerRightOutwardCorner
                 visible: root.isMaterialHug && absoluteCenter.hasContent
                 x: centerMaterialPill.x + centerMaterialPill.width
-                y: Config.options.bar.bottom ? parent.height - implicitSize : 0
+                y: root.axes.position === "bottom" ? parent.height - implicitSize : 0
                 implicitSize: root.shellRadius
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
+                corner: root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
             }
 
             // Non-material layout
@@ -652,6 +666,7 @@ Item {
                 }
 
                 LaneOverflowHost {
+                    widgetBar: root.barConfig
                     id: middleOverflowHost
                     Layout.fillHeight: true
                     visible: root.overflowHiddenGroupsMiddle.length > 0
@@ -661,6 +676,7 @@ Item {
                 Component {
                     id: middleBarGroupDelegate
                     BarGroup {
+                        barAxes: root.axes
                         Layout.fillHeight: true
                         segmentRole: root.middleSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
@@ -691,10 +707,10 @@ Item {
                 id: rightLeftOutwardCorner
                 visible: root.isMaterialHug && rightLane.hasContent
                 x: rightMaterialPill.x - implicitSize
-                y: Config.options.bar.bottom ? parent.height - implicitSize : 0
+                y: root.axes.position === "bottom" ? parent.height - implicitSize : 0
                 implicitSize: root.shellRadius
                 color: root.materialPillBgColor
-                corner: !Config.options.bar.bottom ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
+                corner: root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
             }
 
             // Material pill wrapper
@@ -710,8 +726,8 @@ Item {
 
                 topRightRadius: root.isMaterialHug ? 0 : radius
                 bottomRightRadius: root.isMaterialHug ? 0 : radius
-                topLeftRadius: (root.isMaterialHug && Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && !Config.options.bar.bottom) ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                topLeftRadius: (root.isMaterialHug && root.axes.position === "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                bottomLeftRadius: (root.isMaterialHug && root.axes.position !== "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
 
                 RowLayout {
                     id: rightMaterialRow
@@ -719,6 +735,7 @@ Item {
                     spacing: 3
 
                     LaneOverflowHost {
+                        widgetBar: root.barConfig
                         id: rightOverflowHostMaterial
                         Layout.fillHeight: true
                         visible: root.overflowHiddenGroupsRight.length > 0
@@ -734,6 +751,7 @@ Item {
                     Component {
                         id: rightMaterialGroupDelegate
                         BarGroup {
+                            barAxes: root.axes
                             Layout.fillHeight: true
                             segmentRole: root.rightSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
@@ -763,6 +781,7 @@ Item {
                 spacing: root.rowSpacing
 
                 LaneOverflowHost {
+                    widgetBar: root.barConfig
                     id: rightOverflowHost
                     Layout.fillHeight: true
                     visible: root.overflowHiddenGroupsRight.length > 0
@@ -778,6 +797,7 @@ Item {
                 Component {
                     id: rightBarGroupDelegate
                     BarGroup {
+                        barAxes: root.axes
                         Layout.fillHeight: true
                         segmentRole: root.rightSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
@@ -797,5 +817,5 @@ Item {
     // end4's per-widget spacing baseline (transparent pulls the groups
     // together, segmented separates them, panel keeps a wider gap); the
     // D4c spacing axis overrides it (sentinel -1 = these values).
-    readonly property real rowSpacing: PersonalizationConfig.resolvedBarSpacing(false)
+    readonly property real rowSpacing: PersonalizationConfig.resolvedBarSpacing(false, root.axes)
 }

@@ -515,6 +515,20 @@ if ipc d4dOverflowScene 300 300 >/dev/null 2>&1; then
     d4d_overflow_reset_state=$(ipc d4dOverflowDump 2>/dev/null || true)
 fi
 
+# D4e e1: multi-bar storage (add/round-trip/isolation/delete guards) and
+# the rebuild signature (style-stable, routing-sensitive).
+d4e_store_state=""
+d4e_signature_state=""
+d4e_windows_two_state=""
+d4e_windows_off_state=""
+d4e_windows_clean_state=""
+if ipc d4eStore >/dev/null 2>&1; then
+    d4e_store_state=$(ipc d4eStore 2>/dev/null || true)
+fi
+if ipc d4eSignature >/dev/null 2>&1; then
+    d4e_signature_state=$(ipc d4eSignature 2>/dev/null || true)
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -665,6 +679,19 @@ if ipc windowMode true >/dev/null 2>&1; then
             sleep 0.6
             printf 'autohide-off\t%s\n' "$(ipc windowDump 2>/dev/null || true)" >>"${window_file}"
         fi
+        # D4e e2: multi-bar window topology (two bars -> disable -> clean).
+        if ipc d4eWindowsSet two >/dev/null 2>&1; then
+            sleep 0.6
+            d4e_windows_two_state=$(ipc d4eWindowsDump 2>/dev/null || true)
+        fi
+        if ipc d4eWindowsSet off >/dev/null 2>&1; then
+            sleep 0.6
+            d4e_windows_off_state=$(ipc d4eWindowsDump 2>/dev/null || true)
+        fi
+        if ipc d4eWindowsSet clean >/dev/null 2>&1; then
+            sleep 0.6
+            d4e_windows_clean_state=$(ipc d4eWindowsDump 2>/dev/null || true)
+        fi
     else
         printf 'error: bar window probe did not come up\n' >&2
         exit 3
@@ -717,7 +744,7 @@ ipc cornerStyle 1 >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" <<'PY'
 import json
 import re
 import sys
@@ -738,7 +765,8 @@ import sys
  d4b_instances_state, d4b_click_vocabulary, d4c_migration_state,
  d4c_sentinels_state, d4c_roles_state, d4d_behavior_state,
  d4d_overflow_resolve_state, d4d_overflow_cramped_state,
- d4d_overflow_reset_state) = sys.argv[1:69]
+ d4d_overflow_reset_state, d4e_store_state, d4e_signature_state,
+ d4e_windows_two_state, d4e_windows_off_state, d4e_windows_clean_state) = sys.argv[1:74]
 
 
 def load_tsv(path):
@@ -1542,12 +1570,73 @@ d4d_overflow_reset_ok = bool(
 )
 d4d_ok = d4d_behavior_ok and d4d_overflow_resolve_ok and d4d_overflow_cramped_ok and d4d_overflow_reset_ok
 
+d4e_store = json.loads(d4e_store_state) if d4e_store_state.strip() else {}
+d4e_signature = json.loads(d4e_signature_state) if d4e_signature_state.strip() else {}
+d4e_store_ok = bool(
+    # singleNull/bar1PristineIdentity are emitted for diagnostics only:
+    # earlier probe sections legitimately leave axis deviations behind, so
+    # pristine single-bar state is pinned by d4aPersistence, not here.
+    d4e_store.get("twoCount") == 2
+    and d4e_store.get("secondMiddle") == []
+    and d4e_store.get("islandOwners") == ["default"]
+    and d4e_store.get("uidUnique") is True
+    and d4e_store.get("sparseIds") == ["default", "bar2"]
+    and d4e_store.get("bar2HasPosition") is True
+    and d4e_store.get("bar2HasClockOverride") is True
+    and d4e_store.get("roundTripIds") == ["default", "bar2"]
+    and d4e_store.get("roundTripIslandOwners") == ["default"]
+    and d4e_store.get("islandBlockedMove") is True
+    and d4e_store.get("islandBlockedAdd") is True
+    and d4e_store.get("defaultRightUntouched") is True
+    and d4e_store.get("defaultPositionUntouched") is True
+    and d4e_store.get("refusedDefault") is True
+    and d4e_store.get("backToOne") is True
+    and d4e_store.get("refusedLast") is True
+)
+d4e_signature_ok = bool(
+    d4e_signature.get("styleStable") is True
+    and d4e_signature.get("positionMoved") is True
+    and d4e_signature.get("disableMoved") is True
+    and d4e_signature.get("twoEntries") is True
+)
+d4e_windows_two = json.loads(d4e_windows_two_state) if d4e_windows_two_state.strip() else {}
+d4e_windows_off = json.loads(d4e_windows_off_state) if d4e_windows_off_state.strip() else {}
+d4e_windows_clean = json.loads(d4e_windows_clean_state) if d4e_windows_clean_state.strip() else {}
+_two_hosts = d4e_windows_two.get("hosts", [])
+_off_hosts = d4e_windows_off.get("hosts", [])
+_clean_hosts = d4e_windows_clean.get("hosts", [])
+def _by_id(hosts, host_id):
+    for host in hosts:
+        if host.get("id") == host_id:
+            return host
+    return {}
+d4e_windows_two_ok = bool(
+    len(_two_hosts) == 2
+    and _by_id(_two_hosts, "default").get("position") == "top" and _by_id(_two_hosts, "default").get("windows", 0) >= 1
+    and _by_id(_two_hosts, "bar2").get("position") == "bottom" and _by_id(_two_hosts, "bar2").get("windows", 0) >= 1
+    # The second bar's own window: bottom edge, its OWN clock-only lanes —
+    # per-entry rendering, not the settings-facing views.
+    and d4e_windows_two.get("secondEdge") == "bottom"
+    and d4e_windows_two.get("secondLeftIds") == ["clock"]
+    and d4e_windows_two.get("secondRightIds") == []
+)
+d4e_windows_off_ok = bool(
+    len(_off_hosts) == 2
+    and _by_id(_off_hosts, "bar2").get("enabled") is False and _by_id(_off_hosts, "bar2").get("windows") == 0
+    and _by_id(_off_hosts, "default").get("windows", 0) >= 1
+)
+d4e_windows_clean_ok = bool(
+    len(_clean_hosts) == 1
+    and _by_id(_clean_hosts, "default").get("windows", 0) >= 1
+)
+d4e_ok = d4e_store_ok and d4e_signature_ok and d4e_windows_two_ok and d4e_windows_off_ok and d4e_windows_clean_ok
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1767,6 +1856,40 @@ report = {
             "buttonFound": d4d_overflow_cramped.get("buttonFound"),
             "popupCycle": d4d_overflow_cramped.get("popupCycle"),
             "resetCleared": d4d_overflow_reset_ok,
+        },
+    },
+    "d4e": {
+        "ok": d4e_ok,
+        "store": {
+            "ok": d4e_store_ok,
+            "sparseIds": d4e_store.get("sparseIds"),
+            "islandOwners": d4e_store.get("islandOwners"),
+            "roundTripIds": d4e_store.get("roundTripIds"),
+            "islandBlockedMove": d4e_store.get("islandBlockedMove"),
+            "defaultPositionUntouched": d4e_store.get("defaultPositionUntouched"),
+        },
+        "signature": {
+            "ok": d4e_signature_ok,
+            "styleStable": d4e_signature.get("styleStable"),
+            "positionMoved": d4e_signature.get("positionMoved"),
+            "disableMoved": d4e_signature.get("disableMoved"),
+        },
+        "windows": {
+            "ok": d4e_windows_two_ok and d4e_windows_off_ok and d4e_windows_clean_ok,
+            "two": {
+                "ok": d4e_windows_two_ok,
+                "hosts": d4e_windows_two.get("hosts"),
+                "secondEdge": d4e_windows_two.get("secondEdge"),
+                "secondLeftIds": d4e_windows_two.get("secondLeftIds"),
+            },
+            "off": {
+                "ok": d4e_windows_off_ok,
+                "hosts": d4e_windows_off.get("hosts"),
+            },
+            "clean": {
+                "ok": d4e_windows_clean_ok,
+                "hosts": d4e_windows_clean.get("hosts"),
+            },
         },
     },
     "b96": {

@@ -229,9 +229,14 @@ class StoreShapeTest(unittest.TestCase):
             self.assertNotIn(f'"{key}":', body, f"[bar] section still writes {key}")
 
     def test_sparse_configs_emit_axes(self):
+        # D4e: per-entry diff — sparseBarConfigs folds every entry through
+        # sparseBarConfigEntry, which carries the axes emission loop.
         match = re.search(r"function sparseBarConfigs\(\) \{(.*?)\n    \}", self.pc, re.S)
         self.assertIsNotNone(match)
-        self.assertIn("Object.keys(BarDefaults.DEFAULTS)", match.group(1))
+        self.assertIn("sparseBarConfigEntry", match.group(1))
+        entry = re.search(r"function sparseBarConfigEntry\((.*?)\n    \}", self.pc, re.S)
+        self.assertIsNotNone(entry)
+        self.assertIn("Object.keys(BarDefaults.DEFAULTS)", entry.group(1))
 
 
 class ConsumptionTest(unittest.TestCase):
@@ -255,10 +260,16 @@ class ConsumptionTest(unittest.TestCase):
         cls.group = read(os.path.join(BAR_DIR, "BarGroup.qml"))
 
     def test_lane_geometry_resolves_through_the_store(self):
-        self.assertIn("PersonalizationConfig.resolvedBarInnerPadding()", self.content)
-        self.assertIn("PersonalizationConfig.resolvedBarInnerPadding()", self.vertical)
-        self.assertIn("PersonalizationConfig.resolvedBarSpacing(false)", self.content)
-        self.assertIn("PersonalizationConfig.resolvedBarSpacing(true)", self.vertical)
+        # D4e: the hosts resolve through their OWN entry's axes (per-bar);
+        # the resolved* functions take the axes argument.
+        self.assertIn("PersonalizationConfig.resolvedBarInnerPadding(root.axes)", self.content)
+        self.assertIn("PersonalizationConfig.resolvedBarInnerPadding(root.axes)", self.vertical)
+        self.assertIn("PersonalizationConfig.resolvedBarSpacing(false, root.axes)", self.content)
+        self.assertIn("PersonalizationConfig.resolvedBarSpacing(true, root.axes)", self.vertical)
+        for host in (self.content, self.vertical):
+            self.assertIn("property var barConfig: PersonalizationConfig.activeBarConfig()", host)
+            self.assertIn("readonly property var axes: root.barConfig ? root.barConfig.axes : BarDefaults.DEFAULTS", host)
+            self.assertIn("filterLayout(root.barConfig ? root.barConfig.lanes.left : [])", host)
         self.assertNotIn('borderless === "transparent" ? -7', self.content)
         self.assertNotIn("? -4 :", self.vertical)
 
@@ -284,9 +295,9 @@ class ConsumptionTest(unittest.TestCase):
 
     def test_shell_radius_flows_through_one_alias(self):
         for host in (self.content, self.vertical):
-            self.assertIn("readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding)", host)
+            self.assertIn("readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, root.axes)", host)
         bar = read(os.path.join(BAR_DIR, "Bar.qml"))
-        self.assertIn("readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding)", bar)
+        self.assertIn("readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, barRoot.axes)", bar)
         self.assertIn("root.shellRadius", self.content)
 
     def test_flat_mode_capsule_chrome(self):
@@ -294,7 +305,10 @@ class ConsumptionTest(unittest.TestCase):
         self.assertIn("if (root.isFlat)", self.group)
 
     def test_widget_layer_axes_reach_the_capsule(self):
-        self.assertIn("PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor)", self.group)
+        # D4e: the capsule resolves through the injected per-bar axes.
+        self.assertIn("property var barAxes: PersonalizationConfig.activeBarConfig().axes", self.group)
+        self.assertIn("PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor, root.barAxes)", self.group)
+        self.assertIn("PersonalizationConfig.resolvedBarWidgetPadding(root.paintMaterialPill, root.barAxes)", self.group)
         self.assertIn("PersonalizationConfig.barWidgetOutlineWidth(", self.group)
         self.assertIn("PersonalizationConfig.barWidgetOutlineColor(", self.group)
 

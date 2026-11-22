@@ -495,7 +495,9 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("effectiveLeftLayout", bc_content)
         self.assertIn("effectiveMiddleLayout", bc_content)
         self.assertIn("effectiveRightLayout", bc_content)
-        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", bc_content)
+        # D4e: the host consumes the entry view of its OWN bar (multi-bar);
+        # the settings-facing views stay editor-only.
+        self.assertIn("filterLayout(root.barConfig ? root.barConfig.lanes.left : [])", bc_content)
         self.assertIn("root.getWidgetUrl(modelData.widgetId)", bc_content)
         self.assertIn("widgetEntry: modelData", bc_content)
         self.assertIn("root.injectWidgetEntry(this, modelData)", bc_content)

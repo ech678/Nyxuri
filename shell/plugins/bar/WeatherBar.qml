@@ -42,7 +42,9 @@ MouseArea {
     implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
 
     acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
-    readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    readonly property bool clickForDetails: !root.barAxes.hoverPopouts
     hoverEnabled: true
 
     onClicked: mouse => {
@@ -169,6 +171,7 @@ MouseArea {
 
     WeatherPopup {
         id: weatherPopup
+        widgetBar: root.widgetBar
         hoverTarget: root
         hoverActivates: !root.clickForDetails
         closeOnOutsideClick: root.clickForDetails

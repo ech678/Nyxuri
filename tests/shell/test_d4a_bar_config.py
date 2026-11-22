@@ -171,7 +171,9 @@ class BarConfigsSchemaTest(unittest.TestCase):
         self.assertIn("property var barConfigs: root.defaultBarConfigs()", self.pc)
         self.assertIn('readonly property var barLayoutLeft: root.laneIds("left")', self.pc)
         self.assertIn('readonly property var barLayoutEntriesLeft: root.laneEntries("left")', self.pc)
-        self.assertIn('readonly property bool islandInLayout: root.laneUsesWidget("island")', self.pc)
+        # D4e: the island scan spans every bar entry (the island lives on
+        # exactly one bar, whichever it is).
+        self.assertIn('readonly property bool islandInLayout: root.anyBarUsesWidget("island")', self.pc)
         # Two-zone mirrors retired as properties (resolveBarLayouts still
         # reads the legacy FILE keys for pre-v3 migration).
         self.assertNotIn("property var barLeadingComponents", self.pc)

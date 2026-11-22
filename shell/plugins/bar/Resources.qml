@@ -53,7 +53,9 @@ BarWidgetSwitcherArea {
         modules: ["cpu", "memory", "disk"]
     }
 
-    readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    readonly property bool clickForDetails: !root.barAxes.hoverPopouts
     hoverEnabled: true
 
     onClicked: mouse => {
@@ -327,6 +329,7 @@ BarWidgetSwitcherArea {
 
     ResourcesPopup {
         id: resourcesPopup
+        widgetBar: root.widgetBar
         hoverTarget: root
         hoverActivates: !root.clickForDetails
         closeOnOutsideClick: root.clickForDetails

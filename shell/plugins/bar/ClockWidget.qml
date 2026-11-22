@@ -13,6 +13,10 @@ BarWidgetSwitcher {
     // read and the global [time].dateFormat key; the long date formats
     // per instance now.
     property var widgetEntry: null
+    // D4e: the owning bar (injected with the entry) — bar-level axes
+    // resolve through it, never the settings-facing views.
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     readonly property bool showDate: BarWidgetDefaults.option("clock", root.widgetEntry, "showDate")
     readonly property string dateFormat: BarWidgetDefaults.option("clock", root.widgetEntry, "dateFormat")
     readonly property string longDate: root.dateFormat !== "" ? Qt.formatDateTime(root.today, root.dateFormat) : Qt.formatDateTime(root.today, "dddd, dd/MM")
@@ -222,7 +226,7 @@ BarWidgetSwitcher {
     MouseArea {
         id: mouseArea
         anchors.fill: parent
-        readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
+        readonly property bool clickForDetails: !root.barAxes.hoverPopouts
         hoverEnabled: true
         // D4b click axes: a consumed dispatch ends here; "default"/"none"
         // fall through to the built-in popup behavior.
@@ -236,6 +240,7 @@ BarWidgetSwitcher {
 
         ClockWidgetPopup {
             id: clockPopup
+            widgetBar: root.widgetBar
             hoverTarget: mouseArea
             hoverActivates: !mouseArea.clickForDetails
             closeOnOutsideClick: mouseArea.clickForDetails

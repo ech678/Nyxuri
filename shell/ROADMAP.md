@@ -55,6 +55,7 @@
 | D4b 每部件实例配置 | 待验收 | 实机 chip 齿轮进实例编辑页（13 页过目）、双实例隔离手感（两个时钟不同格式）、电池功耗行视觉、工作区状态色三模式、点击动作实跑（含自定义命令）、升级 v4 迁移零感知 |
 | D4c bar 级几何与样式 | 待验收 | 实机过目：间距/lane 内边距/部件内边距三轴（Auto↔显式值）、两端边距 % 模式（居中缩短 bar、exclusiveZone 跟随）、flat 档裸部件 + 右键弹层逐部件背景、方角/圆角覆写链、内容缩放（时钟/托盘/系统监视器文字）、表面色/不透明度/边框与部件层描边分组、隐藏部件融合角重排（无曲目 Media）、升级 v5 迁移零感知（原右键样式保留） |
 | D4d 行为与溢出 | 待验收 | 实机过目：窄屏/加件触发溢出按钮手感与弹层迁居、overflowMode 四档/优先级实跑、autoHide 延迟与 strict 节奏、全屏进出 reveal、点击穿透空隙点击与边缘揭示、hover 弹层 150ms 体感、Behavior 设置组七行 |
+| D4e 引擎线 e1–e3 | 待验收 | 实机过目：双 bar 排布（顶+底/左右组合）、屏幕集合生效与热插拔、禁用条目窗口消失、双 bar 弹层各自锚定自己的边、悬停弹层与 150ms 延迟跟随各自条目 |
 | T3 M3/M4 设置页积木化 | 待验收 | 核心四页 + 全页面实机视觉过目 |
 | P4 主题契约/取色引擎 | 待验收 | 壁纸切换、深浅代调链路、模板 hooks 实机行为；镜像色板长期策略拍板 |
 | A1–A8 性能调查 | 待验收 | A6/A8 进行中；明细与各自剩余项见 [performance-plan](../llms-wiki/shell/performance-plan.md) |
@@ -151,7 +152,7 @@
 - 全屏常驻窗的性能代价进 probe 度量（A 卷口径）。
 - 验收：试点实机开合流畅度、输入 mask 正确性（不挡桌面点击）、性能数据写回本页。
 
-### D4 Bar 自定义引擎（dux 程度，五期）——进行中（D4a/D4b/D4c/D4d 实现落地，2026-11-22，机器证据齐，待作者实机验收）
+### D4 Bar 自定义引擎（dux 程度，五期）——进行中（D4a/D4b/D4c/D4d 实现落地，2026-11-22；D4e 引擎线 e1–e3 落地，机器证据齐，待作者实机验收）
 
 > 目标定案：自定义度对齐 dux-shell（「GUI 设置面板驱动」流派的天花板），轴覆盖
 > **布局 / 几何 / 样式 / 行为 / 逐部件实例**五层。架构六件套：schema 分层、默认值
@@ -170,7 +171,7 @@
 | D4b 每部件实例配置 | **已落地（2026-11-21）**：`BarWidgetDefaults.DEFAULTS` 轴表填充（迁移键照搬原值、新轴默认现视觉；quickSettings/utilButtons 一组件一表按引用共享）；13 部件消费迁移到 `widgetEntry + option()`（Workspaces 六轴+状态色、systemMonitor/utilButtons/tray/separator、clock dateFormat/showDate、battery percent/power、media 宽度钳制/标题/滚轮音量、activeWindow 帽宽——`Config` 桥相应映射退役，`DateTime` 全局长格式退役）；点击动作协议 `BarWidgetActions` 单例（9 预设经 ActionGateway 分发 + `command` argv 数组**不经 sh -c**、L/M/R 三轴、`dispatchMouse` 一行接入 7 部件）；v3→v4 迁移（`MIGRATED_WIDGET_GLOBALS` 显式键名映射、逐实例复制/跳默认/幂等、`[time].dateFormat` 折叠进 clock 条目、头戳升 4 快路径收 2/3/4）；第四注册点 `BarWidgetCatalog.optionsFiles` + `BarWidgetPage` 实例编辑页（uid 定位、`value()/set()` facade、chip 齿轮入口、非 manifest 路由不进搜索）+ `plugins/bar/options/` 13 页（结构抄 dux `XxxOptions`，控件换血 Preference 原子）；tray 边界（tint/hidePassive/showItemId 逐实例 + passive 过滤移部件侧，pin 列表/invert 留域共享）；退役 `BarModulesSection` widget-scoped 组（~25 行）与 end4 `isUsed` 门、Appearance divider 三行 + Clock dateFormat 段。契约 `llms-wiki/shell/bar-config.md` D4b 节 | `BarWidgetDefaults.js` / `XxxOptions.qml` 每部件设置页模式 |
 | D4c bar 级几何与样式 | **已落地（2026-11-22）**：bar 级轴迁入 `[[bar.configs]]` 条目平键（v4→v5 显式映射 + 头戳升 5，快路径收 2–5）；正典表 `services/BarDefaults.js`（**哨兵原则**：几何轴默认 −1 = per-style 基线，默认零写入零视觉 diff，probe 钉死）；轴：spacing/innerPadding/widgetPadding、sideMarginPercent（每侧边距 % 屏宽，吃掉 dux lengthMode 三键）、squareCorners+radius（显式值>方角>主题圆角）、fontScale（`BarScale` 单例乘算 115 处 bar 表面 type-scale 读取，settings/双表面卡不缩放）、borderless **+flat 第五档**、surfaceColor/Transparency + border×4（bar 面）、widgetTransparency + widgetOutline×4（部件层）；融合角 `SegmentRoles.js`（dux 原件整抄）——隐藏部件重排邻居圆角、spacer/separator 断 run，BarGroup 换 `segmentRole` 协议；右键样式弹层存储折叠进条目 overrides（uid 寻址，per-mode 维度退役，多实例各配各的）；设置页八分区扩展（布局/形状/效果/部件层，Auto 哨兵行）。**登记边界**：iconScale（97 处 end4 字面图标槽）与 shadow×5（依赖窗口增长基建）归 D4e 密度/窗口期。契约 `llms-wiki/shell/bar-config.md` D4c 节 | `SegmentRoles.js` 融合角算法 / bar config 60+ 键裁剪 |
 | D4d 行为与溢出 | **已落地（2026-11-22）**：行为轴（autoHideDelay 0/strict 只解弹层类锚定/hideOnFullscreen 抬 Overlay——全屏检测走 NiriDriver `is_fullscreen` 透传 + CompositorDriver 门面；clickThrough 掩码缩三条 lane 矩形 + dux 边缘条揭示/settle 防抖；hoverPopouts 吸收退役 tooltips 硬编码 + 150ms intent，D4d-1 拍板）；溢出系统——`OverflowLayout.js`+`CenterLayout.js` verbatim 整抄（契约钉死）、双容器引擎（活跃分支测量/1ms 防抖/迟滞）、BarGroup 迁居协议（widgetLoader 完成期捕获，实例永不销毁）、`LaneOverflowHost` 按钮（BarGroup 胶囊 + StyledPopup `pinnedOpen`，D4d-3）、Media flexible 协议（natural/min/allotted 配给）；条目轴 `overflowMode`/`overflowPriority` 进 BarWidgetPage 共享 Overflow 组（pinned id 不渲染）。**无版本迁移**（全新键）。probe `d4d` 节全绿（含 300px 挤压实况/弹层迁居双程/复位清零）。契约 `llms-wiki/shell/bar-config.md` D4d 节 | `OverflowLayout.js` / HoverController 只借 intent 语义不搬 32KB 实现 |
-| D4e 多 bar 与编辑体验 | 任意数量 bar 实例（每条独立全配置 + 屏幕集合 screenPreferences）；per-widget 设置页；行级 reset-to-default 感知（每项知道自己是不是默认态）；密度预设（只迁移用户未改过的键） | `ShellCore` Variants / `WidgetsTab` / `DensityPresets.js` |
+| D4e 多 bar 与编辑体验 | **引擎线落地（2026-11-22）**：e1 存储解锁（多条归一/uid 带 bar 域/根 `enabled` 键/per-entry 稀疏写/`selectedBarId` 会话态/跨 bar 单例桶与守卫/存储 API 三件）、e2 窗口多实例（Item 父级 Repeater×Variants 两级相乘、签名重建、横向先行装载序、窗口根持 per-entry barConfig/axes）、e3 轴穿线（`barStyleContextOf(axes)` + resolved*/描边函数可选 axes 尾参、内容宿主与 BarGroup 注入、`widgetBar` 第二注入协议覆盖 hoverPopouts/延迟/弹层锚定）；顺带修 Workspaces `elementMoveSmall` 死令牌（映射 elementMoveFast）与 DynamicIsland callLater 销毁竞态，新增动画令牌有效性门禁。**待续 e4 设置面**（WidgetsTab 列表式 + barSelector + reset-to-default 感知原子，chip 卡退役）、**e5 岛接入**（island* 折叠进条目 overrides + v6 迁移 + IslandOptions 页）、**e6 密度/iconScale**（DensityPresets 整抄 + 97 处图标槽收敛）。登记边界：厚度链/fontScale/Config 桥样式叶暂跟随 settings-facing 条目，随 e6 叶级清扫 | `ShellCore` Variants / `WidgetsTab` / `DensityPresets.js` |
 
 验收（各期）：probe 断言几何/持久化/迁移/溢出行为；配置文件最小化快照测试
 （只含非默认键，升级用户零感知）；D4e 多屏多 bar 实机排布。

@@ -27,6 +27,8 @@ Item {
     // branch, lane order). Empty = no button.
     property var overflowGroups: []
     property bool vertical: false
+    // D4e: the owning bar rides along for the popup's routing/delay axes.
+    property var widgetBar: null
     property bool open: popup.pinnedOpen
     // dux SectionOverflow closes on membership changes: a refit while open
     // re-parents widgets back before the set mutates.
@@ -128,6 +130,7 @@ Item {
     StyledPopup {
         id: popup
 
+        widgetBar: root.widgetBar
         hoverTarget: root
         hoverActivates: false
         closeOnOutsideClick: true

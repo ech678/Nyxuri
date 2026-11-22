@@ -15,7 +15,9 @@ LazyLoader {
     property bool popupHovered: false
     // D4d: the intent delay is the bar-level hoverPopoutDelay axis (150ms
     // default, D4d-1 decision — the old 400ms hardcode retired with it).
-    property int hoverOpenDelay: PersonalizationConfig.barAxes.hoverPopoutDelay
+    property var widgetBar: null
+    readonly property var barAxes: widgetBar ? widgetBar.axes : PersonalizationConfig.barAxes
+    property int hoverOpenDelay: root.barAxes.hoverPopoutDelay
     // D4d: explicit-open path for click-driven popups (the lane overflow
     // button). The hover machinery stays untouched; pinnedOpen simply
     // forces active. Callers must move hosted items back OUT of the popup
@@ -72,11 +74,13 @@ LazyLoader {
 
     // B9.4: the bar edge is the single truth (end4 derived "right" from a
     // bottom bool, which sent a right-edge popup to the left side).
-    readonly property string barEdge: Config.options?.bar?.edge ?? "top"
+    // D4e: the owning bar's routing axes when threaded (multi-bar), else
+    // the settings-facing entry.
+    readonly property string barEdge: root.widgetBar ? root.barAxes.position : (Config.options?.bar?.edge ?? "top")
     readonly property bool barVertical: root.barEdge === "left" || root.barEdge === "right"
-    readonly property real m3OuterGap: (Config.options?.bar?.m3?.cornerStyle ?? 0) === 3 ? (Config.options?.bar?.m3?.gapsOut ?? 0) : 0
+    readonly property real m3OuterGap: (root.widgetBar ? root.barAxes.cornerStyle : (Config.options?.bar?.m3?.cornerStyle ?? 0)) === 3 ? (Config.options?.bar?.m3?.gapsOut ?? 0) : 0
     // B9.5: popups start after the outer edge margin the bar itself reserves.
-    readonly property real barEdgeMargin: Config.options?.bar?.edgeMargin ?? 0
+    readonly property real barEdgeMargin: root.widgetBar ? root.barAxes.edgeMargin : (Config.options?.bar?.edgeMargin ?? 0)
     readonly property real barThickness: (root.barVertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight) + root.barEdgeMargin + root.m3OuterGap
 
     PanelWindow {

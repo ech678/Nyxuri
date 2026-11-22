@@ -24,7 +24,9 @@ MouseArea {
     implicitWidth: vertical ? 36 : speedColumn.implicitWidth + 8
     implicitHeight: vertical ? speedColumn.implicitHeight + 6 : 32
 
-    readonly property bool clickForDetails: !PersonalizationConfig.barAxes.hoverPopouts
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    readonly property bool clickForDetails: !root.barAxes.hoverPopouts
     hoverEnabled: true
 
     onClicked: mouse => {
@@ -110,6 +112,7 @@ MouseArea {
 
     NetworkSpeedPopup {
         id: networkPopup
+        widgetBar: root.widgetBar
         hoverTarget: root
         hoverActivates: !root.clickForDetails
         closeOnOutsideClick: root.clickForDetails
