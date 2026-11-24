@@ -18,6 +18,7 @@ from nyxuri.deploy import (
 from nyxuri.deploy.deploy import (
     enable_theme_plugin as _enable_theme,
     enable_wallpapers_plugin as _enable_wallpapers,
+    sync_gateway_scripts as _sync_gateway_scripts,
     wallpapers_pack_present,
 )
 from nyxuri.system.pkg import get_missing_deps, install_selected_deps, plugin_package_installer
@@ -202,6 +203,11 @@ def install_configs_workflow(mode: str = "full") -> bool:
             print(f"  {line}")
         if uid == "wallpapers":
             wallpaper_ok = bool(steps_res) and all(s.ok for s in steps_res)
+
+    # The compositor templates launch the shell through the gateway scripts,
+    # and no plugin transaction above deploys them. Synced before the failure
+    # check: the plugins that did enable still point at them.
+    _sync_gateway_scripts()
 
     if failed_items:
         render_completion_screen(
