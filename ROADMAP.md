@@ -21,7 +21,7 @@
 | D卷 | 设计统一：契约基石 → bar 快修 → SystemIcons QS 化 → 自定义引擎（D4a–D4h）→ 跨表面统一与联动（D5） | 进行中 |
 | T4 | Shell 可控性与透明化（开工时立细则） | 待开始 |
 | T5 | 多合成器解耦（门禁触发型） | 待开始 |
-| T2 | TUI Textual 重做（搁置，分支 `archive/t2-textual-market` 备用） | 待开始 |
+| T2 | TUI Textual inline 重写：美学定稿 → inline 实测 → 引擎/界面接缝 → 逐屏 → 旧界面退役 → 实机验收 | 进行中 |
 
 ### T4 Shell 可控性与透明化（立项三件套）
 
@@ -38,6 +38,77 @@ S0 的 niri 适配层（`CompositorDriver` + `NiriDriver` 单文件方言）已�
 第三个合成器接入前收编残余字面量（债务登记见
 [delayed-decisions](llms-wiki/delayed-decisions.md)）。
 
+### T2 TUI Textual inline 重写
+
+从零重写，形态参照 Claude Code / Codex CLI 的“记录 + 活动区”（原地展开，退出后历史还在），
+版式参照 Omarchy 安装器的居中栏。
+`archive/t2-textual-market` 与 `refactor/t2-tui-pytermgui` 两条分支放弃，代码不沿用。
+视觉契约见 [tui-design-system](llms-wiki/tui-design-system.md)，交互原则见
+[tui-charter](llms-wiki/tui-charter.md)。
+
+**边界**
+
+- 引擎（`nyxuri/` 除 `nyxuri/tui/` 外）保持纯标准库；`textual` 只许出现在 `nyxuri/tui/`，测试静态断言。
+- `python-textual`（Arch `extra`）进 PKGBUILD `depends`；launcher 去掉 `-S`，保留 `-I`。
+- 所有 CLI 动词不经过 Textual 也能跑：引擎里的交互统一走纯标库行式基座。
+- 无参数启动走 Textual；导入失败打印一行原因并退出，不悄悄降级。
+- TUI 只是 `state.json` / catalog 的投影，动作走 `engine`，文案复用 `format_steps`。
+- **操作全覆盖**：`COMMANDS` 每个动词在 TUI 里都有入口；TUI 内绝不掉回行式提示或让用户“去运行 CLI”
+  （细则与例外见 [tui-design-system](llms-wiki/tui-design-system.md) §6）。
+
+**Textual 依据（基线 `python-textual 8.2.8`）**
+
+实现只用下表里有文档或源码出处的能力；表外的东西不自己发明，先查
+[Textual 文档](https://textual.textualize.io/)，查不到就列进“待实测”，M1 跑出结论再用。
+
+| 设计需求 | Textual 能力 | 出处 |
+| --- | --- | --- |
+| 原地展开 | `App.run(inline=True)` | [Style Inline Apps](https://textual.textualize.io/how-to/style-inline-apps/) |
+| 退出后历史还在 | `run(inline_no_clear=True)` | [App Basics](https://textual.textualize.io/guide/app/)；`app.py` `run_async` 参数 |
+| 鼠标不追踪 | `run(mouse=False)` | `App.run` 签名 |
+| 去掉顶部空行 | `INLINE_PADDING = 0` | Style Inline Apps |
+| inline 专属样式 | `:inline` 伪类；`Screen:inline` 默认带上下 `tall` 边框，需覆盖为 `none` | Style Inline Apps；`screen.py` 默认 CSS |
+| 跟随终端 16 色 | `ansi_color=True` + `ansi_*` 颜色；`register_theme()` 注册自有主题 | [Themes](https://textual.textualize.io/guide/design/) |
+| 强调色 = magenta | 内置 `ansi-dark` 的 accent 是 `ansi_green`，不合用；自有主题以 `ansi-dark` 为底，`accent` / `primary` 改 `ansi_magenta` | `theme.py` `BUILTIN_THEMES` |
+| 居中栏 | `Screen { align: center top; }` + 容器 `width: 72; max-width: 100%` | [Center things](https://textual.textualize.io/how-to/center-things/)；[Align](https://textual.textualize.io/styles/align/)、[Max-width](https://textual.textualize.io/styles/max_width/) |
+| 单选 / 菜单 | `OptionList` | [OptionList](https://textual.textualize.io/widgets/option_list/) |
+| 多选 / 勾选 | `SelectionList` | [SelectionList](https://textual.textualize.io/widgets/selection_list/) |
+| 输入 | `Input` | [Input](https://textual.textualize.io/widgets/input/) |
+| 装包日志尾 | `Log` | [Log](https://textual.textualize.io/widgets/log/) |
+| spinner | `LoadingIndicator` | [LoadingIndicator](https://textual.textualize.io/widgets/loading_indicator/) |
+| 文本 / 详情行 | `Static` / `Label` | [Static](https://textual.textualize.io/widgets/static/) |
+| 引擎调用不卡界面 | `run_worker()` / `@work(thread=True)` | [Workers](https://textual.textualize.io/guide/workers/) |
+| 键位 | `BINDINGS` / actions | [Input](https://textual.textualize.io/guide/input/)、[Actions](https://textual.textualize.io/guide/actions/) |
+| 结束并返回结果 | `App.exit(result, return_code, message)` | `App.exit` |
+| 测试 | `run_test()` + `Pilot` | [Testing](https://textual.textualize.io/guide/testing/) |
+
+**已知限制（源码核实）**
+
+- `App.suspend()` 在 inline 模式不可用：`LinuxInlineDriver` 沿用基类 `can_suspend = False`，
+  调用抛 `SuspendNotSupported`。所以 sudo / pacman / `$EDITOR` 只能放在两次 inline 运行之间，
+  不能在一次运行里挂起。
+- 内置 `Header` / `Footer` 和默认主题都不用，样式只写在 `nyxuri.tcss`。
+
+**待实测（文档没写，M1 出结论前不当成事实）**
+
+1. 同一进程里连续多次 inline `App.run()`：每次启动开销、光标位置是否接得上。
+2. `inline_no_clear` 留在历史里的最后一帧长什么样，有没有残留边框或空行。
+3. inline 模式下改终端宽度，重排是否干净。
+4. 中文和全角符号在 `OptionList` / `SelectionList` 里的列对齐。
+5. 记录区（运行之间用标准库输出）和 Textual 活动区的居中边距能不能逐列对齐。
+6. Ctrl+C 中断时，inline 区域能否收干净。
+
+任一项不过，回到 [tui-design-system](llms-wiki/tui-design-system.md) 改设计，不在代码里打补丁。
+
+| 期 | 交付 | 门禁 | 状态 |
+| --- | --- | --- | --- |
+| M0 美学定稿 | [tui-design-system](llms-wiki/tui-design-system.md)：记录 + 活动区、Omarchy 式居中栏、跟随终端 16 色（强调 = ANSI magenta）、符号、空间、交互、线框 | 作者确认后冻结，冻结前不写 TUI 代码 | 待验收 |
+| M1 inline 实测 | `nyxuri/tui/` 骨架 + `nyxuri.tcss` + 自有 ANSI 主题 + 插件工坊一屏接真实数据；逐条回答上面 6 项待实测 | kitty 实机：单次 inline 运行启动 < 300ms、6 项待实测全部有结论并回写本节、换主题颜色跟随；**作者看过点头，否则停** | 待开始 |
+| M2 接缝 | `deploy` / `backup` / `uninstall` / `pkg` / `net` / `clean` 不再 import `nyxuri.ui.tui`；引擎交互点抽成“提问”接口（确认 / 单选 / 多选 / 输入 / 进度），行式和 TUI 各给一份实现；`textual` 隔离断言入库 | `python3 -I -S` 导入引擎绿；路由表对应定向单测绿；TUI 实现下引擎零 `input()` 调用 | 待开始 |
+| M3 全动词 | 主菜单覆盖全部动词：插件（list / on / off / use / add / remove / update / doctor）、整装与自更新、主题、外壳、依赖、包管理、清理、快照 / 回滚、卸载、诊断导出、语言 | 动词对等测试（`COMMANDS` ⊆ TUI 入口 − 例外）绿；各流程 pilot 测试；transaction / forms 现有测试零退化 | 待开始 |
+| M4 退役 | 删 `nyxuri/ui/tui.py`、`menus.py`，清 i18n 孤儿键；同步 AGENTS 不变量 3、overview、operation-map、tui-charter、PKGBUILD、CHANGELOG | 全量回归 + 沙箱部署 | 待开始 |
+| M5 验收 | 80 / 120 / 200 列逐屏过目，清过渡代码 | 作者实机确认 | 待开始 |
+
 ## 分支策略（PR #148 · Ubuntu 支持）
 
 - PR #148（138 文件，+10519/−2532）整包暂存：自 main 建立 `legacy/ubuntu-support`，
@@ -48,8 +119,6 @@ S0 的 niri 适配层（`CompositorDriver` + `NiriDriver` 单文件方言）已�
 
 ## 冻结与挂起
 
-- **T2 TUI**：选型 Textual、一次全搬定案不变；M0 spike 先行（kitty 终端交接、中文对齐、
-  退出干净）。
 - **Shell 功能阉割档：整档挂起（作者裁决）**。dashboard 双轨合并已划掉——双轨终局
   保留。其余候选留档备查：cookie 时钟链（约 −870）、lock 双风格链（约 −1,000）、
   通知双渲染实现合一、regionselector、PersonalizationConfig 死函数（约 −340）、
