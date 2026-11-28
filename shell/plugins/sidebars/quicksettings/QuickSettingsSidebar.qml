@@ -8,6 +8,11 @@ Item {
 
     property var panelScreen: null
     readonly property bool onLeft: PersonalizationConfig.quickSettingsSidebarSide === "left"
+    // D4g 批四b avoidance insets (ScreenBarLayout projection): the
+    // same-edge rail reserves the x span; top/bottom bands reserve y.
+    readonly property real railInset: ScreenBarLayout.reservation(panelScreen, root.onLeft ? "left" : "right")
+    readonly property real topInset: ScreenBarLayout.reservation(panelScreen, "top")
+    readonly property real bottomInset: ScreenBarLayout.reservation(panelScreen, "bottom")
     property real sidebarWidth: Math.min(Metrics.sidebarWidthComfortable, Math.max(0, width))
     readonly property alias blurBackgroundItem: revealSurface.blurBackgroundItem
     readonly property bool requestedOpen: WidgetState.quickSettingsOpen
@@ -96,10 +101,13 @@ Item {
         id: revealSurface
 
         visible: root.panelPresented
-        x: root.onLeft ? 0 : root.width - root.sidebarWidth
-        y: 0
+        // D4g 批四b: the drawer insets by the topology projection — the
+        // same-edge rail reserves the x span, top/bottom bands reserve the
+        // y span (Overlay would otherwise paint over the Top-layer bars).
+        x: root.onLeft ? root.railInset : root.width - root.sidebarWidth - root.railInset
+        y: root.topInset
         width: root.sidebarWidth
-        height: root.height
+        height: Math.max(0, root.height - root.topInset - root.bottomInset)
         open: root.presentationOpen
         onLeft: root.onLeft
         backgroundColor: BlurService.backgroundColor(Appearance.colors.colLayer0)

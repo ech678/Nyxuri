@@ -555,6 +555,99 @@ ShellRoot {
             });
         }
 
+        // D4g 批四b: the corner junction + avoidance projection, config-side.
+        // Stage A proves the solo baseline; stage B joins a rail AFTER the
+        // top bar (configOrder verdict: the rail tucks its top end by the
+        // top band + seam, the top bar keeps its corners); then the rail's
+        // autoHide drops its reservation and the tuck re-resolves to zero.
+        function d4gAvoid(): string {
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
+            const screen = Quickshell.screens[0];
+            const solo = {
+                "top": ScreenBarLayout.reservation(screen, "top"),
+                "left": ScreenBarLayout.reservation(screen, "left")
+            };
+            const railId = PersonalizationConfig.addBarConfig();
+            PersonalizationConfig.selectedBarId = railId;
+            PersonalizationConfig.setBarPosition("left");
+            const railTuck = ScreenBarLayout.tuckMargins(screen, railId);
+            const topTuck = ScreenBarLayout.tuckMargins(screen, "default");
+            const joined = {
+                "topBand": ScreenBarLayout.reservation(screen, "top"),
+                "leftBand": ScreenBarLayout.reservation(screen, "left"),
+                "railTuck": railTuck,
+                "topTuck": topTuck
+            };
+            PersonalizationConfig.setBarAxis("autoHide", true);
+            const hidden = {
+                "leftBand": ScreenBarLayout.reservation(screen, "left"),
+                "topTuck": ScreenBarLayout.tuckMargins(screen, "default")
+            };
+            PersonalizationConfig.setBarAxis("autoHide", false);
+            // Stage C: the rail joins FIRST (default flips to left, order 0)
+            // — now the top-positioned second entry tucks its left end.
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.setBarPosition("left");
+            const secondId = PersonalizationConfig.addBarConfig();
+            PersonalizationConfig.selectedBarId = secondId;
+            PersonalizationConfig.setBarPosition("top");
+            const reversed = {
+                "topTuck": ScreenBarLayout.tuckMargins(screen, secondId),
+                "railTuck": ScreenBarLayout.tuckMargins(screen, "default")
+            };
+            // Cleanup: factory single top bar.
+            PersonalizationConfig.deleteBarConfig(secondId);
+            PersonalizationConfig.deleteBarConfig(railId);
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.setBarPosition("top");
+            PersonalizationConfig.resetBarLanes();
+            return JSON.stringify({
+                "solo": solo,
+                "joined": joined,
+                "hidden": hidden,
+                "reversed": reversed
+            });
+        }
+
+        // Window-level evidence for the same verdict: the rail window's
+        // height must shrink by the tuck inset (margins carry it).
+        function d4gWindowsSet(scene: string): string {
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
+            if (scene === "rail") {
+                const railId = PersonalizationConfig.addBarConfig();
+                PersonalizationConfig.selectedBarId = railId;
+                PersonalizationConfig.setBarPosition("left");
+                PersonalizationConfig.setBarLayouts(["workspaces"], ["clock"], ["systemIcons"]);
+            }
+            return "OK";
+        }
+
+        function d4gWindowsDump(): string {
+            const barScope = windowLoader.item;
+            const top = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("default") : null;
+            const rail = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("bar2") : null;
+            return JSON.stringify({
+                "screenH": rail && rail.screen ? rail.screen.height : 0,
+                "topWindow": top ? {
+                    "h": Math.round(top.height),
+                    "w": Math.round(top.width),
+                    "margins": top.margins
+                } : null,
+                "railWindow": rail ? {
+                    "w": Math.round(rail.width),
+                    "h": Math.round(rail.height),
+                    "margins": rail.margins
+                } : null,
+                "railTuck": rail ? ScreenBarLayout.tuckMargins(rail.screen, "bar2") : null,
+                "bands": rail ? {
+                    "top": ScreenBarLayout.reservation(rail.screen, "top"),
+                    "left": ScreenBarLayout.reservation(rail.screen, "left")
+                } : null
+            });
+        }
+
         // Layout scenes: "mediaOnly" is the self-hiding-widget contract (an
         // empty lane must collapse to zero instead of keeping capsule
         // padding); "default" restores the shipped three-lane layout.

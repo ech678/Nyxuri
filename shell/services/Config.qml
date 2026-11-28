@@ -41,12 +41,12 @@ Singleton {
         readonly property QtObject bar: QtObject {
             id: barOptions
 
-            // B9.4: `edge` is the single truth (end4 only had a bottom bool,
-            // which made a right-edge bar look like a left-edge one to every
-            // popup). The derived `bottom`/`vertical` views retired with
-            // D4g 批四 — they had zero consumers, and the selected-bar
-            // orientation is a per-entry fact now, not a global one.
-            readonly property string edge: PersonalizationConfig.barPosition
+            // B9.4: `edge` used to be the single truth here (end4 only had a
+            // bottom bool, which made a right-edge bar look like a left-edge
+            // one to every popup). The bridge views retired across 批四:
+            // orientation is a per-entry fact — avoidance reads the
+            // ScreenBarLayout projection, popups and widgets read their
+            // injected axes, the settings faces read the entry directly.
             // B9.5 outer margins.
             readonly property real edgeMargin: PersonalizationConfig.barEdgeMargin ?? 5
             readonly property real sideMargin: PersonalizationConfig.resolvedBarSideMargin()

@@ -382,5 +382,87 @@ class RailDefaultLayoutTest(unittest.TestCase):
         self.assertIn("function railDefaults(): string", self.probe)
 
 
+class CornerJunctionTest(unittest.TestCase):
+    """D4g 批四b: the avoidance projection and the corner junction.
+
+    - `commons/BarScreenLayout.js` is the Fork & Trim of dux's
+      LayoutResolver (islands/frames/goth wings/row stacking dropped) and
+      the only place the corner verdict lives: the earliest configured
+      bar meeting at a corner owns it, the later bar insets the shared
+      along-axis end by the owner's band reservation + seam gap, each
+      corner adjudicated independently;
+    - `services/ScreenBarLayout.qml` is the single per-screen projection
+      (barConfigs x screens -> bands + tuck margins), derived from
+      BarGeometry.exclusiveZone — the exact number the window binds;
+      autoHide entries reserve nothing;
+    - Bar.qml merges the tuck margins into its window margins;
+    - the notification popups and both sidebar panels consume the same
+      projection instead of reading bar geometry locally;
+    - the selected-bar bridge keys (`edge`/`bottom`/`vertical`) are gone:
+      StyledPopup's unreachable fallback retired, every instance is
+      threaded its owning bar.
+    """
+
+    def setUp(self):
+        self.resolver = read(os.path.join(SHELL, "commons", "BarScreenLayout.js"))
+        self.projection = read(os.path.join(SERVICES_DIR, "ScreenBarLayout.qml"))
+        self.bar = read(os.path.join(BAR_DIR, "Bar.qml"))
+        self.notif = read(os.path.join(SHELL, "plugins", "notifications", "NotificationPopupHost.qml"))
+        self.qs_sidebar = read(os.path.join(SHELL, "plugins", "sidebars", "quicksettings", "QuickSettingsSidebar.qml"))
+        self.dash_sidebar = read(os.path.join(SHELL, "plugins", "sidebars", "dashboard", "DashboardSidebar.qml"))
+        self.popup = read(os.path.join(BAR_DIR, "StyledPopup.qml"))
+        self.bridge = read(os.path.join(SERVICES_DIR, "Config.qml"))
+        self.probe = read(os.path.join(SHELL, "scripts", "dev", "probe-bar.qml"))
+
+    def test_resolver_is_the_dux_fork_with_the_nyxuri_rule(self):
+        self.assertIn("Fork & Trim: dux-shell quickshell/Common/LayoutResolver.js", self.resolver)
+        self.assertIn("var SEAM_GAP = 4;", self.resolver)
+        self.assertIn("function resolveScreen(inputs, screenName)", self.resolver)
+        self.assertIn("function coversScreen(axes, screenName, screenNames)", self.resolver)
+        # The configOrder verdict: an earlier perpendicular bar owns the
+        # corner; the later bar insets by the owner's band + seam.
+        self.assertIn("other.configOrder < instance.configOrder", self.resolver)
+        self.assertIn("bands[side].reservation + SEAM_GAP", self.resolver)
+        # autoHide entries arrive with reservation 0 and never tuck others.
+        self.assertIn("const reservation = input.reservation > 0 ? input.reservation : 0;", self.resolver)
+
+    def test_projection_is_the_single_source(self):
+        self.assertIn("pragma Singleton", self.projection)
+        self.assertIn("BarScreenLayout.resolveScreen(inputs, screen.name)", self.projection)
+        self.assertIn("BarGeometry.exclusiveZone(vertical, axes.barThickness, axes.verticalThickness, BarDefaults.styleBoost(style), axes.edgeMargin)", self.projection)
+        self.assertIn("axes.autoHide === true ? 0 : zone", self.projection)
+        self.assertIn("function reservation(screen, edge)", self.projection)
+        self.assertIn("function tuckMargins(screen, barId)", self.projection)
+
+    def test_bar_window_merges_the_tuck(self):
+        self.assertIn("ScreenBarLayout.tuckMargins(barRoot.screen, barRoot.barConfig.id)", self.bar)
+        self.assertIn("own.top + barRoot.tuckMargins.top", self.bar)
+        self.assertIn("own.left + barRoot.tuckMargins.left", self.bar)
+
+    def test_notification_popups_read_the_projection(self):
+        self.assertIn("ScreenBarLayout.reservation(modelData, \"top\")", self.notif)
+        self.assertIn("ScreenBarLayout.reservation(modelData, \"right\")", self.notif)
+        self.assertNotIn("Config.options", self.notif,
+                         "the popup must not read the selected-bar bridge anymore")
+
+    def test_sidebars_inset_by_the_projection(self):
+        for sidebar in (self.qs_sidebar, self.dash_sidebar):
+            self.assertIn("ScreenBarLayout.reservation(panelScreen, root.onLeft ? \"left\" : \"right\")", sidebar)
+            self.assertIn("ScreenBarLayout.reservation(panelScreen, \"top\")", sidebar)
+            self.assertIn("root.height - root.topInset - root.bottomInset", sidebar)
+
+    def test_bridge_edge_views_are_gone_and_popups_thread_their_bar(self):
+        self.assertNotIn("readonly property string edge", self.bridge)
+        self.assertNotIn("readonly property bool bottom", self.bridge)
+        self.assertNotIn("readonly property bool vertical", self.bridge)
+        self.assertIn("readonly property string barEdge: root.barAxes.position", self.popup)
+        self.assertNotIn("Config.options?.bar?.edge", self.popup)
+
+    def test_probe_pins_the_junction_evidence(self):
+        self.assertIn("function d4gAvoid(): string", self.probe)
+        self.assertIn("function d4gWindowsSet(scene: string)", self.probe)
+        self.assertIn("function d4gWindowsDump(): string", self.probe)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -289,9 +289,22 @@ Scope {
                                     // B9.5/D4f outer margins: edgeMargin 0 = flush, >0 = floating.
                                     readonly property real edgeMargin: barRoot.axes.edgeMargin
                                     readonly property real sideMargin: barRoot.sideMarginPx
+                                    // D4g 批四b corner junction: this entry's tuck insets from the
+                                    // shared topology projection (ScreenBarLayout) — a later bar
+                                    // insets the corner ends an earlier perpendicular bar owns.
+                                    // Zero everywhere for a solo bar (or one owning its corners).
+                                    readonly property var tuckMargins: ScreenBarLayout.tuckMargins(barRoot.screen, barRoot.barConfig.id)
                                     // The margins and the reserved exclusive zone share one pure
                                     // implementation (commons/BarGeometry.js) with the probe.
-                                    readonly property var windowMargins: BarGeometry.margins(barRoot.edge, barRoot.vertical, barRoot.edgeMargin, barRoot.sideMarginPx, barRoot.autoHideEnabled, barRoot.deadPixel)
+                                    readonly property var windowMargins: {
+                                        const own = BarGeometry.margins(barRoot.edge, barRoot.vertical, barRoot.edgeMargin, barRoot.sideMarginPx, barRoot.autoHideEnabled, barRoot.deadPixel);
+                                        return {
+                                            top: own.top + barRoot.tuckMargins.top,
+                                            bottom: own.bottom + barRoot.tuckMargins.bottom,
+                                            left: own.left + barRoot.tuckMargins.left,
+                                            right: own.right + barRoot.tuckMargins.right
+                                        };
+                                    }
                                     readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, barRoot.axes.barThickness, barRoot.axes.verticalThickness, barRoot.styleContext.boostExtra, barRoot.edgeMargin)
                                     // The content is instantiated exactly once, by the active
                                     // orientation branch (B8.6: a second copy stole islandHost and

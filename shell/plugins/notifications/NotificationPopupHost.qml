@@ -17,15 +17,14 @@ Scope {
             required property var modelData
 
             // Slot placement, not a private switch: the bar's existence is
-            // the ledger's (StateProjection), its edge is appearance config.
-            readonly property bool barEnabled: StateProjection.isEnabled("bar")
-            readonly property string barEdge: Config.options?.bar?.edge ?? "top"
-            readonly property bool barTop: barEnabled && barEdge === "top"
-            readonly property bool barRight: barEnabled && barEdge === "right"
-            // B9.4/B9.5: the bar's real thickness and outer edge margin, not
-            // the legacy 0.85-scaled Sizes tokens (they were 37.4/6.8 against
-            // a 36px bar, so the popup overlapped the bar it was avoiding).
-            readonly property real barOffset: (barEdge === "left" || barEdge === "right" ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight) + (Config.options?.bar?.edgeMargin ?? 0) + 12
+            // the ledger's (StateProjection); the avoidance insets are the
+            // topology projection's (ScreenBarLayout) — per-screen, per-edge,
+            // autoHide bars reserve nothing. D4g 批四b: the selected-bar
+            // bridge read retired (it could not see a rail on another entry).
+            readonly property real topReserve: ScreenBarLayout.reservation(modelData, "top")
+            readonly property real rightReserve: ScreenBarLayout.reservation(modelData, "right")
+            // The 12px breathing rides on any reserving band; bare corners
+            // keep the 16px base. B-legacy: the buffer trims the shadow box.
             readonly property int notifWidth: 380
             readonly property int notifContentHeight: NotificationService.popupList.reduce((h, notif) => {
                 return h + (NotificationService.normalActions(notif).length > 0 ? 104 : 64);
@@ -49,8 +48,8 @@ Scope {
             }
 
             margins {
-                top: (popupWindow.barTop ? popupWindow.barOffset : 16) - popupWindow.shadowBuffer
-                right: (popupWindow.barRight ? popupWindow.barOffset : 16) - popupWindow.shadowBuffer
+                top: (popupWindow.topReserve > 0 ? popupWindow.topReserve + 12 : 16) - popupWindow.shadowBuffer
+                right: (popupWindow.rightReserve > 0 ? popupWindow.rightReserve + 12 : 16) - popupWindow.shadowBuffer
             }
 
             implicitWidth: notifWidth + shadowBuffer * 2

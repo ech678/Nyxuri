@@ -606,6 +606,7 @@ vertical_file="${tmp}/vertical.tsv"
 : >"${vertical_file}"
 margins_state=""
 d4g_rail_state=""
+d4g_windows_state=""
 for edge in left right; do
     if ! ipc edge "${edge}" >/dev/null; then
         printf 'error: could not switch the bar to the %s edge\n' "${edge}" >&2
@@ -711,6 +712,15 @@ print(json.dumps({
 PY
 )
 fi
+# D4g 批四b: the corner junction projection — the configOrder verdict from
+# both join orders, and the autoHide reservation collapse.
+d4g_avoid_state=""
+d4g_avoid_probe=$(ipc d4gAvoid 2>/dev/null || true)
+if [[ -n ${d4g_avoid_probe} ]]; then
+    d4g_avoid_state="${d4g_avoid_probe}"
+    ipc reload >/dev/null 2>&1 || true
+    sleep 0.6
+fi
 # B9.5 margins ride the same pure geometry the window binds.
 if ipc edge top >/dev/null 2>&1; then
     ipc stylePreset floating >/dev/null 2>&1 || true
@@ -797,6 +807,14 @@ if ipc windowMode true >/dev/null 2>&1; then
             sleep 0.6
             d4e_windows_clean_state=$(ipc d4eWindowsDump 2>/dev/null || true)
         fi
+        # D4g 批四b: the rail tuck at the window level — a rail joined after
+        # the top bar shrinks by the top band + seam (margins carry it).
+        if ipc d4gWindowsSet rail >/dev/null 2>&1; then
+            sleep 0.8
+            d4g_windows_state=$(ipc d4gWindowsDump 2>/dev/null || true)
+            ipc d4gWindowsSet clean >/dev/null 2>&1 || true
+            sleep 0.6
+        fi
     else
         printf 'error: bar window probe did not come up\n' >&2
         exit 3
@@ -849,7 +867,7 @@ ipc stylePreset floating >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" "${d4g_catalog_state}" "${d4g_rail_state}" "${d4g_defaults_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" "${d4g_catalog_state}" "${d4g_rail_state}" "${d4g_defaults_state}" "${d4g_avoid_state}" "${d4g_windows_state}" <<'PY'
 import json
 import re
 import sys
@@ -872,7 +890,7 @@ import sys
  d4d_overflow_resolve_state, d4d_overflow_cramped_state,
  d4d_overflow_reset_state, d4e_store_state, d4e_signature_state, d4e_migration_v6_state,
  d4e_windows_two_state, d4e_windows_off_state, d4e_windows_clean_state,
- d4f_style_state, d4g_catalog_state, d4g_rail_state, d4g_defaults_state) = sys.argv[1:78]
+ d4f_style_state, d4g_catalog_state, d4g_rail_state, d4g_defaults_state, d4g_avoid_state, d4g_windows_state) = sys.argv[1:80]
 
 
 def load_tsv(path):
@@ -1830,12 +1848,78 @@ d4g_defaults_ok = bool(
     and _d4g_top_defaults_stored == "top\t0"
 )
 
+# 批四b: the corner junction projection. Default floating axes put both
+# bands at 41 (36 thickness + 5 edge margin); the seam gap is 4, so the
+# later bar tucks by 45. configOrder decides from both join orders, and
+# an autoHide rail reserves nothing (the tuck collapses with it).
+d4g_avoid = {}
+if d4g_avoid_state.strip():
+    try:
+        d4g_avoid = json.loads(d4g_avoid_state)
+    except ValueError:
+        d4g_avoid = {}
+_d4g_solo = d4g_avoid.get("solo") or {}
+_d4g_joined = d4g_avoid.get("joined") or {}
+_d4g_hidden = d4g_avoid.get("hidden") or {}
+_d4g_reversed = d4g_avoid.get("reversed") or {}
+_d4g_joined_rail_tuck = _d4g_joined.get("railTuck") or {}
+_d4g_joined_top_tuck = _d4g_joined.get("topTuck") or {}
+_d4g_hidden_top_tuck = _d4g_hidden.get("topTuck") or {}
+_d4g_reversed_top_tuck = _d4g_reversed.get("topTuck") or {}
+_d4g_reversed_rail_tuck = _d4g_reversed.get("railTuck") or {}
+d4g_avoid_ok = bool(
+    _d4g_solo.get("top", 0) > 0
+    and _d4g_solo.get("left") == 0
+    and abs(_d4g_joined.get("topBand", 0) - 41) <= 0.01
+    and abs(_d4g_joined.get("leftBand", 0) - 41) <= 0.01
+    and abs(_d4g_joined_rail_tuck.get("top", 0) - 45) <= 0.01
+    and _d4g_joined_rail_tuck.get("left") == 0
+    and all((_d4g_joined_top_tuck or {}).get(side) == 0 for side in ("top", "bottom", "left", "right"))
+    and _d4g_hidden.get("leftBand") == 0
+    and all((_d4g_hidden_top_tuck or {}).get(side) == 0 for side in ("top", "bottom", "left", "right"))
+    and abs(_d4g_reversed_top_tuck.get("left", 0) - 45) <= 0.01
+    and _d4g_reversed_top_tuck.get("right") == 0
+    and all((_d4g_reversed_rail_tuck or {}).get(side) == 0 for side in ("top", "bottom", "left", "right"))
+)
+
+# 批四b window evidence. The deterministic contract is the margins binding
+# (own margin + tuck, per axis); the window height additionally absorbs
+# whatever zones the SURROUNDING session reserves (on the developer's live
+# compositor the real shell's own bar shifts the usable area), so the
+# height is asserted as bounded by the margins, never as an exact number.
+d4g_windows = {}
+if d4g_windows_state.strip():
+    try:
+        d4g_windows = json.loads(d4g_windows_state)
+    except ValueError:
+        d4g_windows = {}
+_d4g_rail_win = d4g_windows.get("railWindow") or {}
+_d4g_top_win = d4g_windows.get("topWindow") or {}
+_d4g_rail_tuck_win = d4g_windows.get("railTuck") or {}
+_d4g_rail_win_bands = d4g_windows.get("bands") or {}
+_d4g_rail_win_screen_h = d4g_windows.get("screenH") or 0
+_d4g_rail_win_margins = _d4g_rail_win.get("margins") or {}
+_d4g_top_win_margins = _d4g_top_win.get("margins") or {}
+_d4g_rail_margins_sum = (_d4g_rail_win_margins.get("top", 0) + _d4g_rail_win_margins.get("bottom", 0)
+                         + _d4g_rail_win_margins.get("left", 0) + _d4g_rail_win_margins.get("right", 0))
+d4g_windows_ok = bool(
+    _d4g_top_win.get("h", 0) > 0
+    and _d4g_rail_win.get("w", 0) > 0
+    and _d4g_rail_win_screen_h > 0
+    and abs(_d4g_rail_tuck_win.get("top", 0) - (_d4g_rail_win_bands.get("top", 0) + 4)) <= 0.01
+    and abs(_d4g_rail_win_margins.get("top", 0) - (5 + _d4g_rail_tuck_win.get("top", 0))) <= 0.01
+    and abs(_d4g_rail_win_margins.get("bottom", 0) - (5 + _d4g_rail_tuck_win.get("bottom", 0))) <= 0.01
+    and abs(_d4g_top_win_margins.get("top", 0) - 5) <= 0.01
+    and 0 < _d4g_rail_win.get("h", 0) <= _d4g_rail_win_screen_h - _d4g_rail_margins_sum
+    and _d4g_rail_win.get("h", 0) >= _d4g_rail_win_screen_h - _d4g_rail_margins_sum - 200
+)
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok and d4g_ok and d4g_rail_ok and d4g_defaults_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok and d4g_ok and d4g_rail_ok and d4g_defaults_ok and d4g_avoid_ok and d4g_windows_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -2118,6 +2202,11 @@ report = {
             "ok": d4g_defaults_ok,
             "rail": d4g_defaults.get("rail") or {},
             "top": d4g_defaults.get("top") or {},
+        },
+        "avoid": {
+            "ok": d4g_avoid_ok and d4g_windows_ok,
+            "projection": d4g_avoid,
+            "windows": d4g_windows,
         },
     },    "b96": {
         "ok": b96_ok,

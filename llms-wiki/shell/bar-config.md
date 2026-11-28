@@ -492,6 +492,40 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
     827 例绿；会话 probe exit=0 全绿零 logErrors。遗留补账：批三岛轨钉
     （test_bar_runtime ×6）、D4f schema 钉（stamp 6→7）、D4f 词典清账
     （死键 ×4 + 缺失文案 ×13）一并修复。实机项归作者：翻边手感与轨默认观感。
+- **批四b（避让让位基建 + 转角接合，2026-11-28）**：
+  - **投影单例**（唯一让位真相）：`services/ScreenBarLayout.qml` + 纯库
+    `commons/BarScreenLayout.js`（dux `LayoutResolver.js` Fork & Trim：岛/
+    帧/哥特翼/行堆叠等 dux 特有分支全裁）。输入只取 barConfigs × 屏（配置
+    真相，不读窗口实例），输出每屏每边 band 预留 + 逐 bar tuck insets；
+    预留 = `BarGeometry.exclusiveZone`（窗口绑定的同一函数），autoHide 条目
+    预留 0（dux `reserves` 血统）。屏幕列表语义沿 D4e（空 = 全屏，无匹配
+    回落全屏）。
+  - **转角接合**（作者拍板，偏离 dux）：同角相遇按 configOrder 裁决——先建
+    图者通长占角、贴屏装饰归它；后建图者让出共享沿轴端 = 对方 band 预留 +
+    4px 接缝（dux `spacing ?? 4` 血统）。逐角独立裁决，双端可同时 tuck
+    （两侧轨都早于横 bar 时横 bar 让两端）。tuck 走窗口 margins 叠加
+    （`windowMargins` 逐轴相加），exclusiveZone 不变；内容随缩短的窗口
+    自动重排，融合角/胶囊装饰随内容边缘走。
+  - **消费面**：通知 popup（per-screen 每边预留 + 12 呼吸，裸角 16 基线）、
+    两侧栏面板（同边轨吃 x 跨度，上下横 bar 吃 y 跨度——Overlay 不再压过
+    Top 层 bar）。**登记边界**：启动器（全屏 overlay 居中内容）不让位不改
+    （登记）；dock 角接合不做（dock 不在 barConfigs，resolver 可扩）；通知
+    只避 top/right（窄屏左轨重叠登记）；quickpanel 按钮（BluetoothButton/
+    Network）仍读选中 bar 的 `barPosition`，归后续部件轴收口。
+  - **桥键全退**：`Config.options.bar` 的 `edge`/`bottom`/`vertical` 三派生
+    视图退役——StyledPopup 七实例全部由宿主 widget 注入 `widgetBar`（逐点
+    核实），不可达 fallback 删除；通知 popup 迁投影；SystemIconSlot tooltip
+    读注入 `barAxes`（批四a）。
+  - **probe `d4g.avoid` 节**：配置侧三幕（solo 基线 41/0 → 后建轨 tuck
+    top=45=topBand+4、top 零 tuck → autoHide 轨预留归零且 tuck 随塌 → 反序
+    轨先建、后建 top bar tuck left=45）；窗口侧钉 margins 绑定
+    （top = sideMargin + tuck，逐轴）+ 高度上界（session probe 与作者
+    live shell 同屏，窗口高吸收环境 zone，不做精确断言——weston 沙箱可
+    精确复验）。
+  - 机器证据：`test_d4g_bar_config.py` CornerJunctionTest（fork 头/configOrder
+    裁决/单源投影/margins 合并/消费面/桥零残留/probe 钉）；tests/shell 全量
+    834 例绿；会话 probe exit=0 全绿零 logErrors。实机项归作者：双 bar 转角
+    观感与接缝、通知/侧栏让位手感、autoHide 往返下的让位节奏。
 
 ## 证据
 

@@ -407,12 +407,13 @@ class VerticalAndMarginContractTest(unittest.TestCase):
 
     def test_config_exposes_the_edge_as_the_single_truth(self):
         config = read_services_file("Config.qml")
-        self.assertIn("readonly property string edge", config)
-        # D4g 批四: the selected-bar `bottom`/`vertical` derived views
-        # retired — orientation is a per-entry fact, and the bridge's
-        # consumers read the injected axes instead.
-        self.assertNotIn('PersonalizationConfig.barPosition === "bottom"', config)
-        self.assertNotIn('PersonalizationConfig.barPosition === "left"', config)
+        # D4g 批四: the whole selected-bar bridge view set (`edge`/
+        # `bottom`/`vertical`) retired — orientation is a per-entry fact;
+        # avoidance reads the ScreenBarLayout projection, popups and
+        # widgets read their injected axes.
+        self.assertNotIn("readonly property string edge", config)
+        self.assertNotIn("readonly property bool bottom", config)
+        self.assertNotIn("readonly property bool vertical", config)
         self.assertIn("edgeMargin", config)
         self.assertIn("sideMargin", config)
 
