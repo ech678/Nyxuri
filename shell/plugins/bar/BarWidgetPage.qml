@@ -29,6 +29,9 @@ Item {
     readonly property var entry: PersonalizationConfig.barEntryByUid(root.widgetUid)
     readonly property string widgetId: root.entry ? root.entry.widgetId : ""
     readonly property bool entryAlive: root.entry !== null
+    // D4g batch two: the editor edits the selected bar; on a rail, widgets
+    // without a catalog rail face get the capability note.
+    readonly property bool editingOnRail: root.entryAlive && (PersonalizationConfig.barAxes.position === "left" || PersonalizationConfig.barAxes.position === "right")
     readonly property bool hasOverrides: !!(root.entry && root.entry.overrides && Object.keys(root.entry.overrides).length > 0)
     // dux OverflowLayout.pinned: spacer/separator/island never leave the
     // bar, so their editor pages carry no overflow group.
@@ -112,6 +115,15 @@ Item {
                         label: I18n.tr("Lane")
                         value: root.zoneLabel
                         icon: "view_agenda"
+                    }
+
+                    // D4g batch two: capability note — factual today-state,
+                    // not a promise (see the catalog header for the audit).
+                    PreferenceInfo {
+                        visible: root.editingOnRail && !widgetCatalog.supportsVertical(root.widgetId)
+                        label: I18n.tr("Vertical bar")
+                        value: I18n.tr("This widget has no vertical face yet")
+                        icon: "info"
                     }
                 }
 

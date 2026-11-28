@@ -432,10 +432,10 @@ class VerticalAndMarginContractTest(unittest.TestCase):
         self.assertIn("PersonalizationConfig.resolvedVerticalBarWidth(root.axes)", content)
         self.assertIn("laneTopHeight", content)
         self.assertIn("laneCenterY", content)
-        # The island has no vertical shape yet (ROADMAP B9.4). D4a: the
-        # filter walks entry objects; D4g gates the rail drop on the axis.
-        self.assertIn('entry.widgetId !== "island"', content)
-        self.assertIn("if (root.vertical)", content)
+        # 批三: the island mounts on the rail as the compact face — the
+        # old rail-only island drop is retired (end4 behaviour gone).
+        self.assertNotIn('entry.widgetId !== "island"', content)
+        self.assertNotIn("if (root.vertical)", content)
         # Only the active capsule branch instantiates widgets.
         self.assertIn("active: root.isMaterial", content)
         self.assertIn("active: !root.isMaterial", content)

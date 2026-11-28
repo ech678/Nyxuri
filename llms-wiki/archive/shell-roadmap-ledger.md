@@ -1784,3 +1784,101 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   占用 tooling；lint 缺位由运行态 probe（零 logErrors）与 275 例契约测试覆盖，
   不视为通过。
 - **未验证（作者）**：左右轨排布与融合角/材质胶囊角视觉（B9.4 验收项不变）。
+
+## D4g 批二：部件能力目录（2026-11-28 实现落地）
+
+- **目录侧**：`ui/BarWidgetCatalog.qml` 17 条目全量声明 `orientations`，轨可用部件
+  再加 `verticalMode`——词表闭合 D-9 三语法（`stack`/`rotate`/`iconPopup`），
+  **缺字段 = 无轨面判定**，无第四值；导出 `verticalModes` 词表 +
+  `supportsVertical(id)` / `verticalMode(id)` 纯函数 helper。
+- **逐部件审计分类（钉真值，非愿望）**：`stack`×11（tray/systemIcons/
+  utilButtons+quickSettings/workspaces/visualizer/weather/separator/spacer/
+  launcherButton/powerButton——沿轨重排或单图标格）；`rotate`×1（battery，
+  进度条 -90°）；`iconPopup`×2（activeWindow/media——轨面是裸图标退化面，
+  dux `FocusedApp`/`Media` 竖向退化基线，悬停弹层半边未建，注释如实标注不预支
+  批三）；无轨面×3（island——轨上被 middle lane 过滤，紧凑面归批三；clock——
+  批三首位；systemMonitor——表盘未适配轨宽）。
+- **设置面三处消费 `supportsVertical()`**（选中 bar 为轨时生效，互不删除用户
+  配置）：`BarWidgetPickerPopup` `blockedOrientation`（复用 blockedSingleton
+  模式：block 图标 + subtext）、`BarLaneSection` 在册行 subtitle 链追加说明、
+  `BarWidgetPage` `editingOnRail` capability 提示行（PreferenceInfo）。
+  **引擎零消费**——`BarContent` 不读能力数据（`test_d4g` 反向钉死），装载
+  不变，批三语法落地前轨上照挂现状。
+- **文案**：zh_CN 三键（「竖向状态栏」「这个部件还没有竖向形态」「竖向状态栏上
+  暂不可用」）；en 走键名回退（en_US.toml 只承载复数特例的既有形态）。
+- **probe**：`d4gCatalog` IPC 节（catalog 数据级断言：17 行分类、词表闭合、
+  auditVerdict、逐行 vertical⟺mode 配对）+ `probe-bar.sh` 采集/report.d4g
+  接线；设置面禁用手感本身归实机。
+- **验证**：`tests/shell/test_d4g_bar_config.py` 11 例绿 + bar 系定向回归
+  250 例绿（d4a–f/end4/island/resources/manifests）；会话 probe exit=0 全绿
+  零 logErrors（d4g 节 + vertical 六例 / windowProbe 往返 / d4a–f / b96 /
+  b97 全部回归）；qml-format 归一（BarLaneSection 含 HEAD 既有漂移两处随改动
+  文件契约归一，如实在案）。
+- **环境阻断（如实报告）**：qml-lint 仍不可用——Quickshell 针对 Qt 6.12.0
+  构建、系统 Qt 已升 6.12.1（包需重编，承批一）；由运行态 probe 零 logErrors
+  与契约测试覆盖，不视为通过。
+- **存量发现（非本批引入，HEAD stash 复现归属 D4f）**：`test_i18n_catalog`
+  2 处失败——D4f 设置面重排遗留 16 个 I18n.tr 字面量缺 zh 键（"Margins,
+  spacing, and content scaling"/"Structure"/"Bar backplate"/"Lane pill"/
+  "Material tint"/"Widget style"/"Capsule radius" 等）+ 4 个 D-7 退役死键
+  （"Borderless mode"/"Corner radius"/"Corner style"/"Show background"）。
+  归 D4f 清账，未顺手修。
+- **未验证（作者实机）**：picker 禁用与说明手感、在册行标注、实例页提示行
+  视觉；轨上 activeWindow/media 裸图标面维持现状的观感确认。
+
+## D4g 批三：竖向岛紧凑面 + clock 轨面升级（2026-11-28 实现落地）
+
+- **批二勘误（证据拨正）**：roadmap「clock 与 systemMonitor 没有竖向处理」
+  与代码不符——两者自 B9.4 起即有轨面（`BarWidgetSwitcher/Area` 换轴的
+  colDefault/colMaterial：clock 时间分段竖排、systemMonitor 五仪表竖列），
+  probe centerOnly 场景轨上 clock 早已渲染。批二按 roadmap 钉的「无轨面」
+  判定随之修正：island/clock/systemMonitor → 轨可用（stack），「缺
+  verticalMode = 无轨面」协议保留（现行 17 部件全部轨可用，判定空集待未来
+  部件）；`test_d4g` EXPECTED_CAPABILITY 与 probe `d4gCatalog` 判定同步翻转，
+  `test_island_end4`/`test_bar_end4` 的过滤钉随形态升级。
+- **竖向岛**：撤销 end4 的轨上岛过滤（`BarContent.filterLayout` 的
+  `if (root.vertical)` 块退役）——岛作为 middle lane 成员在轨上装载。pill
+  沿轨生长：宽 = 轨厚 `railCrossSize`（`resolvedVerticalBarWidth`），高 =
+  活动面沿轨长度 `railPillLength`（各 provider 带 `railLength`，idle 经
+  `idleRailContentLength` 回调上报，2× 轨厚为上报前下限）；整胶囊
+  `min(w,h)/2` 代 dux 贴边角拆分（岛住 middle lane 不贴边）；宽/高动画各随
+  己轴（`Behavior enabled` 门）；`x:0/y:0` 显式定位（禁条件锚）。四面 column
+  变体（dux `compactColumn`/`pillTarget(along, cross)`/SystemLevelCompact
+  `verticalFace` 血统）：idle 三段竖排（头像上/`ClockContent` vertical 卫星
+  中/状态图标列下，inline component 复用三件套）、OSD 图标上+数值下、媒体
+  封面上+播放键下（文字/控制/频谱半边 `!di.vertical` 门控为行面专属）、会话
+  四动作竖排（`ActionDelegate` inline component）、通知图标面（文本面挂窗口
+  增长基建）、电池图标+百分数（**修一个 Component 双根——单根约束下编译
+  empty，包 Item 壳**）；badges 行仍横面专属。
+- **clock 轨面升级**：caelestia `modules/bar/components/Clock.qml` Fork &
+  Trim 换血 colDefault/colMaterial——单 `RailClockFace` inline component
+  （`materialSkin` 分色），日期块（weekday/日/分隔线，`showDate` 轴门控）+
+  HH/MM 逐行 TextMetrics 光学匹配（`railLineScale`：`fontFor` 血统，窄行最多
+  +5%、"11" 固定 +15%）+ am/pm 行；dateFormat 长格式仍行面专属。两处对原件
+  偏离如实登记：fit 阶段（`railFitScale`，轨厚 28–64 轴、基号向最宽行收缩，
+  原件内宽固定充裕；内边距预算 8px）与像素缩放代可变字体 width 轴（钟体可
+  配置不保证 variable）。退役失去消费者的 `hasAmPm`。
+- **顺手修复（D4e 引入的存量损坏）**：`NetworkSpeed.qml` colDefault 分支
+  `BarScale.fontFor(root.widgetBar)For(root.widgetBar)` 重复尾缀——竖排分支
+  语法错误（该文件竖面会 compiled empty），删冗余尾缀。归属 D4e 引入、批三
+  轨面工作触碰时发现，如实在案。
+- **probe**：`d4gCatalog` 判定翻转（17 全轨可用 + auditVerdict）；
+  probe-bar.sh 竖排段增 `d4g_rail_state` 采集（left/floating/default 实况：
+  idle 紧凑胶囊 + `ipc osd volume` 触发 OSD 轨面，用后复位）；竖排 default
+  场景判定翻转（middle == ["island"]、岛宽 = 轨厚、高 > 轨厚、沿轨生长）；
+  windowDump 竖排判定取条目对象 `widgetId`（layout() 与 windowDump 形态不
+  同，第一版判定取错形态——两轮 probe 才校准，如实在案）。
+- **验证**：契约 286 例绿（d4a–g/end4/island/resources/manifests/ai_specs；
+  i18n 2 处失败仍为批二登记的 D4f 存量，未顺手修）；qml-format 14 文件过；
+  **会话 probe exit=0 全绿零 logErrors**——d4g 节（17 全轨可用 + rail：
+  idle 36×132 沿轨居中生长、OSD 实况触发 36×76）+ vertical 六例（default
+  场景 middle=[island]、centerOnly=[clock]）+ windowProbe 翻边往返零残留 +
+  osd/keyboardOsd/idleFace/islandRestored/d4f/b96/b97/tray/d1/d2 全部回归。
+  过程实录：第一轮 DynamicIsland 编译失败（battery 组件双根），Loader
+  status 3 + qs 日志 `Expected token '}'`（626:1）定位——一处是双根、一处是
+  重构吞掉 pill 收尾括号，qmlformat/括号计数脚本兜底（qmllint 仍被 Qt 版本
+  阻断，见批一）。
+- **未验证（作者实机）**：轨上岛 idle/OSD 面观感与手感（132 长度的时钟卫星
+  视觉、OSD 换装节奏）、clock caelestia 堆叠轨宽适配实观、媒体/会话轨面
+  （probe 契约钉 + 实况未覆盖：媒体面无播放器不出、会话面需 diSessionOpen
+  触发）、SystemIcons 轨面未动（批二维持）。

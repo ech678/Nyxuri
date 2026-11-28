@@ -31,23 +31,21 @@ MouseArea {
 
     onClicked: mouse => {
         if (mouse.button === Qt.LeftButton && root.clickForDetails)
-            networkPopup.active = !networkPopup.active
+            networkPopup.active = !networkPopup.active;
     }
 
     function formatRate(rate, compact) {
-        const units = compact
-            ? ["B", "K", "M", "G"]
-            : ["B/s", "KB/s", "MB/s", "GB/s"]
-        let value = Math.max(0, Number(rate) || 0)
-        let unitIndex = 0
+        const units = compact ? ["B", "K", "M", "G"] : ["B/s", "KB/s", "MB/s", "GB/s"];
+        let value = Math.max(0, Number(rate) || 0);
+        let unitIndex = 0;
 
         while (value >= 1024 && unitIndex < units.length - 1) {
-            value /= 1024
-            unitIndex++
+            value /= 1024;
+            unitIndex++;
         }
 
-        const precision = unitIndex > 0 && value < 100 ? 1 : 0
-        return `${value.toFixed(precision)}${compact ? "" : " "}${units[unitIndex]}`
+        const precision = unitIndex > 0 && value < 100 ? 1 : 0;
+        return `${value.toFixed(precision)}${compact ? "" : " "}${units[unitIndex]}`;
     }
 
     TextMetrics {
@@ -70,9 +68,7 @@ MouseArea {
 
         MaterialSymbol {
             text: speedLine.iconName
-            iconSize: (root.vertical
-                ? NexusStyle.font.labelSmall
-                : NexusStyle.font.bodySmall) * BarScale.iconFor(root.widgetBar)
+            iconSize: (root.vertical ? NexusStyle.font.labelSmall : NexusStyle.font.bodySmall) * BarScale.iconFor(root.widgetBar)
             color: speedLine.accentColor
             opacity: speedLine.rate > 0 ? 1 : 0.45
 
@@ -86,9 +82,11 @@ MouseArea {
             horizontalAlignment: Text.AlignRight
             text: speedLine.rateText
             color: Appearance.colors.colOnLayer1
-            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar)For(root.widgetBar)
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar)
             font.weight: Font.Medium
-            font.features: { "tnum": 1 }
+            font.features: {
+                "tnum": 1
+            }
         }
     }
 

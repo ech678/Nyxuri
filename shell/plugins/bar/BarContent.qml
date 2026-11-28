@@ -12,11 +12,13 @@
 //
 // D4g single host: the former VerticalBarContent (end4's vertical twin) is
 // merged back — one host lays the same lane tree out as a row or a rail,
-// through the AxisContext built off the bar's own axes.position. The rail
-// keeps end4's rail-specific behaviour verbatim (island filtered out, the
-// vertical spacing ladder, no edge scroll strips yet — D4h); every geometry
-// binding below is axis-branch explicit, because a binding that yields
-// `undefined` never clears a QML anchor (see Bar.qml's flip regression note).
+// through the AxisContext built off the bar's own axes.position. 批一 kept
+// end4's rail-specific behaviour verbatim (vertical spacing ladder, no edge
+// scroll strips yet — D4h); 批三 replaces the last of it: the island now
+// mounts on the rail as the compact face growing along the track (D-9),
+// so the rail-only island filter is gone. Every geometry binding below is
+// axis-branch explicit, because a binding that yields `undefined` never
+// clears a QML anchor (see Bar.qml's flip regression note).
 
 import QtQuick
 import QtQuick.Layouts
@@ -273,8 +275,9 @@ Item {
     // truth. filterLayout keeps the system gates (no tray host without
     // items, no battery widget without a battery) and now also drops
     // entries the user disabled — a disabled widget is not instantiated,
-    // so its lane collapses like any other hidden widget. The rail has no
-    // island shape yet (D4g batch 3), so the island stays a row-only member.
+    // so its lane collapses like any other hidden widget. 批三: the island
+    // mounts on the rail as the compact face, so the old rail-only island
+    // drop is gone (end4's behaviour retired with the batch).
     function filterLayout(entries) {
         let filtered = Array.from(entries ?? []).filter(entry => entry && entry.enabled !== false);
         // B9.3: the island is a layout member, not a second config gate.
@@ -282,8 +285,6 @@ Item {
             filtered = filtered.filter(entry => entry.widgetId !== "tray");
         if (!root.batteryAvailable)
             filtered = filtered.filter(entry => entry.widgetId !== "battery");
-        if (root.vertical)
-            filtered = filtered.filter(entry => entry.widgetId !== "island");
         return filtered;
     }
 

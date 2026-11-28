@@ -23,6 +23,9 @@ ColumnLayout {
     readonly property string overflowKey: root.zone + "OverflowMode"
     readonly property string overflowMode: PersonalizationConfig.barAxes[root.overflowKey] ?? "auto"
     readonly property bool overflowModified: root.overflowMode !== "auto"
+    // D4g batch two: the lane editor edits the selected bar; its orientation
+    // decides whether rail-less widgets get the capability note.
+    readonly property bool barVertical: PersonalizationConfig.barAxes.position === "left" || PersonalizationConfig.barAxes.position === "right"
 
     signal addRequested(string zone)
     signal configureRequested(string entryUid)
@@ -36,6 +39,8 @@ ColumnLayout {
             parts.push(I18n.tr("Always in overflow"));
         else if (ov.overflowMode === "bar")
             parts.push(I18n.tr("Pinned in bar"));
+        if (root.barVertical && !root.widgetCatalog.supportsVertical(entry.widgetId))
+            parts.push(I18n.tr("Not available on a vertical bar"));
         if (entry.widgetId === "spacer")
             parts.push(Math.round(BarWidgetDefaults.option("spacer", entry, "size")) + " px");
         return parts.join(" • ");
@@ -134,9 +139,7 @@ ColumnLayout {
             last: true
             Layout.fillWidth: true
             implicitHeight: emptyLabel.implicitHeight + NexusStyle.padding.medium * 2
-            color: root.dragCoordinator && root.dragCoordinator.active && root.dragCoordinator.targetZone === root.zone
-                ? Appearance.m3colors.m3secondaryContainer
-                : Appearance.m3colors.m3surfaceContainer
+            color: root.dragCoordinator && root.dragCoordinator.active && root.dragCoordinator.targetZone === root.zone ? Appearance.m3colors.m3secondaryContainer : Appearance.m3colors.m3surfaceContainer
 
             StyledText {
                 id: emptyLabel
@@ -218,15 +221,7 @@ ColumnLayout {
                                 if (!root.dragCoordinator)
                                     return;
                                 const globalPt = dragHandle.mapToItem(null, mouse.x, mouse.y);
-                                root.dragCoordinator.beginDrag(
-                                    widgetRow.modelData.uid,
-                                    widgetRow.modelData.widgetId,
-                                    root.widgetCatalog.displayName(widgetRow.catalogItem),
-                                    widgetRow.catalogItem.icon || "widgets",
-                                    root.zone,
-                                    widgetRow.index,
-                                    globalPt
-                                );
+                                root.dragCoordinator.beginDrag(widgetRow.modelData.uid, widgetRow.modelData.widgetId, root.widgetCatalog.displayName(widgetRow.catalogItem), widgetRow.catalogItem.icon || "widgets", root.zone, widgetRow.index, globalPt);
                             }
                             onPositionChanged: mouse => {
                                 if (!root.dragCoordinator || !root.dragCoordinator.active)

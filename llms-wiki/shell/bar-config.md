@@ -409,9 +409,57 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   竖向 spacing ladder（`resolvedBarSpacing(true, axes)`）、融合角/胶囊壳半径
   按「镜像面朝屏幕附着边」逐角轴分支（行：top/bottom，轨：left/right）。
   边缘滚动条在轨上零延展（轨向滚动动作归 D4h）。
-- 批次：批一单宿主并回（本节）→ 批二部件能力目录（`orientations` +
-  `verticalMode`）→ 批三 clock/systemMonitor 竖向语法 + 竖向岛 → 批四竖置
-  默认布局 + 避让审计（`shell.qml` 遗留全局 `bar.vertical` 消费一并收）。
+- 批次：批一单宿主并回（本节）→ 批二部件能力目录（本节批二段）→ 批三
+  clock/systemMonitor 竖向语法 + 竖向岛 → 批四竖置默认布局 + 避让审计
+  （`shell.qml` 遗留全局 `bar.vertical` 消费一并收）。
+- **批二（部件能力目录，2026-11-28）**：设置面据此对轨禁用并说明，引擎零消费。
+  - `ui/BarWidgetCatalog.qml` 每条目声明 `orientations`（横/竖支持）；竖向可用的
+    再加 `verticalMode`，词表闭合 D-9 三语法（`stack` 沿轨重排/`rotate` ±90°/
+    `iconPopup` 轨上图标面 + 弹层）。**缺 `verticalMode` = 无轨面判定**，无第四值。
+  - 分类是逐部件审计结果（今日轨上实态，B9.4 轨化遗产，非愿望）：`stack` =
+    tray/systemIcons/utilButtons+quickSettings/workspaces/visualizer/weather/
+    separator/spacer/launcherButton/powerButton；`rotate` = battery（进度条
+    -90°）；`iconPopup` = activeWindow/media（轨上是裸图标退化面——dux 竖向
+    退化基线，悬停弹层半边未建）；无轨面 = island（轨上被 middle lane 过滤，
+    紧凑面归批三）/clock（批三首位）/systemMonitor（表盘未适配轨宽）。
+  - 设置面三处消费 `supportsVertical()`（选中 bar 为轨时生效）：添加 picker
+    禁用（block 图标 + 「竖向状态栏上暂不可用」）、`BarLaneSection` 在册行
+    subtitle 追加说明、`BarWidgetPage` 实例页 capability 提示行；**不删除用户
+    配置，装载不变**（批三语法落地前轨上照挂现状）。
+  - helper `supportsVertical(id)` / `verticalMode(id)` 纯函数读目录声明；
+    probe `d4gCatalog` 节做数据级断言（分类判定 + 词表闭合 + 逐行
+    vertical⟺mode 配对），设置面禁用手感归作者实机。
+- **批三（竖向岛紧凑面 + clock 轨面升级，2026-11-28）**：
+  - **竖向岛**：撤销 end4 的轨上岛过滤——岛作为 middle lane 成员在轨上装载，
+    pill 沿轨生长（宽 = 轨厚 `resolvedVerticalBarWidth`，高 = 活动面沿轨长度
+    `railPillLength`），整胶囊 `min(w,h)/2`，宽/高动画各随己轴（`Behavior
+    enabled` 门，禁条件锚）。四面 column 变体（dux `compactColumn` /
+    `pillTarget(along, cross)` 血统；岛住 middle lane，用整胶囊代 dux 贴边角
+    拆分）：idle = 头像上 / 时钟卫星（`ClockContent` vertical，edge =
+    `axes.position`）中 / 状态图标列下，长度经 `idleRailContentLength` 回调
+    上报（同 `idleTextContentWidth` 模式）；OSD = 图标上 + 数值下（dux
+    `SystemLevelCompact` `verticalFace` 血统，无滑杆故无轨道）；媒体 = 封面上
+    + 播放键下，文字/控制/频谱半边是行面专属（挂窗口增长基建）；会话 = 四动作
+    竖排（`ActionDelegate` inline component 复用）；通知 = 图标紧凑面（文本面
+    同窗口增长基建）；电池警报 = 图标 + 百分数。badges 行仍横面专属。
+  - **clock 轨面升级**：caelestia `modules/bar/components/Clock.qml` Fork &
+    Trim 换血 colDefault/colMaterial——单 `RailClockFace` inline component
+    （`materialSkin` 分色），日期块（weekday/日/分隔线，`showDate` 轴门控）+
+    HH/MM 逐行 TextMetrics 光学匹配（`fontFor` 血统：窄行最多 +5%、"11" 固定
+    +15%）+ am/pm 行；dateFormat 长格式仍是行面专属。两处对原件的偏离如实
+    登记：fit 阶段（轨厚是 28–64 轴，基号向最宽行收缩，原件内宽固定充裕）与
+    像素缩放代替可变字体 width 轴（钟体可配置不保证 variable）。
+  - **systemMonitor**：轨面早已存在（五仪表竖排 colDefault/colMaterial），
+    批三仅修正目录判定，无新语法。
+  - **目录判定修正（批二勘误）**：clock/systemMonitor/island → 轨可用
+    （stack）——批二按 roadmap「clock 与 systemMonitor 没有竖向处理」钉的判定
+    与代码不符（两者都有 B9.4 轨面），批三以证据拨正；「缺 verticalMode = 无
+    轨面」协议保留（现行 17 部件全部轨可用，该判定空集待未来部件使用）。
+  - 机器证据：契约测试 `test_d4g_bar_config.py`（判定翻转 + IslandRailFaceTest
+    批三钉）+ bar 系 286 例绿；probe `d4gCatalog` 判定翻转 + 竖排 rail 实况节
+    （default 场景 middle=[island]、idle 紧凑胶囊 36×132 沿轨居中、`ipc osd
+    volume` 触发 OSD 轨面 36×76）；会话 probe exit=0 全绿零 logErrors。
+    实机项归作者：轨上岛四面观感与手感、clock 堆叠轨宽适配实观。
 
 ## 证据
 

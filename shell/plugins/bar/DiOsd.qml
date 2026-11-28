@@ -29,7 +29,38 @@ Item {
         }
     }
 
+    // D4g batch three: the rail face stacks icon over value along the track
+    // (dux SystemLevelCompact `verticalFace` lineage — dux adds a stacked
+    // DSlider track; ours has no slider, so the readout is icon + value).
+    ColumnLayout {
+        visible: di.vertical
+        anchors.centerIn: parent
+        spacing: 4
+
+        MaterialShapeWrappedMaterialSymbol {
+            Layout.alignment: Qt.AlignHCenter
+            wrappedShape: MaterialShapeCanvas.Shape.Cookie12Sided
+            color: Appearance.colors.colPrimary
+            colSymbol: Appearance.colors.colOnPrimary
+            text: di.iconForProviderId("osd")
+            iconSize: (di.isMaterial ? 20 : 16) * BarScale.iconFor(di.widgetBar)
+            fill: 1
+            padding: 4
+        }
+
+        StyledText {
+            Layout.alignment: Qt.AlignHCenter
+            text: di.osdValueText()
+            font.pixelSize: (di.isMaterial ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium) * BarScale.fontFor(di.widgetBar)
+            font.features: {
+                "tnum": 1
+            }
+            color: Appearance.colors.colOnLayer0
+        }
+    }
+
     RowLayout {
+        visible: !di.vertical
         anchors {
             fill: parent
             leftMargin: di.isMaterial ? 0 : 4

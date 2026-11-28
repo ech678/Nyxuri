@@ -37,6 +37,11 @@ ShellRoot {
     // phase must stand down first (one production instance at a time).
     property bool windowMode: false
 
+    // D4g batch two: the capability catalog the settings faces consume.
+    BarWidgetCatalog {
+        id: catalogProbe
+    }
+
     Item {
         id: stage
 
@@ -72,6 +77,7 @@ ShellRoot {
             width: 220
             height: 32
             property real pillHeight: 32
+            property bool vertical: false
             property bool isMaterial: PersonalizationConfig.barTint
             property var widgetBar: null
             property var activePlayer: null
@@ -1838,6 +1844,34 @@ ShellRoot {
                 "d8BonusesRetired": d8BonusesRetired,
                 "radiusVocabulary": radiusVocabulary,
                 "restoredFloating": BarStylePresets.currentPreset(PersonalizationConfig.barAxes) === "floating"
+            });
+        }
+
+        // D4g batch three: the rail face is the compact pill growing along
+        // the track — every widget id is rail-capable now (clock and
+        // systemMonitor always had B9.4-era rail faces; the roadmap claim
+        // was wrong and 批二 pinned it, so this verdict corrects it).
+        function d4gCatalog(): string {
+            const ids = BarWidgetDefaults.IDS;
+            const rows = {};
+            let capable = 0;
+            for (let i = 0; i < ids.length; i += 1) {
+                const id = ids[i];
+                const supported = catalogProbe.supportsVertical(id);
+                if (supported)
+                    capable += 1;
+                rows[id] = {
+                    "vertical": supported,
+                    "mode": catalogProbe.verticalMode(id)
+                };
+            }
+            return JSON.stringify({
+                "count": ids.length,
+                "capable": capable,
+                "modes": catalogProbe.verticalModes,
+                "rows": rows,
+                "vocabularyClosed": catalogProbe.verticalModes.join(",") === "stack,rotate,iconPopup",
+                "auditVerdict": catalogProbe.supportsVertical("clock") && catalogProbe.supportsVertical("island") && catalogProbe.supportsVertical("systemMonitor") && catalogProbe.verticalMode("battery") === "rotate" && catalogProbe.verticalMode("tray") === "stack" && catalogProbe.verticalMode("activeWindow") === "iconPopup" && catalogProbe.verticalMode("media") === "iconPopup"
             });
         }
 

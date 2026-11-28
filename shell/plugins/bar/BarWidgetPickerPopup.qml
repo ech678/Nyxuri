@@ -13,6 +13,10 @@ MaterialDialog {
 
     property string targetZone: "left"
     readonly property bool islandTaken: PersonalizationConfig.anyBarUsesWidget("island")
+    // D4g batch two: the picker targets the selected bar, so a rail disables
+    // the widgets the catalog verdict gives no rail face. Settings-side
+    // only — the engine keeps mounting whatever the lane holds.
+    readonly property bool barVertical: PersonalizationConfig.barAxes.position === "left" || PersonalizationConfig.barAxes.position === "right"
 
     signal widgetSelected(string widgetId, string targetZone)
 
@@ -49,12 +53,14 @@ MaterialDialog {
                             required property var modelData
 
                             readonly property bool blockedSingleton: modelData.value === "island" && root.islandTaken
+                            readonly property bool blockedOrientation: root.barVertical && !widgetCatalog.supportsVertical(modelData.value)
+                            readonly property bool blocked: blockedSingleton || blockedOrientation
 
                             icon: modelData.icon || "widgets"
                             text: modelData.label
-                            subtext: blockedSingleton ? I18n.tr("Already placed on a bar") : ""
-                            trailingIcon: blockedSingleton ? "block" : "add"
-                            enabled: !blockedSingleton
+                            subtext: blockedSingleton ? I18n.tr("Already placed on a bar") : blockedOrientation ? I18n.tr("Not available on a vertical bar") : ""
+                            trailingIcon: blocked ? "block" : "add"
+                            enabled: !blocked
                             onClicked: {
                                 root.widgetSelected(modelData.value, root.targetZone);
                                 root.close();

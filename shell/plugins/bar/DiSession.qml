@@ -8,67 +8,110 @@ Item {
     id: diSessionRoot
     required property Item di
     anchors.fill: parent
-    
+
     readonly property var actions: [
-        { icon: "lock",              label: Translation.tr("Lock"),     action: () => ActionGateway.powerAction("lock", "island:session") },
-        { icon: "dark_mode",         label: Translation.tr("Sleep"),    action: () => ActionGateway.powerAction("suspend", "island:session") },
-        { icon: "restart_alt",       label: Translation.tr("Reboot"),   action: () => ActionGateway.powerAction("reboot", "island:session") },
-        { icon: "power_settings_new", label: Translation.tr("Shutdown"), action: () => ActionGateway.powerAction("poweroff", "island:session") }
+        {
+            icon: "lock",
+            label: Translation.tr("Lock"),
+            action: () => ActionGateway.powerAction("lock", "island:session")
+        },
+        {
+            icon: "dark_mode",
+            label: Translation.tr("Sleep"),
+            action: () => ActionGateway.powerAction("suspend", "island:session")
+        },
+        {
+            icon: "restart_alt",
+            label: Translation.tr("Reboot"),
+            action: () => ActionGateway.powerAction("reboot", "island:session")
+        },
+        {
+            icon: "power_settings_new",
+            label: Translation.tr("Shutdown"),
+            action: () => ActionGateway.powerAction("poweroff", "island:session")
+        }
     ]
 
     property int focusedIndex: 0
 
     function confirmCurrent() {
-        diSessionRoot.actions[diSessionRoot.focusedIndex].action()
-        GlobalStates.diSessionOpen = false
+        diSessionRoot.actions[diSessionRoot.focusedIndex].action();
+        GlobalStates.diSessionOpen = false;
     }
 
     function close() {
-        GlobalStates.diSessionOpen = false
+        GlobalStates.diSessionOpen = false;
     }
 
-    onVisibleChanged: if (visible) diSessionRoot.forceActiveFocus()
-    Component.onCompleted: if (diSessionRoot.visible) diSessionRoot.forceActiveFocus()
+    onVisibleChanged: if (visible)
+        diSessionRoot.forceActiveFocus()
+    Component.onCompleted: if (diSessionRoot.visible)
+        diSessionRoot.forceActiveFocus()
 
+    // D4g batch three: the rail face stacks the same four actions along the
+    // track (dux DestinationCompact `compactColumn` lineage).
     RowLayout {
         anchors.centerIn: parent
         spacing: 8
+        visible: !di.vertical
 
         Repeater {
             model: diSessionRoot.actions
-            delegate: Item {
-                id: actionDelegate
-                required property var modelData
-                required property int index
-                implicitWidth: 34
-                implicitHeight: 34
+            delegate: ActionDelegate {}
+        }
+    }
 
-                readonly property bool isFocused: diSessionRoot.focusedIndex === actionDelegate.index
+    ColumnLayout {
+        anchors.centerIn: parent
+        spacing: 8
+        visible: di.vertical
 
-                MaterialShapeWrappedMaterialSymbol {
-                    anchors.fill: parent
-                    wrappedShape: MaterialShapeCanvas.Shape.Cookie12Sided
-                    text: actionDelegate.modelData.icon
-                    iconSize: 18 * BarScale.iconFor(di.widgetBar)
-                    fill: actionDelegate.isFocused ? 1 : 0
-                    padding: 4
-                    color: actionDelegate.isFocused ? Appearance.colors.colPrimary : Appearance.colors.colLayer1
-                    colSymbol: actionDelegate.isFocused ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+        Repeater {
+            model: diSessionRoot.actions
+            delegate: ActionDelegate {}
+        }
+    }
 
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Behavior on colSymbol { ColorAnimation { duration: 150 } }
+    component ActionDelegate: Item {
+        id: actionDelegate
+        required property var modelData
+        required property int index
+        implicitWidth: 34
+        implicitHeight: 34
+
+        readonly property bool isFocused: diSessionRoot.focusedIndex === actionDelegate.index
+
+        MaterialShapeWrappedMaterialSymbol {
+            anchors.fill: parent
+            wrappedShape: MaterialShapeCanvas.Shape.Cookie12Sided
+            text: actionDelegate.modelData.icon
+            iconSize: 18 * BarScale.iconFor(di.widgetBar)
+            fill: actionDelegate.isFocused ? 1 : 0
+            padding: 4
+            color: actionDelegate.isFocused ? Appearance.colors.colPrimary : Appearance.colors.colLayer1
+            colSymbol: actionDelegate.isFocused ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer1
+
+            Behavior on color {
+                ColorAnimation {
+                    duration: 150
                 }
+            }
 
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onEntered: diSessionRoot.focusedIndex = actionDelegate.index
-                    onClicked: {
-                        diSessionRoot.focusedIndex = actionDelegate.index
-                        diSessionRoot.confirmCurrent()
-                    }
+            Behavior on colSymbol {
+                ColorAnimation {
+                    duration: 150
                 }
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onEntered: diSessionRoot.focusedIndex = actionDelegate.index
+            onClicked: {
+                diSessionRoot.focusedIndex = actionDelegate.index;
+                diSessionRoot.confirmCurrent();
             }
         }
     }

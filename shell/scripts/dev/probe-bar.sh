@@ -539,6 +539,12 @@ if ipc d4fStyle >/dev/null 2>&1; then
     d4f_style_state=$(ipc d4fStyle 2>/dev/null || true)
 fi
 
+# D4g batch two: rail capability catalog (the settings faces' data source).
+d4g_catalog_state=""
+if ipc d4gCatalog >/dev/null 2>&1; then
+    d4g_catalog_state=$(ipc d4gCatalog 2>/dev/null || true)
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -593,11 +599,13 @@ else
 fi
 
 # B9.4 vertical bar: left and right edges, non-material and material capsule
-# paths, then a populated centre-only scene. The island is filtered out of the
-# vertical layout, so the default scene must evaluate to an empty middle lane.
+# paths, then a populated centre-only scene. 批三: the island mounts on the
+# rail as the compact face, so the default scene's middle lane is the island
+# pill grown along the track (it was end4's filtered-out empty lane).
 vertical_file="${tmp}/vertical.tsv"
 : >"${vertical_file}"
 margins_state=""
+d4g_rail_state=""
 for edge in left right; do
     if ! ipc edge "${edge}" >/dev/null; then
         printf 'error: could not switch the bar to the %s edge\n' "${edge}" >&2
@@ -605,7 +613,7 @@ for edge in left right; do
     fi
     for style in floating materialHug; do
         ipc stylePreset "${style}" >/dev/null || true
-        ipc scene default >/dev/null || true
+        ipc scene default >/dev/null 2>&1 || true
         ipc reload >/dev/null || true
         sleep 0.7
         printf '%s\t%s\tdefault\t%s\n' "${edge}" "${style}" "$(ipc layout)" >>"${vertical_file}"
@@ -616,6 +624,41 @@ for edge in left right; do
     sleep 1.4
     printf '%s\t%s\tcenterOnly\t%s\n' "${edge}" "floating" "$(ipc layout)" >>"${vertical_file}"
 done
+# D4g batch three: the island rail faces — the idle compact pill on the
+# default scene, then the OSD face triggered on the same rail (left edge,
+# floating). Runtime evidence for the face that is always present; the
+# session/media rail faces ride the contract pins + the real-machine pass.
+if ipc edge left >/dev/null 2>&1; then
+    ipc stylePreset floating >/dev/null 2>&1 || true
+    ipc scene default >/dev/null 2>&1 || true
+    ipc reload >/dev/null 2>&1 || true
+    sleep 1.0
+    d4g_rail_idle=$(ipc layout 2>/dev/null || true)
+    ipc osd volume >/dev/null 2>&1 || true
+    sleep 0.5
+    d4g_rail_osd=$(ipc layout 2>/dev/null || true)
+    ipc osd "" >/dev/null 2>&1 || true
+    d4g_rail_state=$(python3 - "${d4g_rail_idle}" "${d4g_rail_osd}" <<'PY' 2>/dev/null || true
+import json, sys
+try:
+    idle, osd = json.loads(sys.argv[1]), json.loads(sys.argv[2])
+except Exception:
+    print("{}")
+    raise SystemExit
+print(json.dumps({
+    "idle": {
+        "middle": (idle.get("lanes") or {}).get("middle"),
+        "island": idle.get("island"),
+        "islandState": idle.get("islandState"),
+    },
+    "osd": {
+        "island": osd.get("island"),
+        "islandState": osd.get("islandState"),
+    },
+}))
+PY
+)
+fi
 # B9.5 margins ride the same pure geometry the window binds.
 if ipc edge top >/dev/null 2>&1; then
     ipc stylePreset floating >/dev/null 2>&1 || true
@@ -754,7 +797,7 @@ ipc stylePreset floating >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" "${d4g_catalog_state}" "${d4g_rail_state}" <<'PY'
 import json
 import re
 import sys
@@ -777,7 +820,7 @@ import sys
  d4d_overflow_resolve_state, d4d_overflow_cramped_state,
  d4d_overflow_reset_state, d4e_store_state, d4e_signature_state, d4e_migration_v6_state,
  d4e_windows_two_state, d4e_windows_off_state, d4e_windows_clean_state,
- d4f_style_state) = sys.argv[1:75]
+ d4f_style_state, d4g_catalog_state, d4g_rail_state) = sys.argv[1:77]
 
 
 def load_tsv(path):
@@ -919,20 +962,25 @@ for key, entry in vertical_rows:
     edge, style, scene_name = key
     geometry = entry.get("geometry") or {}
     lanes = entry.get("lanes") or {}
+    island = entry.get("island")
     row_ok = bool(
         entry.get("ok") is True
         and entry.get("vertical") is True
         and entry.get("edge") == edge
-        and entry.get("island") is None
         and isinstance(geometry.get("width"), (int, float))
         and geometry.get("width", 0) > 0
         and abs(geometry.get("height", 0) - 1440) <= 1
     )
     if scene_name == "default":
-        row_ok = row_ok and not lanes.get("middle") and geometry.get("topHeight", 0) > 0 and geometry.get("bottomHeight", 0) > 0
+        # 批三: the island mounts on the rail as the compact face — the
+        # middle lane carries it and the pill grows along the track.
+        row_ok = row_ok and lanes.get("middle") == ["island"] and island is not None \
+            and abs((island or {}).get("width", 0) - geometry.get("width", 0)) <= 1 \
+            and (island or {}).get("height", 0) > (island or {}).get("width", 0) \
+            and geometry.get("topHeight", 0) > 0 and geometry.get("bottomHeight", 0) > 0
         widths[(edge, style)] = geometry.get("width")
     else:
-        row_ok = row_ok and lanes.get("middle") == ["clock"] and geometry.get("centerHeight", 0) > 0
+        row_ok = row_ok and lanes.get("middle") == ["clock"] and island is None and geometry.get("centerHeight", 0) > 0
     vertical_cases.append({
         "edge": edge,
         "preset": style,
@@ -1130,7 +1178,9 @@ for key, entry in window_rows:
             and abs(content_box.get("offsetY", -1)) <= 1
             and lanes.get("top", 0) > 0
             and lanes.get("bottom", 0) > 0
-            and entry.get("middle") == []
+            # 批三: the island is a rail member now (windowDump reports
+            # entry objects, layout() reports id strings).
+            and [e.get("widgetId") for e in entry.get("middle") or []] == ["island"]
         )
     else:
         # top edge sits at y=0, bottom edge below the corner-rounding band.
@@ -1670,12 +1720,42 @@ d4f_ok = bool(
     and d4f_style.get("restoredFloating") is True
 )
 
+d4g_catalog = json.loads(d4g_catalog_state) if d4g_catalog_state.strip() else {}
+_d4g_rows = d4g_catalog.get("rows", {})
+d4g_ok = bool(
+    d4g_catalog.get("count") == 17
+    and d4g_catalog.get("capable") == 17
+    and d4g_catalog.get("vocabularyClosed") is True
+    and d4g_catalog.get("auditVerdict") is True
+    and all(row.get("mode") in ("stack", "rotate", "iconPopup") for row in _d4g_rows.values() if row.get("vertical") is True)
+    and all(row.get("mode") == "" for row in _d4g_rows.values() if row.get("vertical") is False)
+)
+
+# 批三: the island rail faces, live on the left rail (floating). The idle
+# compact pill always sits in the middle lane; the OSD face swaps in on
+# trigger with its own along-length.
+d4g_rail = json.loads(d4g_rail_state) if d4g_rail_state.strip() else {}
+_d4g_idle_face = (d4g_rail.get("idle") or {})
+_d4g_osd_face = (d4g_rail.get("osd") or {})
+_d4g_idle_island = _d4g_idle_face.get("island") or {}
+_d4g_osd_island = _d4g_osd_face.get("island") or {}
+d4g_rail_ok = bool(
+    _d4g_idle_face.get("middle") == ["island"]
+    and _d4g_idle_face.get("islandState") == "idle"
+    and _d4g_idle_island.get("visible") is True
+    and abs(_d4g_idle_island.get("width", 0) - 36) <= 0.01
+    and _d4g_idle_island.get("height", 0) > 72
+    and _d4g_osd_face.get("islandState") == "osd"
+    and abs(_d4g_osd_island.get("width", 0) - 36) <= 0.01
+    and abs(_d4g_osd_island.get("height", 0) - 76) <= 0.01
+)
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok and d4g_ok and d4g_rail_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1945,6 +2025,15 @@ report = {
     "d4f": {
         "ok": d4f_ok,
         "style": d4f_style,
+    },
+    "d4g": {
+        "ok": d4g_ok and d4g_rail_ok,
+        "catalog": d4g_catalog,
+        "rail": {
+            "ok": d4g_rail_ok,
+            "idle": _d4g_idle_face,
+            "osd": _d4g_osd_face,
+        },
     },
     "b96": {
         "ok": b96_ok,
