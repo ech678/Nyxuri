@@ -9,15 +9,18 @@ import qs.commons
 import qs.services
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
-    property bool vertical: Config.options.bar.vertical
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
     property real btnSize: 40
     property real btnSpacing: 2
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     // D4b: style/spacing are entry axes (separator), not flat [bar] keys.
     property var widgetEntry: null
     readonly property string style: BarWidgetDefaults.option("separator", root.widgetEntry, "style")
@@ -40,6 +43,6 @@ Item {
         anchors.centerIn: parent
         text: "• "
         color: isMaterial ? Appearance.colors.colPrimary : root.contentColor
-        font.pixelSize: NexusStyle.font.bodyLarge * BarScale.font
+        font.pixelSize: NexusStyle.font.bodyLarge * BarScale.fontFor(root.widgetBar)
     }
 }

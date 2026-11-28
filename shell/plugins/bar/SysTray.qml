@@ -6,27 +6,28 @@ import qs.services
 import qs.commons
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
+    property var widgetEntry: null
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property bool vertical: false
     property bool invertSide: false
     property bool trayOverflowOpen: false
     property bool showSeparator: true
     property bool showOverflowMenu: true
     property var activeMenu: null
-    readonly property bool isOnLeft: Config.options.bar.m3.layouts.leftLayout.includes("sysTray")
-    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
-    // D4b entry axes (tint/hidePassive/showItemId); pin semantics stay
-    // tray-domain shared state in TrayService.
-    property var widgetEntry: null
+    readonly property bool isOnLeft: root.widgetBar ? (root.widgetBar.lanes?.left ?? []).some(e => e.enabled !== false && e.widgetId === "tray") : PersonalizationConfig.barLayoutLeft.includes("tray")
+    readonly property bool isMaterial: BarStyle.isTinted(root.barAxes)
     readonly property bool tintIcons: BarWidgetDefaults.option("tray", root.widgetEntry, "tintIcons")
     readonly property bool showItemId: BarWidgetDefaults.option("tray", root.widgetEntry, "showItemId")
     readonly property bool hidePassive: BarWidgetDefaults.option("tray", root.widgetEntry, "hidePassive")
 
     visible: SystemTray.items.values.length > 0
-    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (isMaterial ? pill.implicitWidth - 4 : gridLayout.implicitWidth)
-    implicitHeight: vertical ? gridLayout.implicitHeight + 6 : Appearance.sizes.barHeight
+    implicitWidth: vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : (isMaterial ? pill.implicitWidth - 4 : gridLayout.implicitWidth)
+    implicitHeight: vertical ? gridLayout.implicitHeight + 6 : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     // The passive filter is a per-instance render decision over the raw
     // membership buckets (TrayService never drops Status.Passive).
@@ -122,8 +123,8 @@ Item {
 
             contentItem: MaterialSymbol {
                 anchors.centerIn: parent
-                iconSize: NexusStyle.icon.small
-                text: Config.options.bar.bottom ? "keyboard_control_key" : "expand_more"
+                iconSize: NexusStyle.icon.small * BarScale.iconFor(root.widgetBar)
+                text: root.barAxes.position === "bottom" ? "keyboard_control_key" : "expand_more"
                 horizontalAlignment: Text.AlignHCenter
                 color: root.isMaterial ? M3Palette.pillInk("sysTray") : Appearance.colors.colOnLayer2
                 rotation: (root.trayOverflowOpen ? 180 : 0) - (90 * root.vertical) + (180 * root.invertSide)
@@ -134,6 +135,7 @@ Item {
 
             StyledPopup {
                 id: overflowPopup
+                widgetBar: root.widgetBar
                 hoverTarget: trayOverflowButton
                 hoverActivates: false
                 closeOnOutsideClick: true
@@ -152,6 +154,7 @@ Item {
                         delegate: SysTrayItem {
                             required property SystemTrayItem modelData
                             item: modelData
+                            widgetBar: root.widgetBar
                             tintIcon: root.tintIcons
                             showItemId: root.showItemId
                             Layout.fillHeight: !root.vertical
@@ -171,6 +174,7 @@ Item {
             delegate: SysTrayItem {
                 required property SystemTrayItem modelData
                 item: modelData
+                widgetBar: root.widgetBar
                 tintIcon: root.tintIcons
                 showItemId: root.showItemId
                 Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter

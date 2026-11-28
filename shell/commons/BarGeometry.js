@@ -1,11 +1,11 @@
-// Shared pure geometry for the bar window (B9.4/B9.5).
+// Shared pure geometry for the bar window (B9.4/B9.5/D4f).
 //
 // Bar.qml binds these values; the runtime probe evaluates the same functions,
 // so the outer-margin and exclusive-zone contract has evidence without a
 // compositor round-trip and without a second copy of the math.
 
-function margins(edge, vertical, edgeMargin, sideMargin, layerGap, autoHide, deadPixel) {
-    const normal = edgeMargin + (autoHide ? 0 : layerGap);
+function margins(edge, vertical, edgeMargin, sideMargin, autoHide, deadPixel) {
+    const normal = edgeMargin;
     const anchoredBottom = edge === "bottom" || vertical;
     const anchoredRight = edge === "right" || !vertical;
     return {
@@ -16,6 +16,14 @@ function margins(edge, vertical, edgeMargin, sideMargin, layerGap, autoHide, dea
     };
 }
 
-function exclusiveZone(vertical, baseBarHeight, baseVerticalBarWidth, cornerStyle, gapsOut, edgeMargin) {
-    return (vertical ? baseVerticalBarWidth : baseBarHeight) + (cornerStyle === 1 ? gapsOut : 0) + (cornerStyle === 2 ? -6 : 0) + ((cornerStyle === 4 || cornerStyle === 5) ? 4 : 0) + edgeMargin;
+// PanelWindow.exclusiveZone is additive to margins[edge] in wlr-layer-shell (Niri),
+// so only thickness + boostExtra + innerMargin belongs here (never edgeMargin,
+// which is already in margins[edge] and would otherwise be counted twice).
+function exclusiveZone(vertical, baseBarHeight, baseVerticalBarWidth, boostExtra, innerMargin) {
+    return (vertical ? baseVerticalBarWidth : baseBarHeight) + (boostExtra || 0) + (innerMargin || 0);
+}
+
+// Total band distance from the screen edge (for ScreenBarLayout avoidance & corner tuck).
+function screenReservation(vertical, baseBarHeight, baseVerticalBarWidth, boostExtra, edgeMargin, innerMargin) {
+    return exclusiveZone(vertical, baseBarHeight, baseVerticalBarWidth, boostExtra, innerMargin) + (edgeMargin || 0);
 }

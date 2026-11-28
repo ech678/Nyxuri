@@ -11,9 +11,9 @@ import qs.commons.i18n
 // BarModulesSection = what lives in it) and the routed island subpage.
 // The island is a bar layout part, so its settings ride this page as the
 // bar.island routed subpage. The drag-to-reorder machinery lives inside
-// BarModulesSection (SortableMultiSelectField + LayoutDragCoordinator
-// overlay); the overlay must not be a child of the scrolling content —
-// NexusPageBase takes a single content child.
+// BarModulesSection (BarLaneSection + BarWidgetPickerPopup +
+// QuickSettingsListCard + drag overlay); the overlay must not be a child of
+// the scrolling content — NexusPageBase takes a single content child.
 Item {
     id: root
 
@@ -30,14 +30,20 @@ Item {
     // subpage is internal (not a manifest route — it is meaningless
     // without a uid).
     property string widgetEditorUid: ""
+    property string pendingIslandSection: ""
 
     function openSection(section) {
         const target = String(section || "overview");
         if (target === "island" || target === "island-clock") {
+            root.pendingIslandSection = target === "island-clock" ? "island-clock" : "";
             root.currentSection = "island";
-            if (target === "island-clock" && islandLoader.item && typeof islandLoader.item.openSection === "function")
-                islandLoader.item.openSection("island-clock");
+            if (root.pendingIslandSection.length > 0 && islandLoader.item && typeof islandLoader.item.openSection === "function") {
+                const sub = root.pendingIslandSection;
+                root.pendingIslandSection = "";
+                islandLoader.item.openSection(sub);
+            }
         } else {
+            root.pendingIslandSection = "";
             root.currentSection = "overview";
         }
     }
@@ -45,6 +51,7 @@ Item {
     function openWidgetEditor(uid) {
         if (!uid)
             return;
+        root.pendingIslandSection = "";
         root.widgetEditorUid = uid;
         root.currentSection = "widget";
     }
@@ -71,6 +78,7 @@ Item {
     }
 
     function showOverview() {
+        root.pendingIslandSection = "";
         root.currentSection = "overview";
     }
 
@@ -94,6 +102,14 @@ Item {
         SettingsSearch.retrySearch();
     }
 
+    Connections {
+        target: PersonalizationConfig
+        function onSelectedBarIdChanged() {
+            if (root.currentSection === "widget" && !PersonalizationConfig.barEntryByUid(root.widgetEditorUid))
+                root.showOverview();
+        }
+    }
+
     NexusPageBase {
         id: barPage
 
@@ -114,6 +130,11 @@ Item {
                 anchors.top: parent.top
                 width: barPage.cappedWidth
                 spacing: NexusStyle.padding.extraSmall / 2
+
+                BarManagerCard {
+                    Layout.fillWidth: true
+                    Layout.bottomMargin: NexusStyle.padding.small
+                }
 
                 StyledButtonGroup {
                     Layout.alignment: Qt.AlignLeft
@@ -182,6 +203,11 @@ Item {
                 item.presentationActive = Qt.binding(() => root.presentationActive);
             if (item && item.backRequested !== undefined)
                 item.backRequested.connect(root.showOverview);
+            if (item && root.pendingIslandSection.length > 0 && typeof item.openSection === "function") {
+                const sub = root.pendingIslandSection;
+                root.pendingIslandSection = "";
+                item.openSection(sub);
+            }
         }
 
         anchors.fill: parent
@@ -201,5 +227,6 @@ Item {
         visible: root.currentSection === "widget"
         widgetUid: root.currentSection === "widget" ? root.widgetEditorUid : ""
         onBackRequested: root.showOverview()
+        onRouteRequested: section => root.openSection(section)
     }
 }

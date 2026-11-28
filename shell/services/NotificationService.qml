@@ -12,13 +12,12 @@ import qs.commons.i18n
 Singleton {
     id: root
 
-    readonly property int defaultPopupTimeoutMs: 7000
+    readonly property int defaultPopupTimeoutMs: PersonalizationConfig.notificationTimeoutMs
     readonly property int maxHistoryCount: 500
     readonly property string notificationsDir: Paths.stateHome + "/notifications"
     readonly property string filePath: notificationsDir + "/notifications.json"
     readonly property bool silent: UiPreferences.dndEnabled
-    readonly property bool popupInhibited: silent || (WidgetState.dashboardSidebarOpen
-                                                      && WidgetState.dashboardSidebarView === "info")
+    readonly property bool popupInhibited: silent || (WidgetState.dashboardSidebarOpen && WidgetState.dashboardSidebarView === "info")
     readonly property bool hasNotifs: popupList.length > 0
 
     property bool historyReady: false
@@ -157,11 +156,9 @@ Singleton {
         target: FileActionService
         function onFinished(action, path, response) {
             if (!response || !response.ok)
-                root.addLocal(I18n.tr("File action failed"), I18n.tr(
-                                  "Could not open the saved file or its location: %1").arg(path));
+                root.addLocal(I18n.tr("File action failed"), I18n.tr("Could not open the saved file or its location: %1").arg(path));
             else if (!response.fileExists)
-                root.addLocal(I18n.tr("File no longer exists"), I18n.tr(
-                                  "Opened the containing folder: %1").arg(path));
+                root.addLocal(I18n.tr("File no longer exists"), I18n.tr("Opened the containing folder: %1").arg(path));
         }
     }
 
@@ -170,11 +167,11 @@ Singleton {
             return;
         if (!root.historyReady && !root.historyDegraded) {
             root.pendingSavedFiles = [...root.pendingSavedFiles,
-                                      {
-                                          title,
-                                          path
-                                      }
-                    ];
+                {
+                    title,
+                    path
+                }
+            ];
             return;
         }
         root.addLocal(title, path, path);
@@ -183,25 +180,23 @@ Singleton {
     function addLocal(title, body, filePath) {
         const now = Date.now();
         const notif = notifComponent.createObject(root, {
-                                                      notificationId: ++root.idOffset,
-                                                      appName: "Nyxuri Shell",
-                                                      appIcon: "folder",
-                                                      summary: title,
-                                                      body: body.replace(/&/g, "&amp;").replace(/</g,
-                                                                                                "&lt;").replace(
-                                                                />/g, "&gt;"),
-                                                      localKind: filePath ? "file-saved" : "",
-                                                      filePath: filePath || "",
-                                                      receivedAt: now,
-                                                      urgency: NotificationUrgency.Low,
-                                                      popup: !root.popupInhibited,
-                                                      popupStartedAt: now,
-                                                      popupExpiresAt: now + root.defaultPopupTimeoutMs
-                                                  });
+            notificationId: ++root.idOffset,
+            appName: "Nyxuri Shell",
+            appIcon: "folder",
+            summary: title,
+            body: body.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+            localKind: filePath ? "file-saved" : "",
+            filePath: filePath || "",
+            receivedAt: now,
+            urgency: NotificationUrgency.Low,
+            popup: !root.popupInhibited,
+            popupStartedAt: now,
+            popupExpiresAt: now + root.defaultPopupTimeoutMs
+        });
         notif.timer = notifTimerComponent.createObject(root, {
-                                                           notificationId: notif.notificationId,
-                                                           interval: root.defaultPopupTimeoutMs
-                                                       });
+            notificationId: notif.notificationId,
+            interval: root.defaultPopupTimeoutMs
+        });
         root.list = [...root.list, notif];
         if (notif.popup)
             root.unread++;
@@ -244,33 +239,27 @@ Singleton {
             const timeoutMs = root.popupTimeoutMs(notification.expireTimeout);
             root.idOffset++;
             const newNotifObject = notifComponent.createObject(root, {
-                                                                   "notificationId": root.idOffset,
-                                                                   "serverNotificationId": notification.id,
-                                                                   "notification": notification,
-                                                                   "appIcon": notification.appIcon || "",
-                                                                   "appName": notification.appName
-                                                                              || notification.desktopEntry
-                                                                              || I18n.tr("System"),
-                                                                   "body": notification.body || "",
-                                                                   "desktopEntry": notification.desktopEntry
-                                                                                   || "",
-                                                                   "image": notification.image || "",
-                                                                   "isTransient": notification.transient,
-                                                                   "summary": notification.summary
-                                                                              || notification.appName
-                                                                              || I18n.tr("Notification"),
-                                                                   "receivedAt": now,
-                                                                   "urgency": notification.urgency
-                                                               });
+                "notificationId": root.idOffset,
+                "serverNotificationId": notification.id,
+                "notification": notification,
+                "appIcon": notification.appIcon || "",
+                "appName": notification.appName || notification.desktopEntry || I18n.tr("System"),
+                "body": notification.body || "",
+                "desktopEntry": notification.desktopEntry || "",
+                "image": notification.image || "",
+                "isTransient": notification.transient,
+                "summary": notification.summary || notification.appName || I18n.tr("Notification"),
+                "receivedAt": now,
+                "urgency": notification.urgency
+            });
 
             if (timeoutMs > 0) {
                 newNotifObject.popupStartedAt = now;
                 newNotifObject.popupExpiresAt = now + timeoutMs;
                 newNotifObject.timer = notifTimerComponent.createObject(root, {
-                                                                            "notificationId":
-                                                                            newNotifObject.notificationId,
-                                                                            "interval": timeoutMs
-                                                                        });
+                    "notificationId": newNotifObject.notificationId,
+                    "interval": timeoutMs
+                });
             }
 
             if (!root.popupInhibited) {
@@ -278,8 +267,7 @@ Singleton {
                 root.unread++;
             }
 
-            root.list = [...root.list.filter(notif => notif.serverNotificationId !== notification.id),
-                         newNotifObject,];
+            root.list = [...root.list.filter(notif => notif.serverNotificationId !== notification.id), newNotifObject,];
             replaced.forEach(notif => Qt.callLater(() => notif.destroy()));
             root.trimPopupList(3);
             root.trimHistory();
@@ -327,26 +315,18 @@ Singleton {
                         notificationId = ++maxId;
                     usedIds.add(notificationId);
                     return notifComponent.createObject(root, {
-                                                           "notificationId": notificationId,
-                                                           "localKind": notif.localKind === "file-saved"
-                                                                        ? "file-saved" : "",
-                                                           "filePath": notif.localKind === "file-saved"
-                                                                       && typeof notif.filePath === "string"
-                                                                       && notif.filePath.startsWith("/")
-                                                                       && notif.filePath.indexOf("\u0000")
-                                                                       === -1 ? notif.filePath : "",
-                                                           "appIcon": root.durableHistorySource(notif.appIcon),
-                                                           "appName": notif.appName || I18n.tr("System"),
-                                                           "body": notif.body || "",
-                                                           "desktopEntry": notif.desktopEntry || "",
-                                                           "image": root.durableHistorySource(notif.image),
-                                                           "summary": notif.summary || notif.appName
-                                                                      || I18n.tr("Notification"),
-                                                           "receivedAt": Number(notif.receivedAt
-                                                                                || notif.time) || Date.now(),
-                                                           "urgency": notif.urgency
-                                                                      ?? NotificationUrgency.Normal
-                                                       });
+                        "notificationId": notificationId,
+                        "localKind": notif.localKind === "file-saved" ? "file-saved" : "",
+                        "filePath": notif.localKind === "file-saved" && typeof notif.filePath === "string" && notif.filePath.startsWith("/") && notif.filePath.indexOf("\u0000") === -1 ? notif.filePath : "",
+                        "appIcon": root.durableHistorySource(notif.appIcon),
+                        "appName": notif.appName || I18n.tr("System"),
+                        "body": notif.body || "",
+                        "desktopEntry": notif.desktopEntry || "",
+                        "image": root.durableHistorySource(notif.image),
+                        "summary": notif.summary || notif.appName || I18n.tr("Notification"),
+                        "receivedAt": Number(notif.receivedAt || notif.time) || Date.now(),
+                        "urgency": notif.urgency ?? NotificationUrgency.Normal
+                    });
                 });
                 root.list = restored.concat(live);
                 root.idOffset = maxId;
@@ -424,8 +404,7 @@ Singleton {
             nextGroups[appName].receivedAt = nextLatest[appName] || nextGroups[appName].receivedAt;
         });
         Object.keys(nextPopupGroups).forEach(appName => {
-            nextPopupGroups[appName].receivedAt = nextLatest[appName]
-                    || nextPopupGroups[appName].receivedAt;
+            nextPopupGroups[appName].receivedAt = nextLatest[appName] || nextPopupGroups[appName].receivedAt;
             nextPopupGroups[appName].notifications.sort((a, b) => b.receivedAt - a.receivedAt);
         });
         nextPopupList.sort((a, b) => b.receivedAt - a.receivedAt);
@@ -455,25 +434,24 @@ Singleton {
         if (notifObject && notifObject.localKind === "file-saved" && notifObject.filePath) {
             const path = notifObject.filePath;
             return [
-                        {
-                            identifier: "default",
-                            text: I18n.tr("Show in folder"),
-                            invoke: () => FileActionService.run("reveal", path)
-                        },
-                        {
-                            identifier: "reveal",
-                            text: I18n.tr("Show in folder"),
-                            invoke: () => FileActionService.run("reveal", path)
-                        },
-                        {
-                            identifier: "open",
-                            text: I18n.tr("Open"),
-                            invoke: () => FileActionService.run("open", path)
-                        }
-                    ];
+                {
+                    identifier: "default",
+                    text: I18n.tr("Show in folder"),
+                    invoke: () => FileActionService.run("reveal", path)
+                },
+                {
+                    identifier: "reveal",
+                    text: I18n.tr("Show in folder"),
+                    invoke: () => FileActionService.run("reveal", path)
+                },
+                {
+                    identifier: "open",
+                    text: I18n.tr("Open"),
+                    invoke: () => FileActionService.run("open", path)
+                }
+            ];
         }
-        return notifObject && notifObject.notification && notifObject.notification.actions
-                ? notifObject.notification.actions : [];
+        return notifObject && notifObject.notification && notifObject.notification.actions ? notifObject.notification.actions : [];
     }
 
     function defaultAction(notifObject) {
@@ -506,9 +484,7 @@ Singleton {
     }
 
     function stringifyList(notifications) {
-        return JSON.stringify(notifications.filter(notif => !notif.isTransient).map(notif => root.notifToJSON(
-                                                                                                 notif)), null,
-                              2);
+        return JSON.stringify(notifications.filter(notif => !notif.isTransient).map(notif => root.notifToJSON(notif)), null, 2);
     }
 
     function refresh() {

@@ -12,6 +12,8 @@ Item {
     property bool isActive: false
     property bool forceHovered: false
     property string toolTipText: ""
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
 
     implicitWidth: vertical ? 26 : (hovered ? 54 : 26)
     implicitHeight: vertical ? (hovered ? 54 : 26) : 26
@@ -55,7 +57,7 @@ Item {
         MaterialSymbol {
             id: symbol
             anchors.centerIn: parent
-            iconSize: Appearance.sizes.barUtilIconSize
+            iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
             color: root.hovered ? Appearance.colors.colOnPrimary : Appearance.colors.colPrimary
 
             Behavior on color {
@@ -77,6 +79,6 @@ Item {
         text: root.toolTipText
         extraVisibleCondition: root.toolTipText.length > 0 && mouseArea.containsMouse
         alternativeVisibleCondition: extraVisibleCondition
-        anchorEdges: Config.options?.bar?.bottom ?? false ? Edges.Top : Edges.Bottom
+        anchorEdges: root.barAxes.position === "bottom" ? Edges.Top : Edges.Bottom
     }
 }

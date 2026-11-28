@@ -16,9 +16,10 @@ PopupWindow {
     readonly property var colorOptions: ["transparent", "layer0", "layer1", "layer2", "surfaceContainer", "primary", "primaryContainer", "secondary", "secondaryContainer", "tertiary", "tertiaryContainer", "errorContainer", "onError", "onLayer0"]
     readonly property real padding: Appearance.sizes.elevationMargin
     readonly property real bounceRoom: 24
-    readonly property bool barVertical: Config.options.bar.vertical
+    readonly property var barAxes: root.group && root.group.barAxes ? root.group.barAxes : PersonalizationConfig.barAxes
+    readonly property bool barVertical: root.barAxes.position === "left" || root.barAxes.position === "right"
     // B9.4: "end" means bottom for a horizontal bar, right for a vertical one.
-    readonly property bool barAtEnd: Config.options.bar.edge === "bottom" || Config.options.bar.edge === "right"
+    readonly property bool barAtEnd: root.barAxes.position === "bottom" || root.barAxes.position === "right"
     readonly property real awaySign: root.barAtEnd ? -1 : 1
     property bool closing: false
 
@@ -154,7 +155,7 @@ PopupWindow {
                             color: Appearance.m3colors.m3onSurface
                         }
                         StyledText {
-                            text: Translation.tr("Style for %1 mode").arg(root.group.borderlessMode)
+                            text: Translation.tr("Style (%1)").arg(root.group.widgetStyleMode)
                             font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                             color: Appearance.colors.colSubtext
                         }
@@ -189,6 +190,21 @@ PopupWindow {
                     onSelected: newValue => root.group.setStyle("borderColor", newValue)
                 }
 
+                ConfigSlider {
+                    Layout.leftMargin: 0
+                    Layout.rightMargin: 0
+                    buttonIcon: "opacity"
+                    text: Translation.tr("Opacity")
+                    textWidth: 90
+                    usePercentTooltip: true
+                    from: 0
+                    to: 100
+                    stepSize: 5
+                    value: Math.round((root.group.style.opacity ?? root.barAxes.widgetTransparency ?? 1) * 100)
+                    onMoved: root.group.previewStyle("opacity", Math.round(value) / 100)
+                    onPressedChanged: if (!pressed)
+                        root.group.commitPreview()
+                }
                 ConfigSlider {
                     Layout.leftMargin: 0
                     Layout.rightMargin: 0

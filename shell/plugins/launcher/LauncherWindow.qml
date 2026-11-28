@@ -72,17 +72,7 @@ PanelWindow {
 
     onWebProgressChanged: spotlightBlur.publish()
 
-    readonly property var activeResults: mode === "commands" ? commandProvider.results : ["search", "settings",
-                                                                                          "actions"].includes(
-                                                                   mode) ? searchProvider.results : mode
-                                                                           === "apps" ? appProvider.results : (
-                                                                                            mode === "wallpapers"
-                                                                                            ? wallpaperProvider.results :
-                                                                                              (mode === "clipboard"
-                                                                                               ? clipboardProvider.results :
-                                                                                                 (mode === "files"
-                                                                                                  ? fileProvider.results :
-                                                                                                    [])))
+    readonly property var activeResults: mode === "commands" ? commandProvider.results : ["search", "settings", "actions"].includes(mode) ? searchProvider.results : mode === "apps" ? appProvider.results : (mode === "wallpapers" ? wallpaperProvider.results : (mode === "clipboard" ? clipboardProvider.results : (mode === "files" ? fileProvider.results : [])))
     readonly property bool clipboardDetailsMode: mode === "clipboard" && session.clipboardLayout === "details"
     readonly property bool clipboardMode: mode === "clipboard"
     readonly property bool spotlightModalActive: (resultsPanel ? resultsPanel.modalActive : false)
@@ -150,9 +140,9 @@ PanelWindow {
                 Qt.callLater(clipboardProvider.refresh);
         }
         onSelectionRestored: id => Qt.callLater(() => {
-            root.selectedResultId = id;
-            root.reconcileSelection();
-        })
+                root.selectedResultId = id;
+                root.reconcileSelection();
+            })
         onActionRequested: id => {
             if (id === "theme.light" || id === "theme.dark")
                 ThemeService.setThemeMode(id === "theme.dark" ? "dark" : "light");
@@ -174,9 +164,9 @@ PanelWindow {
         active: root.showing && root.mode === "commands"
         query: root.contentQuery
         sessionState: ({
-                           mode: session.baseMode,
-                           tool: session.tool
-                       })
+                mode: session.baseMode,
+                tool: session.tool
+            })
     }
     Connections {
         target: SpotlightToolService
@@ -197,9 +187,7 @@ PanelWindow {
     Binding {
         target: SpotlightToolService
         property: "query"
-        value: root.mode === "currency" ? currency.expression : templates.active ? templates.expression :
-                                                                                   root.toolMode ? root.query :
-                                                                                                   ""
+        value: root.mode === "currency" ? currency.expression : templates.active ? templates.expression : root.toolMode ? root.query : ""
     }
     Binding {
         target: SpotlightToolService
@@ -257,11 +245,13 @@ PanelWindow {
 
     SpotlightSearchProvider {
         id: searchProvider
-        active: root.showing && root.windowPhase !== "closing" && ["search", "settings", "actions"].includes(
-                    root.mode)
+        active: root.showing && root.windowPhase !== "closing" && ["search", "settings", "actions"].includes(root.mode)
         filter: ["settings", "actions"].includes(root.mode) ? root.mode : ""
         query: active ? root.contentQuery : ""
-        capacities: (resultsPanel ? resultsPanel.searchCapacities : ({apps: 6, wallpapers: 4}))
+        capacities: (resultsPanel ? resultsPanel.searchCapacities : ({
+                    apps: 6,
+                    wallpapers: 4
+                }))
         retainedResultId: root.mode === "search" && !root.queryUpdating ? root.selectedResultId : ""
         onModeRequested: (mode, query) => {
             root.query = query;
@@ -292,9 +282,7 @@ PanelWindow {
     }
 
     function syncControlHeld() {
-        root.controlHeld = root.showing && root.windowActive && root.searchHasFocus &&
-                !root.spotlightModalActive && (modifierSnapshot.currentModifiers() & Qt.ControlModifier)
-                !== 0;
+        root.controlHeld = root.showing && root.windowActive && root.searchHasFocus && !root.spotlightModalActive && (modifierSnapshot.currentModifiers() & Qt.ControlModifier) !== 0;
     }
     onWindowActiveChanged: Qt.callLater(root.syncControlHeld)
     onSearchHasFocusChanged: Qt.callLater(root.syncControlHeld)
@@ -334,8 +322,7 @@ PanelWindow {
 
     function normalizedMode(value) {
         const requested = String(value || "").toLowerCase();
-        return requested === "search" || requested === "apps" || requested === "wallpapers" || requested
-                === "clipboard" || requested === "files" || requested === "commands" ? requested : "";
+        return requested === "search" || requested === "apps" || requested === "wallpapers" || requested === "clipboard" || requested === "files" || requested === "commands" ? requested : "";
     }
 
     function modeIndex(value) {
@@ -349,8 +336,7 @@ PanelWindow {
     }
 
     function modeForIndex(index) {
-        return ["apps", "wallpapers", "clipboard", "files"][Math.max(0, Math.min(style.modeButtonCount - 1,
-                                                                                 index))];
+        return ["apps", "wallpapers", "clipboard", "files"][Math.max(0, Math.min(style.modeButtonCount - 1, index))];
     }
 
     function animateWindow(target) {
@@ -358,9 +344,7 @@ PanelWindow {
         windowAnimation.stop();
         windowAnimation.from = root.windowProgress;
         windowAnimation.to = target;
-        windowAnimation.duration = Math.max(1, (target > root.windowProgress ? style.windowOpenDuration :
-                                                                               style.windowCloseDuration)
-                                            * Math.abs(target - root.windowProgress));
+        windowAnimation.duration = Math.max(1, (target > root.windowProgress ? style.windowOpenDuration : style.windowCloseDuration) * Math.abs(target - root.windowProgress));
         windowAnimation.restart();
     }
 
@@ -556,8 +540,7 @@ PanelWindow {
         if (templates.active && templates.move(offset))
             return;
         if (root.toolMode && SpotlightToolService.state === "ambiguous" && SpotlightToolService.result) {
-            root.toolCandidateIndex = Math.max(0, Math.min(SpotlightToolService.result.candidates.length - 1,
-                                                           root.toolCandidateIndex + offset));
+            root.toolCandidateIndex = Math.max(0, Math.min(SpotlightToolService.result.candidates.length - 1, root.toolCandidateIndex + offset));
             return;
         }
         if (session.slashDraft)
@@ -565,8 +548,7 @@ PanelWindow {
         if (root.mode === "web" || root.activeResults.length === 0)
             return;
         const current = root.selectedResultIndex < 0 ? 0 : root.selectedResultIndex;
-        if (root.mode === "wallpapers" && wallpaperProvider.hasMore && current + offset >= root.activeResults.length
-                - 1) {
+        if (root.mode === "wallpapers" && wallpaperProvider.hasMore && current + offset >= root.activeResults.length - 1) {
             wallpaperProvider.loadMore(current + Math.abs(offset) + root.wallpaperGridColumns * 2);
         }
         root.selectResult(Math.max(0, Math.min(root.activeResults.length - 1, current + offset)));
@@ -589,11 +571,9 @@ PanelWindow {
 
         if (root.clipboardSelectionRecoveryPending) {
             const targetId = root.clipboardSelectionRecoveryTargetId;
-            const targetStillPresent = root.activeResults.some(result => result && String(result.id || "")
-                                                                         === targetId);
+            const targetStillPresent = root.activeResults.some(result => result && String(result.id || "") === targetId);
             if (targetStillPresent) {
-                const targetIndex = root.activeResults.findIndex(result => result && String(result.id || "")
-                                                                           === targetId);
+                const targetIndex = root.activeResults.findIndex(result => result && String(result.id || "") === targetId);
                 if (targetIndex >= 0)
                     root.selectResult(targetIndex);
                 return;
@@ -693,8 +673,7 @@ PanelWindow {
     }
 
     function failClipboardRestore(id, code, message) {
-        if (root.clipboardActionState === "copying" && root.clipboardActionEntryId !== "" && String(id)
-                !== root.clipboardActionEntryId)
+        if (root.clipboardActionState === "copying" && root.clipboardActionEntryId !== "" && String(id) !== root.clipboardActionEntryId)
             return;
         root.clipboardActionEntryId = String(id);
         root.clipboardActionState = "error";
@@ -711,8 +690,7 @@ PanelWindow {
             return false;
 
         root.clipboardSelectionRecoveryPending = root.selectedResultId === String(target.id || "");
-        root.clipboardSelectionRecoveryTargetId = root.clipboardSelectionRecoveryPending ? String(target.id
-                                                                                                  || "") : "";
+        root.clipboardSelectionRecoveryTargetId = root.clipboardSelectionRecoveryPending ? String(target.id || "") : "";
         root.clipboardSelectionRecoveryId = "";
         if (root.clipboardSelectionRecoveryPending) {
             const successor = root.activeResults[index + 1] || root.activeResults[index - 1];
@@ -892,20 +870,18 @@ PanelWindow {
             event.accepted = true;
             return;
         }
-        if (root.mode !== "currency" && !templates.editing && fromSearch && !control && !shift && event.key
-                === Qt.Key_Backspace && session.canBackspace({
-                                                                 selection: searchBar.hasSelection,
-                                                                 preedit: searchBar.inputComposing,
-                                                                 modal: root.spotlightModalActive,
-                                                                 repeat: event.isAutoRepeat,
-                                                                 searchFocus: root.searchHasFocus
-                                                             })) {
+        if (root.mode !== "currency" && !templates.editing && fromSearch && !control && !shift && event.key === Qt.Key_Backspace && session.canBackspace({
+            selection: searchBar.hasSelection,
+            preedit: searchBar.inputComposing,
+            modal: root.spotlightModalActive,
+            repeat: event.isAutoRepeat,
+            searchFocus: root.searchHasFocus
+        })) {
             session.pop();
             event.accepted = true;
             return;
         }
-        if (fromSearch && root.modeRailExpanded && (event.key === Qt.Key_Left || event.key
-                                                    === Qt.Key_Right)) {
+        if (fromSearch && root.modeRailExpanded && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
             root.moveModeFocus(event.key === Qt.Key_Left ? -1 : 1);
             event.accepted = true;
             return;
@@ -932,16 +908,12 @@ PanelWindow {
             event.accepted = true;
             return;
         }
-        if (root.mode === "search" && !root.modeRailExpanded && plainArrow
-                && resultsPanel && resultsPanel.searchHorizontalSelection && (event.key === Qt.Key_Left || event.key
-                                                              === Qt.Key_Right)) {
-            root.selectResult(resultsPanel.searchNavigationIndex(event.key === Qt.Key_Left ? "left" :
-                                                                                             "right"));
+        if (root.mode === "search" && !root.modeRailExpanded && plainArrow && resultsPanel && resultsPanel.searchHorizontalSelection && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
+            root.selectResult(resultsPanel.searchNavigationIndex(event.key === Qt.Key_Left ? "left" : "right"));
             event.accepted = true;
             return;
         }
-        const gridNavigation = (root.mode === "wallpapers" || (resultsPanel && resultsPanel.appGridActive)) && !control &&
-              !shift;
+        const gridNavigation = (root.mode === "wallpapers" || (resultsPanel && resultsPanel.appGridActive)) && !control && !shift;
         if (gridNavigation && event.key === Qt.Key_Left) {
             root.moveSelectionByOffset(-1);
             event.accepted = true;
@@ -957,8 +929,7 @@ PanelWindow {
             if (root.mode === "files" && modifiers === Qt.ControlModifier && !root.modeRailExpanded) {
                 if (!event.isAutoRepeat)
                     fileProvider.execute(root.selectedResultIndex, true);
-            } else if (modifiers === Qt.NoModifier || (root.mode === "clipboard" && modifiers
-                                                       === Qt.ShiftModifier)) {
+            } else if (modifiers === Qt.NoModifier || (root.mode === "clipboard" && modifiers === Qt.ShiftModifier)) {
                 if (!event.isAutoRepeat)
                     root.activateSelected(root.mode === "clipboard" && shift);
             }
@@ -996,8 +967,7 @@ PanelWindow {
         target: root
         property: "windowProgress"
         easing.type: Easing.BezierSpline
-        easing.bezierCurve: root._windowAnimationTarget > root.windowProgress ? style.windowEnterCurve :
-                                                                                style.windowExitCurve
+        easing.bezierCurve: root._windowAnimationTarget > root.windowProgress ? style.windowEnterCurve : style.windowExitCurve
 
         onFinished: {
             if (root._windowAnimationTarget >= 1) {
@@ -1063,10 +1033,8 @@ PanelWindow {
 
         targetWindow: root
         backgroundItem: searchBar.blurRegionItems[0]
-        additionalBackgroundItems: searchBar.blurRegionItems.slice(1).concat(resultsPanel
-                ? [resultsPanel.blurRegionItem, resultsPanel.modalBlurRegionItem, toolPanel]
-                : [toolPanel])
-        blurEnabled: root.showing
+        additionalBackgroundItems: searchBar.blurRegionItems.slice(1).concat(resultsPanel ? [resultsPanel.blurRegionItem, resultsPanel.modalBlurRegionItem, toolPanel] : [toolPanel])
+        blurEnabled: root.showing && PersonalizationConfig.spotlightBlurEnabled
     }
 
     MouseArea {
@@ -1086,21 +1054,9 @@ PanelWindow {
             Qt.callLater(root.syncControlHeld);
         }
 
-        readonly property real baseY: Math.max(Metrics.popupMargin, Math.min(root.height * 0.22
-                                                                             - searchBar.height / 2,
-                                                                             root.height - searchBar.height
-                                                                             - style.resultGap - Math.min(
-                                                                                 root.appGridMode
-                                                                                 ? style.appGridMaxHeight :
-                                                                                   style.resultMaxHeight,
-                                                                                 root.height * 0.55)
-                                                                             - style.windowBottomMargin))
+        readonly property real baseY: Math.max(Metrics.popupMargin, Math.min(root.height * 0.22 - searchBar.height / 2, root.height - searchBar.height - style.resultGap - Math.min(root.appGridMode ? style.appGridMaxHeight : style.resultMaxHeight, root.height * 0.55) - style.windowBottomMargin))
 
-        width: Math.min(root.wallpaperMode ? style.wallpaperPanelWidth : style.canvasWidth, Math.max(0, root.width
-                                                                                                     - Math.min(
-                                                                                                         style.windowHorizontalMargin,
-                                                                                                         Metrics.popupMargin)
-                                                                                                     * 2))
+        width: Math.min(root.wallpaperMode ? style.wallpaperPanelWidth : style.canvasWidth, Math.max(0, root.width - Math.min(style.windowHorizontalMargin, Metrics.popupMargin) * 2))
         height: searchBar.height + style.resultGap + Math.max((resultsPanel ? resultsPanel.height : 0), toolPanel.height)
         anchors.horizontalCenter: parent.horizontalCenter
         y: baseY + style.initialYOffset * (1 - root.windowProgress)
@@ -1127,10 +1083,7 @@ PanelWindow {
             modeFocusIndex: root.modeFocusIndex
             railProgress: root.railProgress
             webProgress: root.webProgress
-            requestedMainWidth: Math.min(Math.max(0, width - style.effectBleed * 2), Math.max(Math.min(420,
-                                                                                                       width), Math.min(
-                                                                                                  style.searchWidth,
-                                                                                                  width - style.compactSideReserve)))
+            requestedMainWidth: Math.min(Math.max(0, width - style.effectBleed * 2), Math.max(Math.min(420, width), Math.min(style.searchWidth, width - style.compactSideReserve)))
             text: root.query
             onTextChanged: root.query = text
             onRoutedKey: event => root.handleKey(event, true)
@@ -1168,8 +1121,7 @@ PanelWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: searchBar.bottom
             anchors.topMargin: style.resultGap
-            availableHeight: Math.max(0, root.height - spotlightRoot.baseY - searchBar.height
-                                      - style.resultGap - style.windowBottomMargin)
+            availableHeight: Math.max(0, root.height - spotlightRoot.baseY - searchBar.height - style.resultGap - style.windowBottomMargin)
         }
         TapHandler {
             acceptedButtons: Qt.AllButtons
@@ -1197,14 +1149,7 @@ PanelWindow {
                 onPreviewKey: event => root.handleKey(event, false)
                 previewActive: root.windowPhase === "open" || root.windowPhase === "opening"
                 selectedClipboardId: root.selectedResultId
-                targetWidth: root.clipboardDetailsMode ? Math.min(style.clipboardDetailsWidth,
-                                                                  spotlightRoot.width) : root.wallpaperMode
-                                                         ? Math.min(style.wallpaperPanelWidth,
-                                                                    spotlightRoot.width) : (root.appGridMode
-                                                                                            ? Math.min(
-                                                                                                  style.appGridPanelWidth,
-                                                                                                  spotlightRoot.width) :
-                                                                                              searchBar.requestedMainWidth)
+                targetWidth: root.clipboardDetailsMode ? Math.min(style.clipboardDetailsWidth, spotlightRoot.width) : root.wallpaperMode ? Math.min(style.wallpaperPanelWidth, spotlightRoot.width) : (root.appGridMode ? Math.min(style.appGridPanelWidth, spotlightRoot.width) : searchBar.requestedMainWidth)
                 width: targetWidth
                 // Opening already animates the whole surface. Apply restored
                 // window geometry immediately before animating mode changes.
@@ -1215,8 +1160,7 @@ PanelWindow {
                 enabled: !session.slashDraft
                 appsLayout: session.appsLayout
                 clipboardLayout: session.clipboardLayout
-                expanded: !root.toolMode && root.mode !== "web" && (root.mode !== "search"
-                                                                    || root.contentQuery.trim() !== "")
+                expanded: !root.toolMode && root.mode !== "web" && (root.mode !== "search" || root.contentQuery.trim() !== "")
 
                 searchError: searchProvider.error
                 results: root.activeResults
@@ -1228,21 +1172,16 @@ PanelWindow {
                 fileState: fileProvider.searchState
                 fileError: fileProvider.error
                 onRevealRequested: index => fileProvider.execute(index, true)
-                loading: root.mode === "files" ? fileProvider.searchState === "loading" : root.clipboardMode
-                                                 && clipboardProvider.loading
-                providerAvailable: root.mode === "files" ? fileProvider.searchState !== "unavailable" :
-                                                           !root.clipboardMode || clipboardProvider.available
+                loading: root.mode === "files" ? fileProvider.searchState === "loading" : root.clipboardMode && clipboardProvider.loading
+                providerAvailable: root.mode === "files" ? fileProvider.searchState !== "unavailable" : !root.clipboardMode || clipboardProvider.available
                 canRestore: !root.clipboardMode || clipboardProvider.canRestore
-                providerError: root.mode === "files" ? fileProvider.error : root.clipboardMode
-                                                       ? clipboardProvider.error : null
+                providerError: root.mode === "files" ? fileProvider.error : root.clipboardMode ? clipboardProvider.error : null
                 clipboardActionState: root.clipboardActionState
                 clipboardActionEntryId: root.clipboardActionEntryId
                 clipboardActionError: root.clipboardActionError
-                clipboardActionRunning: clipboardProvider.actionRunning || root.clipboardActionState
-                                        === "copying" || root.clipboardActionState === "copied"
+                clipboardActionRunning: clipboardProvider.actionRunning || root.clipboardActionState === "copying" || root.clipboardActionState === "copied"
                 wallpaperHasMore: wallpaperProvider.hasMore
-                availableHeight: Math.max(0, root.height - spotlightRoot.baseY - searchBar.height
-                                          - style.resultGap - style.windowBottomMargin)
+                availableHeight: Math.max(0, root.height - spotlightRoot.baseY - searchBar.height - style.resultGap - style.windowBottomMargin)
 
                 onSearchActivationRequested: id => {
                     if (root.windowPhase !== "closing" && !root.queryUpdating)

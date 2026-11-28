@@ -2,16 +2,23 @@ pragma Singleton
 import QtQuick
 import qs.services
 
-// D4c: the barConfigs fontScale axis (multiplier over the NexusStyle type
-// scale, default 1.0 = the type scale untouched). Bar-surface files
-// multiply their NexusStyle font-size reads through here; settings pages
-// and dual-surface cards (dashboard weather/resources) never do — their
-// text is not bar surface. Weight enums do not scale (only sizes).
-// The icon twin is D4e density material (bar icon slots are end4
-// literals, not type-scale reads).
+// D4c/D4e: barConfigs fontScale & iconScale multipliers (default 1.0 = the
+// NexusStyle type scale and end4 icon baselines untouched). Multi-bar surfaces
+// pass their injected `widgetBar` through fontFor()/iconFor() so each bar
+// scales independently; settings/uninjected callers fall back to activeBarConfig.
 QtObject {
-    readonly property real font: {
-        const value = Number(PersonalizationConfig.barAxes.fontScale);
+    readonly property real font: fontFor(null)
+    readonly property real icon: iconFor(null)
+
+    function fontFor(widgetBar): real {
+        const axes = widgetBar && widgetBar.axes ? widgetBar.axes : PersonalizationConfig.barAxes;
+        const value = Number(axes ? axes.fontScale : 1);
+        return isFinite(value) && value > 0 ? value : 1;
+    }
+
+    function iconFor(widgetBar): real {
+        const axes = widgetBar && widgetBar.axes ? widgetBar.axes : PersonalizationConfig.barAxes;
+        const value = Number(axes ? axes.iconScale : 1);
         return isFinite(value) && value > 0 ? value : 1;
     }
 }

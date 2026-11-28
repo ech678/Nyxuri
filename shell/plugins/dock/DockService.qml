@@ -17,8 +17,7 @@ Singleton {
     readonly property bool showThumbnails: root._options.showThumbnails
     readonly property int previewSize: root._options.previewSize
     readonly property bool supportsMinimize: CompositorDriver.supportsMinimize
-    readonly property bool supportsMinimizeEffects: CompositorDriver.minimizeEffects.indexOf("scale") >= 0
-                                                    && CompositorDriver.minimizeEffects.indexOf("genie") >= 0
+    readonly property bool supportsMinimizeEffects: CompositorDriver.minimizeEffects.indexOf("scale") >= 0 && CompositorDriver.minimizeEffects.indexOf("genie") >= 0
     property alias model: entries
     readonly property var pinnedEntries: root._pinned
     readonly property int pinnedAppCount: root._pinned.filter(entry => !DockModel.isFile(entry)).length
@@ -31,10 +30,7 @@ Singleton {
     }
     property string fileError: ""
     function pinIndexForSlot(index, kind) {
-        return kind === "file" || kind === "folder" ? Math.max(root.pinnedAppCount, Math.min(root._pinned.length,
-                                                                                             root.pinnedAppCount
-                                                                                             + index - root.fileStartIndex)) :
-                                                      Math.min(root.pinnedAppCount, index);
+        return kind === "file" || kind === "folder" ? Math.max(root.pinnedAppCount, Math.min(root._pinned.length, root.pinnedAppCount + index - root.fileStartIndex)) : Math.min(root.pinnedAppCount, index);
     }
     function fileRow(pin) {
         const info = DesktopFiles.info(pin.url);
@@ -64,10 +60,9 @@ Singleton {
         };
         if (!allowed[name] || allowed[name].indexOf(value) < 0)
             return false;
-        const next = root._pinned.map(entry => DockModel.pinnedKey(entry) === key && entry.kind === "folder"
-                                               ? Object.assign({}, entry, {
-                                                                   [name]: value
-                                                               }) : entry);
+        const next = root._pinned.map(entry => DockModel.pinnedKey(entry) === key && entry.kind === "folder" ? Object.assign({}, entry, {
+                [name]: value
+            }) : entry);
         return root.commitPinned(next);
     }
     readonly property int revision: root._revision
@@ -86,6 +81,11 @@ Singleton {
     readonly property bool showIndicators: root._options.showIndicators
     readonly property bool showRecent: root._options.showRecent
     readonly property bool contextPinning: root._options.contextPinning
+    readonly property real opacity: root._options.opacity
+    readonly property bool blurEnabled: root._options.blurEnabled
+    readonly property int edgeMargin: root._options.edgeMargin
+    readonly property int cornerRadius: root._options.cornerRadius
+    readonly property bool borderEnabled: root._options.borderEnabled
     property bool externalDragActive: ActionGateway.externalDragActive
     onExternalDragActiveChanged: {
         if (ActionGateway.externalDragActive !== externalDragActive)
@@ -116,10 +116,7 @@ Singleton {
     property int _focusSerial: 0
     property string _focusedWindowId: ""
     property int _revision: 0
-    readonly property var _dataRoots: [Paths.xdgDataHome].concat(String(Quickshell.env("XDG_DATA_DIRS")
-                                                                        || "/usr/local/share:/usr/share").split(
-                                                                     ":").filter(path => path.startsWith(
-                                                                                             "/")))
+    readonly property var _dataRoots: [Paths.xdgDataHome].concat(String(Quickshell.env("XDG_DATA_DIRS") || "/usr/local/share:/usr/share").split(":").filter(path => path.startsWith("/")))
 
     signal activated(string key)
 
@@ -146,14 +143,12 @@ Singleton {
 
     function appRow(key, application, windows, pinned) {
         const first = windows.length ? windows[0] : null;
-        const id = application ? DockModel.desktopId(application.id) : key.startsWith("app:") ? key.slice(4) :
-                                                                                                "";
+        const id = application ? DockModel.desktopId(application.id) : key.startsWith("app:") ? key.slice(4) : "";
         return {
             key: key,
             kind: "app",
             desktopId: id,
-            name: String(application ? application.name || application.id : first ? first.appName || first.appId
-                                                                                    || first.title : id),
+            name: String(application ? application.name || application.id : first ? first.appName || first.appId || first.title : id),
             icon: application ? application.icon : first ? first.iconPath : "",
             symbol: String(application && application.symbol || ""),
             pinned: pinned,
@@ -172,8 +167,7 @@ Singleton {
             return;
         }
 
-        const applications = ApplicationService.launcherApplications.filter(application =>
-        !application.dragOnly);
+        const applications = ApplicationService.launcherApplications.filter(application => !application.dragOnly);
         const windows = CompositorDriver.connected ? CompositorDriver.searchWindows("") : [];
         const focusOrder = Object.create(null);
         for (const window of windows)
@@ -197,23 +191,20 @@ Singleton {
             used.add(key);
             if (DockModel.isSpacer(pinned)) {
                 rows.push({
-                              key: key,
-                              kind: pinned.kind,
-                              desktopId: "",
-                              name: pinned.kind === "small-spacer" ? I18n.tr("Small Space",
-                                                                             "ApplicationService") : I18n.tr(
-                                                                         "Space", "ApplicationService"),
-                              icon: "",
-                              symbol: "",
-                              pinned: true,
-                              windowCount: 0,
-                              focused: false,
-                              launching: false,
-                              available: true
-                          });
+                    key: key,
+                    kind: pinned.kind,
+                    desktopId: "",
+                    name: pinned.kind === "small-spacer" ? I18n.tr("Small Space", "ApplicationService") : I18n.tr("Space", "ApplicationService"),
+                    icon: "",
+                    symbol: "",
+                    pinned: true,
+                    windowCount: 0,
+                    focused: false,
+                    launching: false,
+                    available: true
+                });
             } else {
-                rows.push(root.appRow(key, ApplicationService.findById(pinned.desktopId), byKey[key] || [],
-                                      true));
+                rows.push(root.appRow(key, ApplicationService.findById(pinned.desktopId), byKey[key] || [], true));
             }
         }
         // Existing running applications keep their slots across focus/title changes.
@@ -221,10 +212,7 @@ Singleton {
         running.sort((left, right) => {
             const leftIndex = root.rowIndex(left);
             const rightIndex = root.rowIndex(right);
-            return (leftIndex < 0 ? Number.MAX_SAFE_INTEGER : leftIndex) - (rightIndex < 0
-                                                                            ? Number.MAX_SAFE_INTEGER :
-                                                                              rightIndex) || Number(
-                        groups[left].windows[0].id) - Number(groups[right].windows[0].id);
+            return (leftIndex < 0 ? Number.MAX_SAFE_INTEGER : leftIndex) - (rightIndex < 0 ? Number.MAX_SAFE_INTEGER : rightIndex) || Number(groups[left].windows[0].id) - Number(groups[right].windows[0].id);
         });
         for (const key of running) {
             rows.push(root.appRow(key, groups[key].application, groups[key].windows, false));
@@ -246,18 +234,18 @@ Singleton {
         for (const pin of root._pinned.filter(DockModel.isFile))
             rows.push(root.fileRow(pin));
         rows.push({
-                      key: "trash",
-                      kind: "trash",
-                      desktopId: "",
-                      name: I18n.tr("Trash"),
-                      icon: DesktopFiles.trashCount > 0 ? "user-trash-full" : "user-trash",
-                      symbol: "",
-                      pinned: false,
-                      windowCount: 0,
-                      focused: false,
-                      launching: false,
-                      available: true
-                  });
+            key: "trash",
+            kind: "trash",
+            desktopId: "",
+            name: I18n.tr("Trash"),
+            icon: DesktopFiles.trashCount > 0 ? "user-trash-full" : "user-trash",
+            symbol: "",
+            pinned: false,
+            windowCount: 0,
+            focused: false,
+            launching: false,
+            available: true
+        });
         DockModel.reconcile(entries, rows);
         root._revision++;
         launchTimeout.running = Object.keys(pending).length > 0;
@@ -274,9 +262,7 @@ Singleton {
         }
         const windows = root.windowsFor(key);
         const choice = DockModel.activation(windows, root.supportsMinimize);
-        const success = choice.action === "launch" ? root.launch(key) : choice.action === "minimize"
-                                                     ? root.minimizeWindow(choice.id) : root.focusWindow(
-                                                           choice.id, outputName);
+        const success = choice.action === "launch" ? root.launch(key) : choice.action === "minimize" ? root.minimizeWindow(choice.id) : root.focusWindow(choice.id, outputName);
         if (success)
             root.activated(key);
         return success;
@@ -311,8 +297,7 @@ Singleton {
         const window = CompositorDriver.windowById(id);
         if (!window || !window.id)
             return false;
-        return window.isMinimized ? CompositorDriver.restoreWindow(id, String(outputName || "")) :
-                                    CompositorDriver.focusWindow(id);
+        return window.isMinimized ? CompositorDriver.restoreWindow(id, String(outputName || "")) : CompositorDriver.focusWindow(id);
     }
 
     function minimizeWindow(id) {
@@ -362,9 +347,9 @@ Singleton {
             return index === undefined || index < 0 ? true : root.movePinned(key, index);
         const next = root._pinned.slice();
         next.splice(DockModel.insertionIndex(index, next.length), 0, {
-                        kind: "app",
-                        desktopId: id
-                    });
+            kind: "app",
+            desktopId: id
+        });
         return root.commitPinned(next);
     }
 
@@ -381,8 +366,7 @@ Singleton {
     function dropEntries(mimeText, urls) {
         if (mimeText) {
             const payload = DockModel.dropPayload(String(mimeText));
-            const application = payload && payload.kind === "app" ? ApplicationService.findById(
-                                                                        payload.desktopId) : null;
+            const application = payload && payload.kind === "app" ? ApplicationService.findById(payload.desktopId) : null;
             if (!payload || (payload.kind === "app" && (!application || application.dragOnly)))
                 return [];
             return [payload];
@@ -395,9 +379,9 @@ Singleton {
                 return [];
             const id = DockModel.desktopIdForPath(info.path, root._dataRoots);
             const entry = id && ApplicationService.findById(id) ? {
-                                                                      kind: "app",
-                                                                      desktopId: id
-                                                                  } : {
+                kind: "app",
+                desktopId: id
+            } : {
                 kind: info.isDirectory ? "folder" : "file",
                 url: info.url
             };
@@ -419,12 +403,9 @@ Singleton {
         if (!root.ready || !dropped.length)
             return false;
         const incoming = dropped.map(entry => DockModel.isSpacer(entry) ? {
-                                                                              kind: entry.kind,
-                                                                              id: Date.now().toString(36)
-                                                                                  + "_" + Math.random(
-                                                                                      ).toString(36).slice(2,
-                                                                                                           10)
-                                                                          } : entry);
+                kind: entry.kind,
+                id: Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10)
+            } : entry);
         const keys = new Set(incoming.map(entry => DockModel.pinnedKey(entry)));
         const gap = DockModel.insertionIndex(index, root._pinned.length);
         let position = 0;
@@ -494,9 +475,7 @@ Singleton {
         }
         function onFinished(action, succeeded, errors) {
             if (errors.length)
-                root.fileError = (succeeded > 0 ? I18n.tr("Some files could not be processed.") : I18n.tr(
-                                                      "The file operation failed.")) + "\n" + errors.join(
-                            "\n");
+                root.fileError = (succeeded > 0 ? I18n.tr("Some files could not be processed.") : I18n.tr("The file operation failed.")) + "\n" + errors.join("\n");
         }
     }
     Timer {

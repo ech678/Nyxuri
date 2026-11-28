@@ -15,6 +15,7 @@ import qs.ui
 Loader {
     id: root
 
+    property var widgetBar: null
     property bool vertical: false
     property color color: Appearance.colors.colOnSurfaceVariant
 
@@ -37,7 +38,7 @@ Loader {
             MaterialSymbol {
                 visible: KeyboardIndicators.capsLockVisible
                 text: KeyboardIndicators.capsMaterialIcon
-                iconSize: Appearance.sizes.barUtilIconSize
+                iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                 fill: 1
                 color: root.color
             }
@@ -45,7 +46,7 @@ Loader {
             MaterialSymbol {
                 visible: KeyboardIndicators.numLockVisible
                 text: KeyboardIndicators.numMaterialIcon
-                iconSize: Appearance.sizes.barUtilIconSize
+                iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                 fill: 1
                 color: root.color
             }
@@ -54,7 +55,7 @@ Loader {
                 visible: KeyboardIndicators.layoutVisible
                 horizontalAlignment: Text.AlignHCenter
                 text: KeyboardIndicators.currentLayoutCodeInline
-                font.pixelSize: NexusStyle.font.bodyMedium
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: root.color
             }
         }
@@ -70,7 +71,7 @@ Loader {
                 visible: KeyboardIndicators.capsLockVisible
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: KeyboardIndicators.capsMaterialIcon
-                iconSize: Appearance.sizes.barUtilIconSize
+                iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                 fill: 1
                 color: root.color
             }
@@ -79,7 +80,7 @@ Loader {
                 visible: KeyboardIndicators.numLockVisible
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: KeyboardIndicators.numMaterialIcon
-                iconSize: Appearance.sizes.barUtilIconSize
+                iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                 fill: 1
                 color: root.color
             }
@@ -88,7 +89,7 @@ Loader {
                 visible: KeyboardIndicators.layoutVisible
                 horizontalAlignment: Text.AlignHCenter
                 text: KeyboardIndicators.currentLayoutCodeMultiline
-                font.pixelSize: text.includes("\n") ? NexusStyle.font.bodySmall : NexusStyle.font.bodyMedium
+                font.pixelSize: (text.includes("\n") ? NexusStyle.font.bodySmall : NexusStyle.font.bodyMedium) * BarScale.fontFor(root.widgetBar)
                 color: root.color
             }
         }

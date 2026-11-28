@@ -40,11 +40,11 @@ NexusPageBase {
 
     function buildGpuOptions() {
         const options = [
-                  {
-                      "value": "auto",
-                      "label": I18n.tr("Auto")
-                  }
-              ];
+            {
+                "value": "auto",
+                "label": I18n.tr("Auto")
+            }
+        ];
         const names = ({});
         for (let index = 0; index < SystemMonitorService.gpus.length; index += 1) {
             const name = String(SystemMonitorService.gpus[index].name || I18n.tr("Graphics device"));
@@ -58,9 +58,9 @@ NexusPageBase {
 
             const name = String(gpu.name || I18n.tr("Graphics device"));
             options.push({
-                             "value": id,
-                             "label": names[name] > 1 ? name + " · " + root.gpuPciLabel(gpu) : name
-                         });
+                "value": id,
+                "label": names[name] > 1 ? name + " · " + root.gpuPciLabel(gpu) : name
+            });
         }
         const preferred = UiPreferences.systemMonitorGpuId;
         if (preferred !== "auto") {
@@ -73,9 +73,9 @@ NexusPageBase {
             }
             if (!found)
                 options.push({
-                                 "value": preferred,
-                                 "label": preferred + " · " + I18n.tr("Currently unavailable")
-                             });
+                    "value": preferred,
+                    "label": preferred + " · " + I18n.tr("Currently unavailable")
+                });
         }
         return options;
     }
@@ -83,18 +83,18 @@ NexusPageBase {
     function buildCapacityDiskOptions() {
         const language = I18nService.language;
         const options = [
-                  {
-                      "value": "follow-io",
-                      "label": I18n.tr("Follow Disk I/O card")
-                  }
-              ];
+            {
+                "value": "follow-io",
+                "label": I18n.tr("Follow Disk I/O card")
+            }
+        ];
         for (let index = 0; index < SystemMonitorService.disks.length; index += 1) {
             const device = String(SystemMonitorService.disks[index].device || "");
             if (device !== "")
                 options.push({
-                                 "value": device,
-                                 "label": device
-                             });
+                    "value": device,
+                    "label": device
+                });
         }
         const preferred = UiPreferences.storageCapacityDiskDevice;
         if (preferred !== "follow-io") {
@@ -107,19 +107,15 @@ NexusPageBase {
             }
             if (!found)
                 options.push({
-                                 "value": preferred,
-                                 "label": preferred + " · " + I18n.tr("Currently unavailable")
-                             });
+                    "value": preferred,
+                    "label": preferred + " · " + I18n.tr("Currently unavailable")
+                });
         }
         return options;
     }
 
-    onPresentationActiveChanged: SystemMonitorService.setConsumerModules("general-sidebar-settings",
-                                                                         root.presentationActive ? ["gpu",
-                                                                                                    "disk"] : [])
-    Component.onCompleted: SystemMonitorService.setConsumerModules("general-sidebar-settings",
-                                                                   root.presentationActive ? ["gpu", "disk"] :
-                                                                                             [])
+    onPresentationActiveChanged: SystemMonitorService.setConsumerModules("general-sidebar-settings", root.presentationActive ? ["gpu", "disk"] : [])
+    Component.onCompleted: SystemMonitorService.setConsumerModules("general-sidebar-settings", root.presentationActive ? ["gpu", "disk"] : [])
     Component.onDestruction: SystemMonitorService.clearConsumer("general-sidebar-settings")
 
     ColumnLayout {
@@ -178,11 +174,53 @@ NexusPageBase {
         }
 
         PreferenceToggle {
-            last: true
             text: I18n.tr("Keep sidebar loaded")
             subtext: I18n.tr("Opens faster next time, but uses more memory")
             checked: PersonalizationConfig.keepSidebarsLoaded
             onToggled: PersonalizationConfig.setKeepSidebarsLoaded(checked)
+        }
+
+        PreferenceSlider {
+            label: I18n.tr("Sidebar width")
+            valueLabel: Math.round(PersonalizationConfig.sidebarWidth) + " px"
+            value: PersonalizationConfig.sidebarWidth
+            from: 320
+            to: 640
+            stepSize: 10
+            modified: PersonalizationConfig.sidebarWidth !== 420
+            onMoved: value => PersonalizationConfig.setSidebarWidth(Math.round(value))
+            onResetRequested: PersonalizationConfig.setSidebarWidth(420)
+        }
+
+        PreferenceToggle {
+            text: I18n.tr("Follow theme opacity")
+            checked: PersonalizationConfig.sidebarOpacity < 0
+            modified: PersonalizationConfig.sidebarOpacity >= 0
+            onToggled: checked => PersonalizationConfig.setSidebarOpacity(checked ? -1 : PersonalizationConfig.shellBackgroundOpacity)
+            onResetRequested: PersonalizationConfig.setSidebarOpacity(-1)
+        }
+
+        PreferenceSlider {
+            visible: PersonalizationConfig.sidebarOpacity >= 0
+            label: I18n.tr("Sidebar opacity")
+            valueLabel: Math.round(Math.max(0, PersonalizationConfig.sidebarOpacity) * 100) + " %"
+            value: Math.round(Math.max(0, PersonalizationConfig.sidebarOpacity) * 100)
+            from: 0
+            to: 100
+            stepSize: 5
+            modified: PersonalizationConfig.sidebarOpacity >= 0
+            onMoved: value => PersonalizationConfig.setSidebarOpacity(Math.round(value) / 100)
+            onResetRequested: PersonalizationConfig.setSidebarOpacity(-1)
+        }
+
+        PreferenceToggle {
+            last: true
+            text: I18n.tr("Background blur")
+            enabled: BlurService.enabled
+            checked: PersonalizationConfig.sidebarBlurEnabled
+            modified: !PersonalizationConfig.sidebarBlurEnabled
+            onToggled: PersonalizationConfig.setSidebarBlurEnabled(checked)
+            onResetRequested: PersonalizationConfig.setSidebarBlurEnabled(true)
         }
 
         // Desktop card layout
@@ -334,8 +372,7 @@ NexusPageBase {
         PreferenceToggle {
             text: I18n.tr("Hour marks")
             subtext: I18n.tr("Available with Dots or Full dials")
-            enabled: root.cookieClockActive && (UiPreferences.sidebarCookieDialStyle === "dots"
-                                                || UiPreferences.sidebarCookieDialStyle === "full")
+            enabled: root.cookieClockActive && (UiPreferences.sidebarCookieDialStyle === "dots" || UiPreferences.sidebarCookieDialStyle === "full")
             opacity: root.cookieClockActive ? 1 : 0.42
             checked: UiPreferences.sidebarCookieHourMarks
             onToggled: UiPreferences.setSidebarCookieHourMarks(checked)
@@ -525,8 +562,7 @@ NexusPageBase {
                     subtext: {
                         const cards = SystemCardService.cards;
                         const state = cards ? cards[cardToggle.modelData] : null;
-                        return state && state.container === "desktop" ? I18n.tr("Desktop") : I18n.tr(
-                                                                            "Sidebar");
+                        return state && state.container === "desktop" ? I18n.tr("Desktop") : I18n.tr("Sidebar");
                     }
                     checked: {
                         const cards = SystemCardService.cards;

@@ -8,16 +8,19 @@ Item {
 
     property var panelScreen: null
     readonly property bool onLeft: PersonalizationConfig.quickSettingsSidebarSide === "left"
-    property real sidebarWidth: Math.min(Metrics.sidebarWidthComfortable, Math.max(0, width))
+    // D4g 批四b avoidance insets (ScreenBarLayout projection): the
+    // same-edge rail reserves the x span; top/bottom bands reserve y.
+    readonly property real railInset: ScreenBarLayout.reservation(panelScreen, root.onLeft ? "left" : "right")
+    readonly property real topInset: ScreenBarLayout.reservation(panelScreen, "top")
+    readonly property real bottomInset: ScreenBarLayout.reservation(panelScreen, "bottom")
+    property real sidebarWidth: Math.min(PersonalizationConfig.sidebarWidth, Math.max(0, width))
     readonly property alias blurBackgroundItem: revealSurface.blurBackgroundItem
     readonly property bool requestedOpen: WidgetState.quickSettingsOpen
     property bool presentationAllowed: true
     property bool panelPresented: false
     property bool contentRetained: false
     property bool presentationOpen: false
-    readonly property bool contentReady: quickSettingsLoader.status === Loader.Ready
-                                         && quickSettingsLoader.item !== null
-                                         && quickSettingsLoader.item.readyForPresentation
+    readonly property bool contentReady: quickSettingsLoader.status === Loader.Ready && quickSettingsLoader.item !== null && quickSettingsLoader.item.readyForPresentation
     // A presented surface is only created after contentReady. It remains
     // operational until the closing reveal has fully covered its contents.
     readonly property bool contentOperational: panelPresented
@@ -96,13 +99,16 @@ Item {
         id: revealSurface
 
         visible: root.panelPresented
-        x: root.onLeft ? 0 : root.width - root.sidebarWidth
-        y: 0
+        // D4g 批四b: the drawer insets by the topology projection — the
+        // same-edge rail reserves the x span, top/bottom bands reserve the
+        // y span (Overlay would otherwise paint over the Top-layer bars).
+        x: root.onLeft ? root.railInset : root.width - root.sidebarWidth - root.railInset
+        y: root.topInset
         width: root.sidebarWidth
-        height: root.height
+        height: Math.max(0, root.height - root.topInset - root.bottomInset)
         open: root.presentationOpen
         onLeft: root.onLeft
-        backgroundColor: BlurService.backgroundColor(Appearance.colors.colLayer0)
+        backgroundColor: Appearance.applyAlpha(Appearance.colors.colLayer0Base, PersonalizationConfig.sidebarOpacity >= 0 ? PersonalizationConfig.sidebarOpacity : PersonalizationConfig.shellBackgroundOpacity)
         onClosed: root.finishClosing()
 
         Loader {

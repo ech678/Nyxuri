@@ -8,16 +8,19 @@ import Quickshell.Services.UPower
 import qs.commons
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
+    property var widgetEntry: null
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property color contentColor: Appearance.colors.colOnLayer2
     property bool contentColorOverridden: false
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     // D4b: the seven slots are entry axes (utilButtons == quickSettings
     // share this component and one axes table).
-    property var widgetEntry: null
     readonly property string widgetId: root.widgetEntry && root.widgetEntry.widgetId === "quickSettings" ? "quickSettings" : "utilButtons"
     readonly property bool showScreenSnip: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "screenSnip")
     readonly property bool showColorPicker: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "colorPicker")
@@ -27,8 +30,8 @@ Item {
     readonly property bool showDarkModeToggle: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "darkModeToggle")
     readonly property bool showPerformanceProfile: BarWidgetDefaults.option(root.widgetId, root.widgetEntry, "performanceProfile")
 
-    implicitWidth: isMaterial && !root.vertical ? flow.implicitWidth : root.vertical ? Appearance.sizes.verticalBarWidth - 14 : flow.implicitWidth + 4
-    implicitHeight: isMaterial && root.vertical ? flow.implicitHeight : isMaterial ? 32 : root.vertical ? flow.implicitHeight + 4 : Appearance.sizes.barHeight
+    implicitWidth: isMaterial && !root.vertical ? flow.implicitWidth : root.vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) - 14 : flow.implicitWidth + 4
+    implicitHeight: isMaterial && root.vertical ? flow.implicitHeight : isMaterial ? 32 : root.vertical ? flow.implicitHeight + 4 : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     Flow {
         id: flow
@@ -45,6 +48,7 @@ Item {
         Component {
             id: screenSnipM3
             UtilButton {
+                widgetBar: root.widgetBar
                 toolTipText: Translation.tr("Take screenshot")
                 iconText: "screenshot_region"
                 onClicked: GlobalActions.runById("screenshot", "")
@@ -59,7 +63,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 1
                     text: "screenshot_region"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.contentColor
                 }
             }
@@ -73,6 +77,7 @@ Item {
         Component {
             id: colorPickerM3
             UtilButton {
+                widgetBar: root.widgetBar
                 toolTipText: Translation.tr("Pick a color")
                 iconText: "colorize"
                 onClicked: GlobalActions.runById("color-picker", "")
@@ -86,7 +91,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 1
                     text: "colorize"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.contentColor
                 }
             }
@@ -100,6 +105,7 @@ Item {
         Component {
             id: keyboardM3
             UtilButton {
+                widgetBar: root.widgetBar
                 toolTipText: Translation.tr("On-screen keyboard")
                 iconText: "keyboard"
                 onClicked: GlobalActions.runById("toggle-osk", "")
@@ -113,7 +119,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
                     text: "keyboard"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.contentColor
                 }
             }
@@ -127,6 +133,7 @@ Item {
         Component {
             id: wallpaperM3
             UtilButton {
+                widgetBar: root.widgetBar
                 toolTipText: Translation.tr("Choose wallpaper")
                 iconText: "imagesmode"
                 onClicked: ActionGateway.requestSettingsOpen("wallpaper")
@@ -140,7 +147,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
                     text: "imagesmode"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.contentColor
                 }
             }
@@ -154,6 +161,7 @@ Item {
         Component {
             id: micM3
             UtilButton {
+                widgetBar: root.widgetBar
                 toolTipText: Pipewire.defaultAudioSource?.audio?.muted ? Translation.tr("Unmute microphone") : Translation.tr("Mute microphone")
                 iconText: Pipewire.defaultAudioSource?.audio?.muted ? "mic_off" : "mic"
                 onClicked: GlobalActions.runById("toggle-mic-mute", "")
@@ -167,7 +175,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
                     text: Pipewire.defaultAudioSource?.audio?.muted ? "mic_off" : "mic"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.contentColor
                 }
             }
@@ -181,6 +189,7 @@ Item {
         Component {
             id: darkModeM3
             UtilButton {
+                widgetBar: root.widgetBar
                 toolTipText: Appearance.m3colors.darkmode ? Translation.tr("Use light mode") : Translation.tr("Use dark mode")
                 iconText: Appearance.m3colors.darkmode ? "light_mode" : "dark_mode"
                 onClicked: ThemeService.toggleThemeMode()
@@ -194,7 +203,7 @@ Item {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
                     text: Appearance.m3colors.darkmode ? "light_mode" : "dark_mode"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.contentColor
                 }
             }
@@ -208,6 +217,7 @@ Item {
         Component {
             id: perfM3
             UtilButton {
+                widgetBar: root.widgetBar
                 toolTipText: Translation.tr("Change performance profile")
                 iconText: switch (PowerProfiles.profile) {
                 case PowerProfile.PowerSaver:
@@ -267,7 +277,7 @@ Item {
                     case PowerProfile.Performance:
                         return "local_fire_department";
                     }
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.contentColor
                 }
             }

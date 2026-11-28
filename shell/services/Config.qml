@@ -41,18 +41,15 @@ Singleton {
         readonly property QtObject bar: QtObject {
             id: barOptions
 
-            // B9.4: `edge` is the single truth. `bottom`/`vertical` are
-            // derived read-only views (end4 only had a bottom bool, which made
-            // a right-edge bar look like a left-edge one to every popup).
-            readonly property string edge: PersonalizationConfig.barPosition
-            readonly property bool bottom: PersonalizationConfig.barPosition === "bottom"
-            readonly property bool vertical: PersonalizationConfig.barPosition === "left" || PersonalizationConfig.barPosition === "right"
+            // B9.4: `edge` used to be the single truth here (end4 only had a
+            // bottom bool, which made a right-edge bar look like a left-edge
+            // one to every popup). The bridge views retired across 批四:
+            // orientation is a per-entry fact — avoidance reads the
+            // ScreenBarLayout projection, popups and widgets read their
+            // injected axes, the settings faces read the entry directly.
             // B9.5 outer margins.
-            readonly property real edgeMargin: PersonalizationConfig.barEdgeMargin ?? 0
-            readonly property real sideMargin: PersonalizationConfig.barSideMargin ?? 0
-            readonly property bool showBackground: PersonalizationConfig.barShowBackground
-            readonly property int cornerStyle: PersonalizationConfig.barCornerStyle ?? 3
-            readonly property string borderless: PersonalizationConfig.barBorderless ?? "separated"
+            readonly property real edgeMargin: PersonalizationConfig.barEdgeMargin ?? 5
+            readonly property real sideMargin: PersonalizationConfig.resolvedBarSideMargin()
             readonly property bool showScrollHints: true
             readonly property bool followFrameColor: false
             readonly property string frameColor: ""
@@ -62,23 +59,16 @@ Singleton {
             readonly property alias layouts: m3Options.layouts
 
             readonly property QtObject autoHide: QtObject {
-                // B9.7: user-visible surface is only the slide-out switch.
-                // pushWindows / hoverRegionWidth / super-reveal stay internal
-                // defaults — they have live consumers in Bar.qml but no UI.
+                // B9.7 selected-bar projection. D4h moved pushWindows /
+                // superReveal / smart / peek onto the [[bar.configs]] entry
+                // axes (per-bar truth); hoverRegionWidth stays internal —
+                // the input-mask corner cutout has no settings surface.
                 readonly property bool enable: PersonalizationConfig.barAutoHide
-                readonly property bool pushWindows: false
                 readonly property int hoverRegionWidth: 2
-                readonly property QtObject showWhenPressingSuper: QtObject {
-                    readonly property bool enable: false
-                    readonly property int delay: 100
-                }
             }
 
             readonly property QtObject m3: QtObject {
                 id: m3Options
-                readonly property bool showBackground: PersonalizationConfig.barShowBackground
-                readonly property int cornerStyle: PersonalizationConfig.barCornerStyle ?? 3
-                readonly property string borderless: PersonalizationConfig.barBorderless ?? "separated"
                 readonly property real gapsOut: 5
 
                 readonly property QtObject layouts: QtObject {

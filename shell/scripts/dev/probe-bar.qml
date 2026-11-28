@@ -17,6 +17,7 @@ import "commons/BarGeometry.js" as BarGeometry
 import "services/ConfigMigrations.js" as ConfigMigrations
 import "services/BarWidgetDefaults.js" as BarWidgetDefaults
 import "services/BarDefaults.js" as BarDefaults
+import "services/BarStylePresets.js" as BarStylePresets
 import "plugins/bar" as BarPlugin
 import "plugins/bar/SegmentRoles.js" as SegmentRoles
 import "plugins/bar/OverflowLayout.js" as OverflowLayout
@@ -26,7 +27,9 @@ ShellRoot {
 
     // The harness stages a 2560-wide horizontal bar or a 1440-tall vertical
     // one, so lane geometry is evaluated against a realistic screen axis.
-    readonly property bool probeVertical: Config.options.bar.vertical
+    // D4g 批四: read the staged bar's own axes position — the global bridge
+    // view retired with the per-entry orientation truth.
+    readonly property bool probeVertical: PersonalizationConfig.barPosition === "left" || PersonalizationConfig.barPosition === "right"
     property int probeWidth: probeVertical ? Appearance.sizes.verticalBarWidth : 2560
     property real probeHeight: probeVertical ? 1440 : Appearance.sizes.barHeight
     readonly property string probeShell: String(Quickshell.env("NYXURI_PROBE_SHELL") || "")
@@ -35,6 +38,11 @@ ShellRoot {
     // probe can assert orientation switching at the window level. The content
     // phase must stand down first (one production instance at a time).
     property bool windowMode: false
+
+    // D4g batch two: the capability catalog the settings faces consume.
+    BarWidgetCatalog {
+        id: catalogProbe
+    }
 
     Item {
         id: stage
@@ -50,10 +58,12 @@ ShellRoot {
             // types in this Quickshell runtime (loader-form.md). The real shell
             // also feeds PluginRegistry.fileUrl() to its slot Loaders.
             // Wait for the settings store before first load: BarContent reads
-            // PersonalizationConfig and a later cornerStyle flip would leave
+            // PersonalizationConfig and a later preset flip would leave
             // layout sizes stale in a windowless harness.
+            // D4g: one host file — the orientation follows the staged bar's
+            // axes.position (BarContent builds its AxisContext off it).
             active: !probeRoot.windowMode && PersonalizationConfig.ready && !probeRoot.reloading
-            source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/" + (probeRoot.probeVertical ? "VerticalBarContent.qml" : "BarContent.qml") : ""
+            source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/BarContent.qml" : ""
         }
 
         // D1 B-10: the island media face probed with a stub host — the real
@@ -69,10 +79,19 @@ ShellRoot {
             width: 220
             height: 32
             property real pillHeight: 32
-            property bool isMaterial: PersonalizationConfig.barIsMaterial
+            property bool vertical: false
+            property bool isMaterial: PersonalizationConfig.barTint
+            property var widgetBar: null
             property var activePlayer: null
             property bool mediaTrackInfoVisible: false
             property real mediaTextContentWidth: 0
+            function option(key) {
+                if (key === "showMediaControls")
+                    return PersonalizationConfig.islandShowMediaControls;
+                if (key === "visualizerStyle")
+                    return PersonalizationConfig.islandVisualizerStyle;
+                return BarWidgetDefaults.option("island", PersonalizationConfig.islandEntry(), key);
+            }
 
             Loader {
                 id: islandMediaLoader
@@ -403,8 +422,8 @@ ShellRoot {
         const centered = !barContent.effectiveMiddleLayout || barContent.effectiveMiddleLayout.length === 0 || (vertical ? Math.abs(geometry.centerY - (geometry.height - geometry.centerHeight) / 2) <= 1 : Math.abs(geometry.centerX - (geometry.width - geometry.centerWidth) / 2) <= 1);
         return JSON.stringify({
             "ready": barLoader.status === Loader.Ready,
-            "cornerStyle": PersonalizationConfig.barCornerStyle,
-            "borderless": PersonalizationConfig.barBorderless,
+            "preset": BarStylePresets.currentPreset(PersonalizationConfig.barAxes),
+            "widgetStyle": PersonalizationConfig.barWidgetStyle,
             "vertical": vertical,
             "edge": PersonalizationConfig.barPosition,
             "lanes": {
@@ -501,14 +520,14 @@ ShellRoot {
             return probeRoot.layout();
         }
 
-        function cornerStyle(value: int): string {
-            PersonalizationConfig.setBarCornerStyle(value);
-            return String(PersonalizationConfig.barCornerStyle);
+        function stylePreset(key: string): string {
+            PersonalizationConfig.applyBarStylePreset(key);
+            return BarStylePresets.currentPreset(PersonalizationConfig.barAxes);
         }
 
-        function borderless(value: string): string {
-            PersonalizationConfig.setBarBorderless(value);
-            return String(PersonalizationConfig.barBorderless);
+        function widgetStyle(value: string): string {
+            PersonalizationConfig.setBarWidgetStyle(value);
+            return String(PersonalizationConfig.barWidgetStyle);
         }
 
         // B9.4: switching the screen edge swaps the content component, so the
@@ -520,6 +539,166 @@ ShellRoot {
                 probeRoot.reloading = false;
             });
             return String(PersonalizationConfig.barPosition);
+        }
+
+        // D4g 批四: re-resolve the active entry's lanes from the
+        // position-aware defaults. The sparse writer then drops the lane
+        // section entirely (equal-to-default = no write), so the harness can
+        // pin "storage omits lanes -> the rail set" end to end.
+        function railDefaults(): string {
+            PersonalizationConfig.resetBarLanes();
+            return JSON.stringify({
+                "position": PersonalizationConfig.barPosition,
+                "left": Array.from(PersonalizationConfig.barLayoutLeft),
+                "middle": Array.from(PersonalizationConfig.barLayoutMiddle),
+                "right": Array.from(PersonalizationConfig.barLayoutRight)
+            });
+        }
+
+        // D4g 批四b: the corner junction + avoidance projection, config-side.
+        // Stage A proves the solo baseline; stage B joins a rail AFTER the
+        // top bar (configOrder verdict: the rail tucks its top end by the
+        // top band + seam, the top bar keeps its corners); then the rail's
+        // autoHide drops its reservation and the tuck re-resolves to zero.
+        function d4gAvoid(): string {
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
+            const screen = Quickshell.screens[0];
+            const solo = {
+                "top": ScreenBarLayout.reservation(screen, "top"),
+                "left": ScreenBarLayout.reservation(screen, "left")
+            };
+            const railId = PersonalizationConfig.addBarConfig();
+            PersonalizationConfig.selectedBarId = railId;
+            PersonalizationConfig.setBarPosition("left");
+            const railTuck = ScreenBarLayout.tuckMargins(screen, railId);
+            const topTuck = ScreenBarLayout.tuckMargins(screen, "default");
+            const joined = {
+                "topBand": ScreenBarLayout.reservation(screen, "top"),
+                "leftBand": ScreenBarLayout.reservation(screen, "left"),
+                "railTuck": railTuck,
+                "topTuck": topTuck
+            };
+            PersonalizationConfig.setBarAxis("autoHide", true);
+            const hidden = {
+                "leftBand": ScreenBarLayout.reservation(screen, "left"),
+                "topTuck": ScreenBarLayout.tuckMargins(screen, "default")
+            };
+            PersonalizationConfig.setBarAxis("autoHide", false);
+            // Stage C: the rail joins FIRST (default flips to left, order 0)
+            // — now the top-positioned second entry tucks its left end.
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.setBarPosition("left");
+            const secondId = PersonalizationConfig.addBarConfig();
+            PersonalizationConfig.selectedBarId = secondId;
+            PersonalizationConfig.setBarPosition("top");
+            const reversed = {
+                "topTuck": ScreenBarLayout.tuckMargins(screen, secondId),
+                "railTuck": ScreenBarLayout.tuckMargins(screen, "default")
+            };
+            // Cleanup: factory single top bar.
+            PersonalizationConfig.deleteBarConfig(secondId);
+            PersonalizationConfig.deleteBarConfig(railId);
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.setBarPosition("top");
+            PersonalizationConfig.resetBarLanes();
+            return JSON.stringify({
+                "solo": solo,
+                "joined": joined,
+                "hidden": hidden,
+                "reversed": reversed
+            });
+        }
+
+        // Window-level evidence for the same verdict: the rail window's
+        // height must shrink by the tuck inset (margins carry it).
+        function d4gWindowsSet(scene: string): string {
+            PersonalizationConfig.selectedBarId = "";
+            PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
+            if (scene === "rail") {
+                const railId = PersonalizationConfig.addBarConfig();
+                PersonalizationConfig.selectedBarId = railId;
+                PersonalizationConfig.setBarPosition("left");
+                PersonalizationConfig.setBarLayouts(["workspaces"], ["clock"], ["systemIcons"]);
+            }
+            return "OK";
+        }
+
+        function d4gWindowsDump(): string {
+            const barScope = windowLoader.item;
+            const top = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("default") : null;
+            const rail = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("bar2") : null;
+            return JSON.stringify({
+                "screenH": rail && rail.screen ? rail.screen.height : 0,
+                "topWindow": top ? {
+                    "h": Math.round(top.height),
+                    "w": Math.round(top.width),
+                    "margins": top.margins
+                } : null,
+                "railWindow": rail ? {
+                    "w": Math.round(rail.width),
+                    "h": Math.round(rail.height),
+                    "margins": rail.margins
+                } : null,
+                "railTuck": rail ? ScreenBarLayout.tuckMargins(rail.screen, "bar2") : null,
+                "bands": rail ? {
+                    "top": ScreenBarLayout.reservation(rail.screen, "top"),
+                    "left": ScreenBarLayout.reservation(rail.screen, "left")
+                } : null
+            });
+        }
+
+        // D4h window evidence: smart-hide + workspace-switch peek on the real
+        // PanelWindow. "smart" engages the smart axis (peek on too); "clean"
+        // restores the pre-D4h defaults. With no compositor driver the
+        // workspace reads empty, so smart must park the bar WITH its
+        // reservation (the no-windows leg of the contract).
+        function d4hWindowSet(scene: string): string {
+            PersonalizationConfig.selectedBarId = "";
+            if (scene === "smart") {
+                PersonalizationConfig.setBarAxis("autoHide", false);
+                PersonalizationConfig.setBarAxis("autoHideSmart", true);
+                PersonalizationConfig.setBarAxis("peekOnWorkspaceSwitch", true);
+            } else {
+                PersonalizationConfig.setBarAxis("autoHideSmart", false);
+                PersonalizationConfig.setBarAxis("peekOnWorkspaceSwitch", false);
+                PersonalizationConfig.setBarAxis("autoHide", false);
+            }
+            return "OK";
+        }
+
+        function d4hWindowDump(): string {
+            const window = windowLoader.item ? windowLoader.item.windowProbe : null;
+            if (!window)
+                return JSON.stringify({
+                    "found": false
+                });
+            return JSON.stringify({
+                "found": true,
+                "autoHide": window.autoHideEnabled === true,
+                "smartAxis": window.axes.autoHideSmart === true,
+                "peekAxis": window.axes.peekOnWorkspaceSwitch === true,
+                "pushWindowsAxis": window.axes.pushWindows === true,
+                "superRevealAxis": window.axes.superReveal === true,
+                "peekShow": window.peekShow === true,
+                "mustShow": window.mustShow === true,
+                "exclusiveZone": Math.round(window.exclusiveZone)
+            });
+        }
+
+        // Drive the peek entry point directly (no compositor workspace events
+        // in the harness). The dump right after must still be within the
+        // 80ms debounce + 450ms stay window; the harness sleeps ~150ms.
+        function d4hPeek(): string {
+            const window = windowLoader.item ? windowLoader.item.windowProbe : null;
+            if (!window || !window.noteWorkspaceSwitch)
+                return JSON.stringify({
+                    "found": false
+                });
+            window.noteWorkspaceSwitch();
+            return JSON.stringify({
+                "found": true
+            });
         }
 
         // Layout scenes: "mediaOnly" is the self-hiding-widget contract (an
@@ -543,10 +722,11 @@ ShellRoot {
             } else if (name === "divisorLeft") {
                 PersonalizationConfig.setBarLayouts(["divisor"], [], []);
             } else {
-                const left = PersonalizationConfig.defaultBarLayoutLeft.slice();
-                const middle = PersonalizationConfig.defaultBarLayoutMiddle.slice();
-                const right = PersonalizationConfig.defaultBarLayoutRight.slice();
-                PersonalizationConfig.setBarLayouts(left, middle, right);
+                // D4g 批四: the shipped default restores the orientation's
+                // own lane set — a rail restores the rail defaults, not the
+                // rotated horizontal ones.
+                const defaults = PersonalizationConfig.defaultBarLayoutsFor(PersonalizationConfig.barPosition);
+                PersonalizationConfig.setBarLayouts(defaults.left.slice(), defaults.middle.slice(), defaults.right.slice());
             }
             return JSON.stringify({
                 "left": Array.from(PersonalizationConfig.barLayoutLeft),
@@ -559,6 +739,7 @@ ShellRoot {
         // the 0/12/24 margin tiers (Bar.qml binds the same functions).
         function margins(): string {
             const cases = [];
+            const boost = PersonalizationConfig.barStyleBoostFor(PersonalizationConfig.barAxes);
             for (const edge of ["top", "bottom", "left", "right"]) {
                 const vertical = edge === "left" || edge === "right";
                 for (const tier of [0, 12, 24]) {
@@ -566,8 +747,9 @@ ShellRoot {
                         "edge": edge,
                         "vertical": vertical,
                         "tier": tier,
-                        "box": BarGeometry.margins(edge, vertical, tier, tier, 0, false, false),
-                        "exclusiveZone": BarGeometry.exclusiveZone(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, PersonalizationConfig.barCornerStyle, 5, tier)
+                        "box": BarGeometry.margins(edge, vertical, tier, tier, false, false),
+                        "exclusiveZone": BarGeometry.exclusiveZone(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, boost, tier),
+                        "screenReservation": BarGeometry.screenReservation(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, boost, tier, 0)
                     });
                 }
             }
@@ -575,7 +757,7 @@ ShellRoot {
                 "baseBarHeight": Appearance.sizes.baseBarHeight,
                 "baseVerticalBarWidth": Appearance.sizes.baseVerticalBarWidth,
                 "verticalBarWidth": Appearance.sizes.verticalBarWidth,
-                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "styleBoost": boost,
                 "cases": cases
             });
         }
@@ -623,7 +805,7 @@ ShellRoot {
             const host = ActionGateway.islandHost ?? (islandGroup ? islandGroup.loadedWidget : null);
             return JSON.stringify({
                 "ready": true,
-                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "preset": BarStylePresets.currentPreset(PersonalizationConfig.barAxes),
                 "centerPill": {
                     "width": content.centerPillWidth,
                     "middleRowWidth": content.middleRowImplicitWidth
@@ -1127,8 +1309,8 @@ ShellRoot {
             }
             // D4c: the bar-frame keys are derived views now — only the
             // named axis setters can write them.
-            if (key === "barShowBackground")
-                PersonalizationConfig.setBarShowBackground(parsed === true);
+            if (key === "barBackplate")
+                PersonalizationConfig.setBarBackplate(parsed === true);
             else if (key === "barScreenList")
                 PersonalizationConfig.setBarScreenList(Array.isArray(parsed) ? parsed : []);
             else if (key === "barAutoHide")
@@ -1165,15 +1347,17 @@ ShellRoot {
                     "dateFormat": "ddd, dd/MM"
                 },
                 "bar": {
-                    "configs": [{
-                        "id": "default",
-                        "name": "Bar",
-                        "lanes": {
-                            "left": ["launcherButton", "workspaces", "activeWindow", "separator"],
-                            "middle": ["island"],
-                            "right": ["tray", "quickSettings", "systemMonitor", "systemIcons", "powerButton"]
+                    "configs": [
+                        {
+                            "id": "default",
+                            "name": "Bar",
+                            "lanes": {
+                                "left": ["launcherButton", "workspaces", "activeWindow", "separator"],
+                                "middle": ["island"],
+                                "right": ["tray", "quickSettings", "systemMonitor", "systemIcons", "powerButton"]
+                            }
                         }
-                    }],
+                    ],
                     "showAppIcons": true,
                     "numberStyle": "han",
                     "dividerStyle": "space",
@@ -1211,15 +1395,17 @@ ShellRoot {
                     "dateFormat": "ddd, dd/MM"
                 },
                 "bar": {
-                    "configs": [{
-                        "id": "default",
-                        "name": "Bar",
-                        "lanes": {
-                            "left": ["clock"],
-                            "middle": [],
-                            "right": []
+                    "configs": [
+                        {
+                            "id": "default",
+                            "name": "Bar",
+                            "lanes": {
+                                "left": ["clock"],
+                                "middle": [],
+                                "right": []
+                            }
                         }
-                    }]
+                    ]
                 }
             };
             const clockRun = ConfigMigrations.migrateConfig(clockLegacy, seed);
@@ -1313,31 +1499,36 @@ ShellRoot {
             const legacy = {
                 "configVersion": 4,
                 "bar": {
-                    "configs": [{
-                        "id": "default",
-                        "name": "Bar",
-                        "lanes": {
-                            "left": ["launcherButton", "workspaces", "activeWindow"],
-                            "middle": ["island"],
-                            "right": ["tray", "quickSettings", "systemIcons", "powerButton"]
+                    "configs": [
+                        {
+                            "id": "default",
+                            "name": "Bar",
+                            "lanes": {
+                                "left": ["launcherButton", "workspaces", "activeWindow"],
+                                "middle": ["island"],
+                                "right": ["tray", "quickSettings", "systemIcons", "powerButton"]
+                            }
                         }
-                    }],
+                    ],
                     "position": "bottom",
                     "cornerStyle": 2,
                     "borderless": "segmented",
                     "barThickness": 44,
                     "edgeMargin": 12,
                     "showValues": true,
-                    "widgetStyles": [{
-                        "mode": "segmented",
-                        "widget": "workspaces",
-                        "color": "primary",
-                        "padding": 9
-                    }, {
-                        "mode": "pills",
-                        "widget": "clock",
-                        "color": "error"
-                    }],
+                    "widgetStyles": [
+                        {
+                            "mode": "segmented",
+                            "widget": "workspaces",
+                            "color": "primary",
+                            "padding": 9
+                        },
+                        {
+                            "mode": "pills",
+                            "widget": "clock",
+                            "color": "error"
+                        }
+                    ],
                     "tray": {
                         "pinnedItems": ["probe:keep"]
                     }
@@ -1355,11 +1546,11 @@ ShellRoot {
                 "changed": first.changed,
                 "version": first.config.configVersion,
                 "positionFolded": entry.position === "bottom",
-                "cornerStyleFolded": entry.cornerStyle === 2,
-                "borderlessFolded": entry.borderless === "segmented",
+                "cornerStyleFolded": entry.backplate === false && entry.lanePill === undefined && entry.tint === undefined && entry.cornerStyle === undefined,
+                "borderlessFolded": entry.widgetStyle === undefined && entry.groupColor === "layer0" && entry.widgetOutlineEnabled === true && entry.borderless === undefined,
                 "thicknessFolded": entry.barThickness === 44,
                 "edgeMarginFolded": entry.edgeMargin === 12,
-                "defaultsSkipped": entry.sideMargin === undefined && entry.autoHide === undefined && entry.groupColor === undefined,
+                "defaultsSkipped": entry.sideMargin === undefined && entry.autoHide === undefined && entry.capsuleRadius === undefined,
                 "activeModeStyleFolded": workspaces.color === "primary" && workspaces.padding === 9,
                 "otherModeStyleDropped": JSON.stringify(first.config.bar.configs).indexOf("error") === -1,
                 "flatStripped": first.config.bar.position === undefined && first.config.bar.widgetStyles === undefined && first.config.bar.cornerStyle === undefined,
@@ -1472,6 +1663,43 @@ ShellRoot {
             });
         }
 
+        // D4h: behavior additions round-trip through the named setters —
+        // every default preserves the pre-D4h behavior and the sparse
+        // writer only persists deviations (same discipline as d4dBehavior).
+        function d4hBehavior(): string {
+            const before = PersonalizationConfig.barAxes;
+            PersonalizationConfig.setBarAutoHideSmart(true);
+            PersonalizationConfig.setBarPushWindows(true);
+            PersonalizationConfig.setBarSuperReveal(true);
+            PersonalizationConfig.setBarPeekOnWorkspaceSwitch(true);
+            const axes = PersonalizationConfig.barAxes;
+            const sparse = JSON.stringify(PersonalizationConfig.sparseBarConfigs());
+            PersonalizationConfig.setBarAutoHideSmart(false);
+            PersonalizationConfig.setBarPushWindows(false);
+            PersonalizationConfig.setBarSuperReveal(false);
+            PersonalizationConfig.setBarPeekOnWorkspaceSwitch(false);
+            const after = PersonalizationConfig.barAxes;
+            return JSON.stringify({
+                "defaultsPreserved": before.autoHideSmart === false && before.pushWindows === false && before.superReveal === false && before.peekOnWorkspaceSwitch === false,
+                "smartLive": axes.autoHideSmart === true,
+                "pushWindowsLive": axes.pushWindows === true,
+                "superRevealLive": axes.superReveal === true,
+                "peekLive": axes.peekOnWorkspaceSwitch === true,
+                "sparseDeviationsOnly": sparse.indexOf("autoHideSmart") !== -1 && sparse.indexOf("pushWindows") !== -1 && sparse.indexOf("superReveal") !== -1 && sparse.indexOf("peekOnWorkspaceSwitch") !== -1 && sparse.indexOf("hoverPopouts") === -1,
+                "reset": after.autoHideSmart === false && after.pushWindows === false && after.superReveal === false && after.peekOnWorkspaceSwitch === false
+            });
+        }
+
+        // D4h: the orientation-aware scroll strips (row: either side of the
+        // middle lane; rail: the start/end halves along the track).
+        function d4hScrollZones(): string {
+            const content = barLoader.item;
+            return JSON.stringify({
+                "vertical": probeRoot.probeVertical,
+                "zones": content ? content.scrollZones : null
+            });
+        }
+
         // D4d: the forked dux resolver, unit-run against hand-computed
         // expectations (placement vocabulary, priority yield, flexible
         // shrink, pinned/always semantics, hysteresis restore).
@@ -1491,39 +1719,48 @@ ShellRoot {
                 overflowMode: "always"
             });
             const sections = {
-                left: [{
-                    size: 100,
-                    min: 100,
-                    mode: "bar",
-                    priority: 0
-                }, {
-                    size: 200,
-                    min: 100,
-                    mode: "auto",
-                    priority: -5
-                }, {
-                    size: 120,
-                    min: 120,
-                    mode: "auto",
-                    priority: 5
-                }],
-                center: [{
-                    size: 80,
-                    min: 80,
-                    mode: "auto",
-                    priority: 0
-                }],
-                right: [{
-                    size: 90,
-                    min: 90,
-                    mode: "always",
-                    priority: 0
-                }, {
-                    size: 70,
-                    min: 70,
-                    mode: "auto",
-                    priority: 0
-                }]
+                left: [
+                    {
+                        size: 100,
+                        min: 100,
+                        mode: "bar",
+                        priority: 0
+                    },
+                    {
+                        size: 200,
+                        min: 100,
+                        mode: "auto",
+                        priority: -5
+                    },
+                    {
+                        size: 120,
+                        min: 120,
+                        mode: "auto",
+                        priority: 5
+                    }
+                ],
+                center: [
+                    {
+                        size: 80,
+                        min: 80,
+                        mode: "auto",
+                        priority: 0
+                    }
+                ],
+                right: [
+                    {
+                        size: 90,
+                        min: 90,
+                        mode: "always",
+                        priority: 0
+                    },
+                    {
+                        size: 70,
+                        min: 70,
+                        mode: "auto",
+                        priority: 0
+                    }
+                ]
             };
             const options = {
                 length: 400,
@@ -1684,13 +1921,166 @@ ShellRoot {
             return result;
         }
 
-        // D4e e2: the window host topology (window mode). Scene "two" adds a
-        // second bottom bar whose lanes are clock-only; dump reports the
-        // host topology and the LAST-registered window's content — the
-        // probe seam takes the newest window, which is the second bar's,
-        // so the dump proves lanes render per entry. Scene "off" disables
-        // the second entry (its windows must drop to zero). Scene "clean"
-        // restores the factory single bar.
+        // D4e e5: v5 -> v6 migration folds non-default [island] widget
+        // appearance axes onto the singleton "island" lane entry, preserves
+        // [island.horizontalClock], strips legacy island keys + layoutMigrated,
+        // deletes emptied [island], and stays idempotent on repeat runs.
+        function d4eMigrationV6(): string {
+            const legacy = {
+                "configVersion": 5,
+                "bar": {
+                    "configs": [
+                        {
+                            "id": "default",
+                            "lanes": {
+                                "left": ["workspaces"],
+                                "middle": ["island"],
+                                "right": ["clock"]
+                            }
+                        }
+                    ]
+                },
+                "island": {
+                    "satellite": "weather",
+                    "showAvatar": false,
+                    "visualizerStyle": "dots",
+                    "hideDate": true,
+                    "layoutMigrated": true,
+                    "horizontalClock": {
+                        "hourFormat": "hh"
+                    }
+                }
+            };
+            const seed = {
+                "defaults": BarWidgetDefaults.DEFAULTS,
+                "barDefaults": BarDefaults.DEFAULTS
+            };
+            const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
+            const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), seed);
+            const entry = first.config.bar.configs[0].lanes.middle[0] ?? {};
+            const strippedLegacy = Object.assign({}, legacy);
+            delete strippedLegacy.island.horizontalClock;
+            const emptiedRun = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(strippedLegacy)), seed);
+            return JSON.stringify({
+                "changed": first.changed,
+                "version": first.config.configVersion,
+                "foldedOnEntry": entry.id === "island" && entry.satellite === "weather" && entry.showAvatar === false && entry.hideDate === true,
+                "defaultsSkipped": entry.visualizerStyle === undefined,
+                "clockKept": Boolean(first.config.island && first.config.island.horizontalClock && first.config.island.horizontalClock.hourFormat === "hh"),
+                "flatStripped": Boolean(first.config.island && first.config.island.satellite === undefined && first.config.island.showAvatar === undefined && first.config.island.hideDate === undefined && first.config.island.layoutMigrated === undefined),
+                "emptyIslandDeleted": emptiedRun.config.island === undefined,
+                "idempotent": second.changed === false && JSON.stringify(second.config) === JSON.stringify(first.config)
+            });
+        }
+
+        // D4f: atomic bar style axes, write-only starter presets, v7 migration,
+        // D-8 retired bonuses, capsule radius, and transparent group chrome.
+        function d4fStyle(): string {
+            const legacy = {
+                "configVersion": 6,
+                "bar": {
+                    "cornerStyle": 1,
+                    "configs": [
+                        {
+                            "id": "default",
+                            "position": "bottom",
+                            "cornerStyle": 3,
+                            "borderless": "transparent",
+                            "showBackground": false
+                        }
+                    ]
+                }
+            };
+            const seed = {
+                "defaults": BarWidgetDefaults.DEFAULTS,
+                "barDefaults": BarDefaults.DEFAULTS
+            };
+            const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
+            const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), seed);
+            const migratedEntry = first.config.bar.configs[0];
+            const v7Migrated = first.changed === true && first.config.configVersion === 7 && migratedEntry.backplate === false && migratedEntry.lanePill === true && migratedEntry.tint === true && migratedEntry.edgeMargin === undefined && migratedEntry.widgetStyle === undefined && migratedEntry.groupColor === "transparent" && migratedEntry.widgetOutlineEnabled === undefined && migratedEntry.cornerStyle === undefined && migratedEntry.borderless === undefined && migratedEntry.showBackground === undefined && migratedEntry.position === "bottom" && first.config.bar.cornerStyle === undefined && second.changed === false;
+
+            PersonalizationConfig.applyBarStylePreset("islands");
+            const islandsPreset = BarStylePresets.currentPreset(PersonalizationConfig.barAxes);
+            const islandsAxes = PersonalizationConfig.barAxes.backplate === false && PersonalizationConfig.barAxes.lanePill === false && PersonalizationConfig.barAxes.edgeMargin === 0;
+            PersonalizationConfig.setBarTint(true);
+            const customAfterTweak = BarStylePresets.currentPreset(PersonalizationConfig.barAxes) === "";
+            PersonalizationConfig.setBarCapsuleRadius("rounded");
+            PersonalizationConfig.setBarGroupColor("transparent");
+            const roundedAxis = PersonalizationConfig.barAxes.capsuleRadius === "rounded" && PersonalizationConfig.barAxes.groupColor === "transparent";
+            PersonalizationConfig.applyBarStylePreset("floating");
+
+            const d8BonusesRetired = BarDefaults.styleBoost(BarDefaults.deriveStyle({
+                backplate: false,
+                lanePill: true,
+                tint: false,
+                edgeMargin: 0
+            }, 5)) === 4 && BarDefaults.styleBoost(BarDefaults.deriveStyle({
+                backplate: false,
+                lanePill: false,
+                tint: false,
+                edgeMargin: 5
+            }, 5)) === 0 && BarDefaults.styleBoost(BarDefaults.deriveStyle({
+                backplate: true,
+                lanePill: false,
+                tint: false,
+                edgeMargin: 0,
+                squareCorners: true
+            }, 5)) === 0 && BarGeometry.exclusiveZone(false, 40, 44, 0, 5) === 45 && BarGeometry.screenReservation(false, 40, 44, 0, 5, 3) === 48;
+
+            const radiusVocabulary = BarDefaults.capsuleFullRadius({
+                capsuleRadius: "pill"
+            }, 26, 8, 12) === 13 && BarDefaults.capsuleFullRadius({
+                capsuleRadius: "rounded"
+            }, 26, 8, 12) === 8 && BarDefaults.capsuleFullRadius({
+                capsuleRadius: "px"
+            }, 26, 8, 12) === 12 && BarDefaults.GROUP_COLORS.indexOf("transparent") !== -1;
+
+            return JSON.stringify({
+                "v7Migrated": v7Migrated,
+                "presetCount": BarStylePresets.ORDER.length,
+                "islandsPreset": islandsPreset === "islands" && islandsAxes,
+                "customAfterTweak": customAfterTweak,
+                "roundedAndTransparent": roundedAxis,
+                "d8BonusesRetired": d8BonusesRetired,
+                "radiusVocabulary": radiusVocabulary,
+                "restoredFloating": BarStylePresets.currentPreset(PersonalizationConfig.barAxes) === "floating"
+            });
+        }
+
+        // D4g batch three: the rail face is the compact pill growing along
+        // the track — every widget id is rail-capable now (clock and
+        // systemMonitor always had B9.4-era rail faces; the roadmap claim
+        // was wrong and 批二 pinned it, so this verdict corrects it).
+        function d4gCatalog(): string {
+            const ids = BarWidgetDefaults.IDS;
+            const rows = {};
+            let capable = 0;
+            for (let i = 0; i < ids.length; i += 1) {
+                const id = ids[i];
+                const supported = catalogProbe.supportsVertical(id);
+                if (supported)
+                    capable += 1;
+                rows[id] = {
+                    "vertical": supported,
+                    "mode": catalogProbe.verticalMode(id)
+                };
+            }
+            return JSON.stringify({
+                "count": ids.length,
+                "capable": capable,
+                "modes": catalogProbe.verticalModes,
+                "rows": rows,
+                "vocabularyClosed": catalogProbe.verticalModes.join(",") === "stack,rotate,iconPopup",
+                "auditVerdict": catalogProbe.supportsVertical("clock") && catalogProbe.supportsVertical("island") && catalogProbe.supportsVertical("systemMonitor") && catalogProbe.verticalMode("battery") === "rotate" && catalogProbe.verticalMode("tray") === "stack" && catalogProbe.verticalMode("activeWindow") === "iconPopup" && catalogProbe.verticalMode("media") === "iconPopup"
+            });
+        }
+
+        // D4e e2 + e6: the window host topology and per-bar thickness/scales
+        // (window mode). Scene "two" adds a second bottom bar with clock-only
+        // lanes plus custom thickness (50), fontScale (1.1), iconScale (1.25).
+        // Scene "off" disables the second entry (windows drop to zero).
+        // Scene "clean" restores the factory single bar.
         function d4eWindowsSet(scene: string): string {
             PersonalizationConfig.selectedBarId = "";
             PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
@@ -1698,6 +2088,9 @@ ShellRoot {
                 const secondId = PersonalizationConfig.addBarConfig();
                 PersonalizationConfig.selectedBarId = secondId;
                 PersonalizationConfig.setBarPosition("bottom");
+                PersonalizationConfig.setBarThickness(50);
+                PersonalizationConfig.setBarFontScale(1.1);
+                PersonalizationConfig.setBarIconScale(1.25);
                 PersonalizationConfig.setBarLayouts(["clock"], [], []);
                 if (scene === "off")
                     PersonalizationConfig.setBarEnabled(secondId, false);
@@ -1708,13 +2101,18 @@ ShellRoot {
         function d4eWindowsDump(): string {
             const barScope = windowLoader.item;
             const report = barScope && barScope.probeHostReport ? JSON.parse(barScope.probeHostReport()) : [];
-            // Per-entry content: the second bar's own window, not the
-            // newest-registration seam (signature sort decides that one).
+            const first = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("default") : null;
             const second = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("bar2") : null;
             const content = second ? second.barContent : null;
             return JSON.stringify({
                 "hosts": report,
+                "firstHeight": first ? Math.round(first.height) : 0,
+                "firstFontScale": first && first.barConfig ? first.barConfig.axes.fontScale : 0,
+                "firstIconScale": first && first.barConfig ? first.barConfig.axes.iconScale : 0,
                 "secondEdge": second ? String(second.edge) : "",
+                "secondHeight": second ? Math.round(second.height) : 0,
+                "secondFontScale": second && second.barConfig ? second.barConfig.axes.fontScale : 0,
+                "secondIconScale": second && second.barConfig ? second.barConfig.axes.iconScale : 0,
                 "secondLeftIds": content ? content.effectiveLeftLayout.map(entry => entry.widgetId) : [],
                 "secondRightIds": content ? content.effectiveRightLayout.map(entry => entry.widgetId) : []
             });
@@ -1779,10 +2177,10 @@ ShellRoot {
             const buttonIcons = probeRoot.findNodes(content, node => node.iconText !== undefined, []);
             return JSON.stringify({
                 "ready": true,
-                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "preset": BarStylePresets.currentPreset(PersonalizationConfig.barAxes),
                 "colLayer0": layer0,
                 "bridge": {
-                    "showBackground": Config.options.bar.m3.showBackground,
+                    "backplate": PersonalizationConfig.barBackplate,
                     "autoHide": Config.options.bar.autoHide.enable,
                     "screenList": Array.from(Config.options.bar.screenList ?? []),
                     // D4b: the migrated per-widget axes read through the

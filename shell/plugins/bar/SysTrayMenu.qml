@@ -12,6 +12,10 @@ import qs.ui
 PopupWindow {
     id: root
     required property QsMenuHandle trayItemMenuHandle
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    readonly property bool barVertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    readonly property bool barAtEnd: root.barAxes.position === "bottom" || root.barAxes.position === "right"
     property string trayItemId: ""
     property real popupBackgroundMargin: 0
     property bool opened: false
@@ -113,9 +117,9 @@ PopupWindow {
             anchors {
                 left: parent.left
                 right: parent.right
-                verticalCenter: Config.options.bar.vertical ? parent.verticalCenter : undefined
-                top: Config.options.bar.vertical ? undefined : Config.options.bar.bottom ? undefined : parent.top
-                bottom: Config.options.bar.vertical ? undefined : Config.options.bar.bottom ? parent.bottom : undefined
+                verticalCenter: root.barVertical ? parent.verticalCenter : undefined
+                top: root.barVertical ? undefined : root.barAtEnd ? undefined : parent.top
+                bottom: root.barVertical ? undefined : root.barAtEnd ? parent.bottom : undefined
                 margins: root.padding
             }
 

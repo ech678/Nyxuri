@@ -190,13 +190,13 @@ class MigrationV4Test(unittest.TestCase):
         cls.pc = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
 
     def test_version_constants(self):
-        # D4c bumped the chain to 5; the v4 step itself is unchanged.
-        self.assertIn("var CURRENT_VERSION = 5", self.migrations)
+        # D4f bumped the chain to 7; the v4 step itself is unchanged.
+        self.assertIn("var CURRENT_VERSION = 7", self.migrations)
 
     def test_stamp_bumped_and_fast_path_keeps_older(self):
-        # D4c writes stamp 5; the fast path accepts 2..5.
-        self.assertIn("# nyxuri-config-schema: 5\\n", self.config_service)
-        for stamp in ("2", "3", "4", "5"):
+        # D4f writes stamp 7; the fast path accepts 2..7.
+        self.assertIn("# nyxuri-config-schema: 7\\n", self.config_service)
+        for stamp in ("2", "3", "4", "5", "6", "7"):
             self.assertIn(f'"# nyxuri-config-schema: {stamp}"', self.config_service)
 
     def test_migration_map_targets_canonical_ids(self):
@@ -394,14 +394,13 @@ class SettingsSurfaceTest(unittest.TestCase):
         self.assertNotIn("setTimeDateFormat", section)
 
     def test_chip_field_has_the_gear(self):
-        field = read(os.path.join(BAR_DIR, "SortableMultiSelectField.qml"))
-        self.assertIn("signal configureRequested(string entryKey)", field)
-        self.assertIn("configureButton", field)
-        self.assertIn("root.configureRequested(chipDelegate.entryKey)", field)
+        section = read(os.path.join(BAR_DIR, "BarLaneSection.qml"))
+        self.assertIn("signal configureRequested(string entryUid)", section)
+        self.assertIn("root.configureRequested(widgetRow.modelData.uid)", section)
 
     def test_card_and_page_route_the_editor(self):
-        card = read(os.path.join(BAR_DIR, "BarComponentsCard.qml"))
-        self.assertIn("signal widgetConfigureRequested(string entryUid)", card)
+        modules = read(os.path.join(BAR_DIR, "BarModulesSection.qml"))
+        self.assertIn("onConfigureRequested: uid => root.widgetEditorRequested(uid)", modules)
         page = read(os.path.join(BAR_DIR, "GeneralBarPage.qml"))
         self.assertIn("function openWidgetEditor(uid)", page)
         self.assertIn("onWidgetEditorRequested:", page)

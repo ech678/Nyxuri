@@ -83,14 +83,16 @@ class BarDefaultsTest(unittest.TestCase):
         checks = {
             "position": '"top"',
             "autoHide": "false",
-            "showBackground": "true",
-            "cornerStyle": "1",
-            "borderless": '"pills"',
+            "backplate": "true",
+            "lanePill": "false",
+            "tint": "false",
+            "widgetStyle": '"fused"',
+            "capsuleRadius": '"pill"',
             "groupColor": '"layer1"',
             "barThickness": "36",
             "verticalThickness": "36",
-            "edgeMargin": "0",
-            "sideMargin": "0",
+            "edgeMargin": "5",
+            "sideMargin": "-1",
             "sideMarginPercent": "0",
             "squareCorners": "false",
             "fontScale": "1.0",
@@ -103,23 +105,23 @@ class BarDefaultsTest(unittest.TestCase):
         for key, value in checks.items():
             self.assertIn(f"\n    {key}: {value},", body, f"{key} default changed")
 
-    def test_borderless_vocabulary_gains_flat(self):
-        match = re.search(r"var BORDERLESS_MODES = \[(.*?)\];", self.defaults, re.S)
+    def test_widget_style_vocabulary_includes_flat(self):
+        match = re.search(r"var WIDGET_STYLES = \[(.*?)\];", self.defaults, re.S)
         self.assertIsNotNone(match)
         modes = set(re.findall(r'"([a-z]+)"', match.group(1)))
-        self.assertEqual(modes, {"pills", "separated", "segmented", "transparent", "flat"})
+        self.assertEqual(modes, {"fused", "separate", "flat"})
 
     def test_baselines_carry_the_end4_values(self):
         self.assertIn("return style.vertical ? -4 : -7;", self.defaults)
-        self.assertIn("return style.panel ? 3 : (style.vertical ? -2 : -1);", self.defaults)
+        self.assertIn("return style.squareCorners ? 3 : (style.vertical ? -2 : -1);", self.defaults)
         self.assertIn("return style.gapsOut;", self.defaults)
         self.assertIn("return 5;", self.defaults)
 
     def test_shadow_axes_are_registered_out(self):
         body = js_var_body(self.defaults, "DEFAULTS")
-        for key in ("shadowIntensity", "shadowOpacity", "iconScale"):
-            self.assertNotIn(f"\n    {key}:", body, f"{key} must not ship as a live axis (D4e material)")
-        self.assertIn("D4e material", self.defaults)
+        for key in ("shadowIntensity", "shadowOpacity"):
+            self.assertNotIn(f"\n    {key}:", body, f"{key} must not ship as a live axis (D5 material)")
+        self.assertIn("D5 window-growth material", self.defaults)
 
     def test_is_custom_color_guard(self):
         self.assertIn("function isCustomColor(value)", self.defaults)
@@ -135,9 +137,10 @@ class MigrationV5Test(unittest.TestCase):
         cls.defaults = read(os.path.join(SERVICES_DIR, "BarDefaults.js"))
         cls.pc = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
 
-    def test_version_is_five(self):
-        self.assertIn("var CURRENT_VERSION = 5", self.migrations)
+    def test_version_is_seven(self):
+        self.assertIn("var CURRENT_VERSION = 7", self.migrations)
         self.assertIn("changed = migrateBarGlobals(config, seed) || changed;", self.migrations)
+        self.assertIn("changed = migrateBarStyleAxes(config, seed) || changed;", self.migrations)
 
     def test_explicit_bar_globals_map(self):
         match = re.search(r"var MIGRATED_BAR_GLOBALS = \{(.*?)\};", self.migrations, re.S)
@@ -145,10 +148,12 @@ class MigrationV5Test(unittest.TestCase):
         found = set(re.findall(r"^\s{4}([a-zA-Z_][a-zA-Z0-9_]*):", match.group(1), re.M))
         self.assertEqual(found, MIGRATED_BAR_KEYS)
 
-    def test_every_mapped_key_is_a_real_axis(self):
+    def test_every_mapped_key_is_a_real_axis_or_folded_in_v7(self):
         body = js_var_body(self.defaults, "DEFAULTS")
         axes = js_object_keys(body)
-        self.assertTrue(MIGRATED_BAR_KEYS <= axes, MIGRATED_BAR_KEYS - axes)
+        retired_to_v7 = {"showBackground", "cornerStyle", "borderless"}
+        self.assertTrue((MIGRATED_BAR_KEYS - retired_to_v7) <= axes,
+                        (MIGRATED_BAR_KEYS - retired_to_v7) - axes)
 
     def test_widget_style_keys_match_the_popup_vocabulary(self):
         match = re.search(r"var WIDGET_STYLE_KEYS = \[(.*?)\];", self.migrations, re.S)
@@ -181,9 +186,10 @@ class StoreShapeTest(unittest.TestCase):
         self.assertEqual(missing, [], f"normalizeBarAxes misses axes: {missing}")
 
     def test_bar_level_views_are_derived_not_assigned(self):
-        for prop in ("barPosition", "barAutoHide", "barScreenList", "barShowBackground",
-                     "barCornerStyle", "barBorderless", "barGroupColor", "barThickness",
-                     "barVerticalThickness", "barEdgeMargin", "barSideMargin"):
+        for prop in ("barPosition", "barAutoHide", "barScreenList", "barBackplate",
+                     "barLanePill", "barTint", "barWidgetStyle", "barCapsuleRadius",
+                     "barGroupColor", "barThickness", "barVerticalThickness",
+                     "barEdgeMargin", "barSideMargin"):
             self.assertRegex(
                 self.pc,
                 rf"readonly property \w+ {prop}: root\.activeBarConfig\(\)\.axes\.",
@@ -205,14 +211,14 @@ class StoreShapeTest(unittest.TestCase):
             self.assertIn(f"function {setter}(", self.pc)
 
     def test_widget_styles_api_retired(self):
-        for gone in ("barWidgetStyleEntry", "setBarWidgetStyle", "resetBarWidgetStyle",
+        for gone in ("barWidgetStyleEntry", "setBarWidgetStyle(mode", "resetBarWidgetStyle",
                      "normalizedBarWidgetStyles", "property var barWidgetStyles"):
             self.assertNotIn(gone, self.pc, gone)
         for qml in os.listdir(BAR_DIR):
             if not qml.endswith(".qml"):
                 continue
             content = read(os.path.join(BAR_DIR, qml))
-            for gone in ("setBarWidgetStyle", "resetBarWidgetStyle", "barWidgetStyleEntry"):
+            for gone in ("setBarWidgetStyle(mode", "resetBarWidgetStyle(", "barWidgetStyleEntry"):
                 self.assertNotIn(gone, content, f"{qml} still reads {gone}")
 
     def test_entry_style_writers_are_uid_addressed(self):
@@ -249,29 +255,31 @@ class ConsumptionTest(unittest.TestCase):
         "LauncherButton.qml", "PowerButton.qml", "DynamicIsland.qml",
     )
     SETTINGS_SURFACE_FILES = (
-        "BarComponentsCard.qml", "GeneralBarPage.qml", "BarWidgetPage.qml",
-        "SortableMultiSelectField.qml",
+        "BarManagerCard.qml", "BarLaneSection.qml", "BarWidgetPickerPopup.qml",
+        "QuickSettingsListCard.qml", "BarModulesSection.qml",
+        "BarAppearanceSection.qml", "GeneralBarPage.qml", "BarWidgetPage.qml",
     )
 
     @classmethod
     def setUpClass(cls):
+        # D4g: one host file serves both orientations.
         cls.content = read(os.path.join(BAR_DIR, "BarContent.qml"))
-        cls.vertical = read(os.path.join(BAR_DIR, "VerticalBarContent.qml"))
+        cls.hosts = (cls.content,)
         cls.group = read(os.path.join(BAR_DIR, "BarGroup.qml"))
 
     def test_lane_geometry_resolves_through_the_store(self):
-        # D4e: the hosts resolve through their OWN entry's axes (per-bar);
-        # the resolved* functions take the axes argument.
+        # D4e: the host resolves through its OWN entry's axes (per-bar);
+        # the resolved* functions take the axes argument. D4g: the rail
+        # keeps the vertical spacing ladder in the same file.
         self.assertIn("PersonalizationConfig.resolvedBarInnerPadding(root.axes)", self.content)
-        self.assertIn("PersonalizationConfig.resolvedBarInnerPadding(root.axes)", self.vertical)
         self.assertIn("PersonalizationConfig.resolvedBarSpacing(false, root.axes)", self.content)
-        self.assertIn("PersonalizationConfig.resolvedBarSpacing(true, root.axes)", self.vertical)
-        for host in (self.content, self.vertical):
+        self.assertIn("PersonalizationConfig.resolvedBarSpacing(true, root.axes)", self.content)
+        for host in self.hosts:
             self.assertIn("property var barConfig: PersonalizationConfig.activeBarConfig()", host)
             self.assertIn("readonly property var axes: root.barConfig ? root.barConfig.axes : BarDefaults.DEFAULTS", host)
             self.assertIn("filterLayout(root.barConfig ? root.barConfig.lanes.left : [])", host)
         self.assertNotIn('borderless === "transparent" ? -7', self.content)
-        self.assertNotIn("? -4 :", self.vertical)
+        self.assertNotIn("? -4 :", self.content)
 
     def test_segment_roles_fork_is_verbatim_dux(self):
         roles = read(os.path.join(BAR_DIR, "SegmentRoles.js"))
@@ -284,30 +292,30 @@ class ConsumptionTest(unittest.TestCase):
         self.assertIn('root.segmentRole === "first"', self.group)
         self.assertNotIn("property int currentIndex", self.group)
         self.assertNotIn("property int totalCount", self.group)
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertNotIn("totalCount:", host)
             self.assertRegex(host, r'segmentRole: root\.(left|middle|right)SegmentRoles\[index\] \?\? "solo"')
 
     def test_lane_roles_read_live_participation(self):
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertIn("function laneSegmentRoles(entries, plainRepeater, materialRepeater)", host)
             self.assertIn("participating.push(item === null ? true : item.hasContent);", host)
 
     def test_shell_radius_flows_through_one_alias(self):
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertIn("readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, root.axes)", host)
         bar = read(os.path.join(BAR_DIR, "Bar.qml"))
         self.assertIn("readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, barRoot.axes)", bar)
         self.assertIn("root.shellRadius", self.content)
 
     def test_flat_mode_capsule_chrome(self):
-        self.assertIn('readonly property bool isFlat: root.borderlessMode === "flat"', self.group)
+        self.assertIn("readonly property bool isFlat: root.styleContext.capsuleFlat", self.group)
         self.assertIn("if (root.isFlat)", self.group)
 
     def test_widget_layer_axes_reach_the_capsule(self):
         # D4e: the capsule resolves through the injected per-bar axes.
         self.assertIn("property var barAxes: PersonalizationConfig.activeBarConfig().axes", self.group)
-        self.assertIn("PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor, root.barAxes)", self.group)
+        self.assertIn("PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor, root.barAxes, root.style.opacity)", self.group)
         self.assertIn("PersonalizationConfig.resolvedBarWidgetPadding(root.paintMaterialPill, root.barAxes)", self.group)
         self.assertIn("PersonalizationConfig.barWidgetOutlineWidth(", self.group)
         self.assertIn("PersonalizationConfig.barWidgetOutlineColor(", self.group)
@@ -321,13 +329,15 @@ class ConsumptionTest(unittest.TestCase):
         qmldir = read(os.path.join(BAR_DIR, "qmldir"))
         self.assertIn("singleton BarScale 1.0 BarScale.qml", qmldir)
         scale = read(os.path.join(BAR_DIR, "BarScale.qml"))
-        self.assertIn("PersonalizationConfig.barAxes.fontScale", scale)
-        self.assertNotIn("iconScale", scale)
+        self.assertIn("function fontFor(widgetBar)", scale)
+        self.assertIn("function iconFor(widgetBar)", scale)
+        self.assertIn("axes.fontScale", scale)
+        self.assertIn("axes.iconScale", scale)
 
     def test_bar_surface_files_scale_type_reads(self):
-        # The negative lookahead must not be defeatable by backtracking:
-        # anchor the token end first, then reject the multiplier suffix.
-        unscaled = re.compile(r"NexusStyle\.font\.[a-zA-Z]+(?![a-zA-Z])(?! \* BarScale\.font)")
+        # Every NexusStyle.font.* read on a bar surface scales through
+        # BarScale.font / BarScale.fontFor(...) or BarScale.icon / BarScale.iconFor(...).
+        unscaled = re.compile(r"NexusStyle\.font\.[a-zA-Z]+(?![a-zA-Z])(?![^\n]*BarScale\.(font|icon))")
         for name in self.BAR_SURFACE_FONT_FILES:
             content = read(os.path.join(BAR_DIR, name))
             reads = [m.group(0) for m in unscaled.finditer(content)
@@ -362,8 +372,9 @@ class SettingsPageTest(unittest.TestCase):
                      'PersonalizationConfig.setBarRadius(', 'PersonalizationConfig.setBarSurfaceColor(',
                      'PersonalizationConfig.setBarSurfaceTransparency(', 'PersonalizationConfig.setBarBorderEnabled(',
                      'PersonalizationConfig.setBarWidgetOutlineEnabled(', 'PersonalizationConfig.setBarWidgetTransparency(',
-                     'PersonalizationConfig.setBarScreenList(', 'PersonalizationConfig.setBarShowBackground(',
-                     'PersonalizationConfig.setBarAutoHide('):
+                     'PersonalizationConfig.setBarScreenList(', 'PersonalizationConfig.setBarBackplate(',
+                     # D4h: the toggle became the three-state mode writer.
+                     'PersonalizationConfig.setBarAutoHideMode('):
             self.assertIn(call, self.page, call)
 
     def test_sentinel_rows_render_auto(self):

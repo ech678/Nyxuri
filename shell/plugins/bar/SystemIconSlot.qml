@@ -19,6 +19,7 @@ import Quickshell
 import qs.commons
 import qs.ui
 import qs.services
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -39,7 +40,12 @@ Item {
     property string slotKey: ""
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
+    property var widgetBar: null
+    // D4g 批四: the tooltip opens away from the bar this slot lives on —
+    // read the injected axes, not the selected-bar bridge view (same
+    // fallback shape as isMaterial above, UtilButton's anchor precedent).
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    property bool isMaterial: BarStyle.isTinted(root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes)
     default property alias content: contentHost.data
 
     readonly property bool hovered: mouseArea.containsMouse || root.forceHovered
@@ -125,7 +131,7 @@ Item {
 
                 anchors.centerIn: parent
                 visible: root.iconText.length > 0
-                iconSize: Appearance.sizes.barUtilIconSize
+                iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                 fill: root.isActive ? 1 : 0
                 color: root.hovered && root.isMaterial ? M3Palette.primaryForeground : root.resolvedContentColor
 
@@ -168,7 +174,7 @@ Item {
             elide: Text.ElideRight
             clip: true
 
-            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar)
             font.features: { "tnum": 1 }
             color: root.hovered && root.isMaterial ? M3Palette.primaryForeground : root.resolvedContentColor
 
@@ -204,6 +210,6 @@ Item {
         text: root.toolTipText
         extraVisibleCondition: root.toolTipText.length > 0 && mouseArea.containsMouse
         alternativeVisibleCondition: extraVisibleCondition
-        anchorEdges: Config.options?.bar?.bottom ?? false ? Edges.Top : Edges.Bottom
+        anchorEdges: root.barAxes.position === "bottom" ? Edges.Top : Edges.Bottom
     }
 }

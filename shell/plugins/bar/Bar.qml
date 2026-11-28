@@ -8,6 +8,8 @@ import qs.services
 import qs.commons
 import qs.ui
 import "../../commons/BarGeometry.js" as BarGeometry
+import "../../services/BarDefaults.js" as BarDefaults
+import "BarStyle.js" as BarStyle
 
 // Separate Material 3 bar selected by `bar.appearanceStyle === "m3"`.
 // It replaces modules/ii/bar/Bar.qml entirely while active (see ShellIiPanelsImpl),
@@ -177,20 +179,27 @@ Scope {
                                     // keeps geometry sane through a signature reshuffle).
                                     readonly property var barConfig: barHost.barConfig
                                     readonly property var axes: barRoot.barConfig?.axes ?? BarDefaults.DEFAULTS
-                                    readonly property bool showBarBackground: barRoot.axes.showBackground === true
+                                    readonly property var styleContext: BarStyle.resolve(barRoot.axes, {
+                                        gapsOut: Config.options.bar.m3.gapsOut,
+                                        shellRadius: barRoot.shellRadius,
+                                        centerOnly: barRoot.centerOnly
+                                    })
+                                    readonly property bool showBarBackground: barRoot.styleContext.backplate
+                                    readonly property color resolvedSurfaceColor: PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, barRoot.axes)
+                                    readonly property real barVisualOpacity: Math.max(0, Math.min(1, Number(barRoot.axes.barOpacity ?? 1)))
 
                                     // D4c bar shell radius axis (see BarContent.shellRadius);
                                     // every screen-corner decorator below reads this alias.
                                     readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, barRoot.axes)
-                                    // D4c percent length: a nonzero sideMarginPercent converts to
-                                    // pixels against the along-axis screen span and replaces the
-                                    // px sideMargin (0 keeps full width / the px axis).
+                                    // D4c/D4f percent length + sideMargin (-1 Auto -> gapsOut on floating backplate).
                                     readonly property real sideMarginPx: {
                                         const percent = barRoot.axes.sideMarginPercent;
-                                        if (!(percent > 0))
-                                            return barRoot.axes.sideMargin;
-                                        const span = barRoot.vertical ? (barRoot.screen?.height ?? 0) : (barRoot.screen?.width ?? 0);
-                                        return span > 0 ? Math.round(span * percent / 100) : barRoot.axes.sideMargin;
+                                        if (percent > 0) {
+                                            const span = barRoot.vertical ? (barRoot.screen?.height ?? 0) : (barRoot.screen?.width ?? 0);
+                                            if (span > 0)
+                                                return Math.round(span * percent / 100);
+                                        }
+                                        return PersonalizationConfig.resolvedBarSideMargin(barRoot.axes);
                                     }
 
                                     Component.onDestruction: {
@@ -209,7 +218,7 @@ Scope {
 
                                     Timer {
                                         id: showBarTimer
-                                        interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
+                                        interval: BarDefaults.SUPER_REVEAL_DELAY_MS
                                         repeat: false
                                         onTriggered: {
                                             barRoot.superShow = true;
@@ -218,7 +227,10 @@ Scope {
                                     Connections {
                                         target: GlobalStates
                                         function onSuperDownChanged() {
-                                            if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable)
+                                            // D4h: the reveal toggle moved to the entry axis
+                                            // (superReveal) — per-bar truth, was the bridge
+                                            // global showWhenPressingSuper.enable.
+                                            if (barRoot.axes.superReveal !== true)
                                                 return;
                                             if (GlobalStates.superDown)
                                                 showBarTimer.restart();
@@ -245,17 +257,70 @@ Scope {
                                     // below). Edge-scroll areas and scroll hints go dead in this
                                     // mode — registered boundary, they live in the gaps.
                                     readonly property bool clickThroughEnabled: barRoot.axes.clickThrough === true
-                                    // D4d lane mask surfaces (BarContent/VerticalBarContent).
+                                    // D4d lane mask surfaces (the single BarContent host).
                                     readonly property var laneMaskLeft: barRoot.barContent ? barRoot.barContent.laneMaskLeft : null
                                     readonly property var laneMaskMiddle: barRoot.barContent ? barRoot.barContent.laneMaskMiddle : null
                                     readonly property var laneMaskRight: barRoot.barContent ? barRoot.barContent.laneMaskRight : null
                                     readonly property bool fullscreenAutoHide: barRoot.hideOnFullscreenAxis && CompositorDriver.available && CompositorDriver.fullscreenToplevelOnScreen(barRoot.outputName)
-                                    // Reveal grace: while held, the slide-out stays parked even
-                                    // though mustShow dropped (the pointer may come right back).
-                                    // Initial false: changed handlers do not fire for initial
-                                    // binding values, so a boot-time autoHide config must find
-                                    // the bar already in the hidden half of the state.
-                                    property bool hideHold: false
+                                    // D4h smart hide (bar-config.md D4h, noctalia smart_auto_hide
+                                    // semantics): while the active workspace of this output has
+                                    // windows the autoHide channel engages; while it is empty the
+                                    // bar parks shown with its reservation. Empty workspace in a
+                                    // driver-less environment (probes) reads as parked.
+                                    readonly property bool smartHideAxis: barRoot.axes.autoHideSmart === true
+                                    readonly property var activeWorkspace: CompositorDriver.available ? CompositorDriver.activeWorkspaceForOutput(barRoot.outputName) : null
+                                    readonly property bool workspaceHasWindows: barRoot.smartHideAxis && CompositorDriver.available && (CompositorDriver.windowsForWorkspace(barRoot.activeWorkspace?.id ?? -1).length > 0)
+                                    readonly property bool autoHideEnabled: (barRoot.axes.autoHide === true) || barRoot.fullscreenAutoHide || (barRoot.smartHideAxis && barRoot.workspaceHasWindows)
+                                    // D4h: the reservation toggle moved to the entry axis
+                                    // (pushWindows) — was the bridge global of the same name.
+                                    readonly property bool pushWindowsWhenShown: barRoot.axes.pushWindows === true
+                                    // D4h workspace-switch peek (bar-config.md D4h, noctalia
+                                    // show_on_workspace_switch cadence): a workspace change on
+                                    // this output briefly reveals a hidden bar — debounced, then
+                                    // parked for PEEK_STAY_MS. The probe drives
+                                    // noteWorkspaceSwitch() directly (no compositor workspace
+                                    // events in the harness).
+                                    readonly property bool peekEnabled: (barRoot.axes.autoHide === true || barRoot.smartHideAxis) && barRoot.axes.peekOnWorkspaceSwitch === true
+                                    property bool peekShow: false
+                                    // Last-seen active workspace id; -2 = untracked (peek off).
+                                    readonly property int peekWorkspaceId: barRoot.peekEnabled && barRoot.activeWorkspace ? (barRoot.activeWorkspace.id ?? -1) : -2
+                                    property int lastPeekWorkspaceId: -2
+                                    onPeekWorkspaceIdChanged: {
+                                        // A valid -> valid transition is a real switch; the first
+                                        // assignment (driver connecting, peek toggled on) is not.
+                                        if (barRoot.peekWorkspaceId >= 0 && barRoot.lastPeekWorkspaceId >= 0 && barRoot.peekWorkspaceId !== barRoot.lastPeekWorkspaceId)
+                                            barRoot.noteWorkspaceSwitch();
+                                        barRoot.lastPeekWorkspaceId = barRoot.peekWorkspaceId;
+                                    }
+                                    function noteWorkspaceSwitch(): void {
+                                        if (!barRoot.peekEnabled)
+                                            return;
+                                        peekDebounce.restart();
+                                    }
+                                    Timer {
+                                        id: peekDebounce
+                                        interval: BarDefaults.PEEK_DEBOUNCE_MS
+                                        repeat: false
+                                        onTriggered: {
+                                            if (barRoot.peekEnabled) {
+                                                barRoot.peekShow = true;
+                                                peekStay.restart();
+                                            }
+                                        }
+                                    }
+                                    Timer {
+                                        id: peekStay
+                                        interval: BarDefaults.PEEK_STAY_MS
+                                        repeat: false
+                                        onTriggered: barRoot.peekShow = false
+                                    }
+                                    onPeekEnabledChanged: {
+                                        if (!barRoot.peekEnabled) {
+                                            peekDebounce.stop();
+                                            peekStay.stop();
+                                            barRoot.peekShow = false;
+                                        }
+                                    }
                                     // dux gapEnterSuppressed lineage (DBarBody): with
                                     // click-through the hidden bar's mask is the full band but
                                     // the revealed bar's mask is lanes-only, so a pointer over a
@@ -264,13 +329,16 @@ Scope {
                                     // enter generated by the mask expanding under a resting
                                     // pointer) keeps the bar hidden.
                                     property bool gapEnterSuppressed: false
-                                    readonly property bool autoHideEnabled: (barRoot.axes.autoHide === true) || barRoot.fullscreenAutoHide
-                                    readonly property bool pushWindowsWhenShown: Config.options?.bar?.autoHide?.pushWindows ?? false
+                                    // Reveal grace: while held, the slide-out stays parked even
+                                    // though mustShow dropped (the pointer may come right back).
+                                    // Initial false: changed handlers do not fire for initial
+                                    // binding values, so a boot-time autoHide config must find
+                                    // the bar already in the hidden half of the state.
+                                    property bool hideHold: false
                                     readonly property bool overviewOwnsEdge: GlobalStates.overviewOpen || CompositorDriver.inOverview
                                     readonly property string outputName: barRoot.screen?.name ?? ""
-                                    readonly property bool materialHug: barRoot.axes.cornerStyle === 4
-                                    readonly property bool panelStyle: barRoot.axes.cornerStyle === 5
-                                    readonly property real layerGap: barRoot.axes.cornerStyle === 3 ? Config.options.bar.m3.gapsOut : 0
+                                    readonly property bool materialHug: barRoot.styleContext.isLaneHug
+                                    readonly property bool panelStyle: barRoot.styleContext.isSquare
                                     // B9.4: `edge` is the window-anchor truth; `vertical` is the
                                     // same fact in the form every ported widget already reads.
                                     readonly property string edge: barRoot.axes.position
@@ -280,15 +348,28 @@ Scope {
                                     readonly property bool anchoredBottom: barRoot.edge === "bottom" || barRoot.vertical
                                     readonly property bool anchoredLeft: barRoot.edge === "left" || !barRoot.vertical
                                     readonly property bool anchoredRight: barRoot.edge === "right" || !barRoot.vertical
-                                    readonly property real thickness: barRoot.vertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight
-                                    // B9.5 outer margins: normal axis = away from the screen edge,
-                                    // along axis = the two ends. 0 keeps end4's edge-flush look.
+                                    readonly property real thickness: barRoot.vertical ? PersonalizationConfig.resolvedVerticalBarWidth(barRoot.axes) : PersonalizationConfig.resolvedBarHeight(barRoot.axes)
+                                    // B9.5/D4f outer margins: edgeMargin 0 = flush, >0 = floating.
                                     readonly property real edgeMargin: barRoot.axes.edgeMargin
-                                    readonly property real sideMargin: barRoot.axes.sideMargin
+                                    readonly property real innerMargin: barRoot.axes.innerMargin ?? 0
+                                    readonly property real sideMargin: barRoot.sideMarginPx
+                                    // D4g 批四b corner junction: this entry's tuck insets from the
+                                    // shared topology projection (ScreenBarLayout) — a later bar
+                                    // insets the corner ends an earlier perpendicular bar owns.
+                                    // Zero everywhere for a solo bar (or one owning its corners).
+                                    readonly property var tuckMargins: ScreenBarLayout.tuckMargins(barRoot.screen, barRoot.barConfig.id)
                                     // The margins and the reserved exclusive zone share one pure
                                     // implementation (commons/BarGeometry.js) with the probe.
-                                    readonly property var windowMargins: BarGeometry.margins(barRoot.edge, barRoot.vertical, barRoot.edgeMargin, barRoot.sideMarginPx, barRoot.layerGap, barRoot.autoHideEnabled, barRoot.deadPixel)
-                                    readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, barRoot.axes.cornerStyle, Config.options.bar.m3.gapsOut, barRoot.edgeMargin)
+                                    readonly property var windowMargins: {
+                                        const own = BarGeometry.margins(barRoot.edge, barRoot.vertical, barRoot.edgeMargin, barRoot.sideMarginPx, barRoot.autoHideEnabled, barRoot.deadPixel);
+                                        return {
+                                            top: own.top + barRoot.tuckMargins.top,
+                                            bottom: own.bottom + barRoot.tuckMargins.bottom,
+                                            left: own.left + barRoot.tuckMargins.left,
+                                            right: own.right + barRoot.tuckMargins.right
+                                        };
+                                    }
+                                    readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, barRoot.axes.barThickness, barRoot.axes.verticalThickness, barRoot.styleContext.boostExtra, barRoot.innerMargin)
                                     // The content is instantiated exactly once, by the active
                                     // orientation branch (B8.6: a second copy stole islandHost and
                                     // doubled every service consumer).
@@ -311,7 +392,7 @@ Scope {
                                     property bool styleEditorHold: false
                                     readonly property bool interactionHold: contextMenuHold || leftSidebarHold || rightSidebarHold || mediaControlsHold || controlPanelHold || styleEditorHold
                                     readonly property bool pointerShow: !overviewOwnsEdge && hoverRegion.containsMouse && !barRoot.gapEnterSuppressed
-                                    property bool mustShow: pointerShow || superShow || interactionHold
+                                    property bool mustShow: pointerShow || superShow || interactionHold || peekShow
                                     property bool reservationActive: false
                                     onMustShowChanged: {
                                         if (barRoot.mustShow) {
@@ -383,7 +464,7 @@ Scope {
 
                                     exclusionMode: ExclusionMode.Ignore
                                     exclusiveZone: !autoHideEnabled ? shownExclusiveZone : (pushWindowsWhenShown && reservationActive ? shownExclusiveZone : 0)
-                                    WlrLayershell.namespace: "quickshell:bar"
+                                    WlrLayershell.namespace: "nyxuri-shell-bar"
                                     // Upstream raised the bar to Overlay only while a Hyprland
                                     // special workspace sat over a fullscreen window. Niri has no
                                     // special workspace, so the bar stays on Top and fullscreen
@@ -392,8 +473,8 @@ Scope {
                                     // bar to Overlay so the reveal channel stays alive above a
                                     // fullscreen toplevel (default off keeps the Top layer).
                                     WlrLayershell.layer: barRoot.fullscreenAutoHide ? WlrLayer.Overlay : WlrLayer.Top
-                                    implicitHeight: barRoot.vertical ? 0 : (Appearance.sizes.barHeight + barRoot.shellRadius + (barRoot.autoHideEnabled ? barRoot.layerGap : 0))
-                                    implicitWidth: barRoot.vertical ? (Appearance.sizes.verticalBarWidth + barRoot.shellRadius + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)) : 0
+                                    implicitHeight: barRoot.vertical ? 0 : (barRoot.thickness + barRoot.shellRadius)
+                                    implicitWidth: barRoot.vertical ? (barRoot.thickness + barRoot.shellRadius) : 0
                                     // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
                                     // and same-layer overlap is resolved by stacking, not layer priority - bar was winning and
                                     // swallowing the tiny corner-open hit rects. Carve them out of the bar's own mask so clicks
@@ -401,7 +482,7 @@ Scope {
                                     // The corner-open cutout only mattered while the bar was raised
                                     // to Overlay and shared a layer with the screen-corner click
                                     // zones. On Top layer the corners are already above it.
-                                    property int cornerOpenCutHeight: (autoHideEnabled && !barRoot.vertical) ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + layerGap : 0
+                                    property int cornerOpenCutHeight: (autoHideEnabled && !barRoot.vertical) ? Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) : 0
                                     mask: Region {
                                         // D4d click-through: the full-bar hit region is replaced
                                         // by the three lane rects (empty lanes collapse away), so
@@ -550,7 +631,7 @@ Scope {
                                         // A fixed screen-edge strip so a translated-away bar can
                                         // still be revealed. Horizontal bars reserve a horizontal
                                         // strip, vertical bars a vertical one.
-                                        readonly property real strip: Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2) + barRoot.layerGap
+                                        readonly property real strip: Math.max(1, Config.options?.bar?.autoHide?.hoverRegionWidth ?? 2)
                                         x: barRoot.vertical ? (barRoot.edge === "right" ? parent.width - width : 0) : 0
                                         y: barRoot.vertical ? 0 : (barRoot.edge === "bottom" ? parent.height - height : 0)
                                         width: barRoot.vertical ? (barRoot.autoHideEnabled ? strip : 0) : parent.width
@@ -595,7 +676,7 @@ Scope {
                                         Item {
                                             id: hoverMaskRegion
                                             anchors {
-                                                fill: contentLoader
+                                                fill: barRoot.barContent?.barBackgroundItem ?? contentLoader
                                                 topMargin: barRoot.vertical ? 0 : -Config.options.bar.autoHide.hoverRegionWidth
                                                 bottomMargin: barRoot.vertical ? 0 : -Config.options.bar.autoHide.hoverRegionWidth
                                                 leftMargin: barRoot.vertical ? -Config.options.bar.autoHide.hoverRegionWidth : 0
@@ -605,10 +686,11 @@ Scope {
 
                                         RoundCorner {
                                             id: leftPillCorner
-                                            visible: !barRoot.vertical && barRoot.centerOnly && showBarBackground && barRoot.axes.cornerStyle === 0
+                                            visible: !barRoot.vertical && barRoot.styleContext.showCenterPillCorners
+                                            opacity: barRoot.barVisualOpacity
                                             x: barRoot.centerPillX - implicitSize
                                             implicitSize: barRoot.shellRadius
-                                            color: Appearance.colors.colLayer0
+                                            color: barRoot.resolvedSurfaceColor
                                             corner: RoundCorner.CornerEnum.TopRight
 
                                             states: State {
@@ -633,38 +715,35 @@ Scope {
 
                                         Loader {
                                             id: contentLoader
-                                            // One content instance only: the orientation picks the
-                                            // component; geometry is explicit so switching edges
-                                            // cannot leave a stale anchor behind.
+                                            // One content instance only: geometry is explicit so
+                                            // switching edges cannot leave a stale anchor behind.
+                                            // D4g: a single host serves both orientations — the
+                                            // content survives a flip and every axis read re-binds
+                                            // (widgets receive the orientation through the binding
+                                            // injected in BarContent.injectWidgetEntry).
                                             // D4d: hideHold parks the slide-out through the
                                             // autoHideDelay grace.
-                                            readonly property real slideOffset: barRoot.autoHideEnabled ? (!barRoot.mustShow && !barRoot.hideHold ? -barRoot.thickness : barRoot.layerGap) : 0
+                                            readonly property real slideOffset: barRoot.autoHideEnabled && !barRoot.mustShow && !barRoot.hideHold ? -barRoot.thickness : 0
                                             // Explicit geometry, never conditional anchors: QML does
                                             // not clear an anchor when the binding yields
                                             // `undefined`, so a top->left->top switch used to leave
                                             // the content 2519 wide / 1440 tall inside the window.
                                             x: barRoot.vertical ? ((barRoot.edge === "right" ? parent.width - width + slideOffset : slideOffset) + (barRoot.edge === "right" && barRoot.deadPixel ? -1 : 0)) : 0
                                             y: barRoot.vertical ? 0 : ((barRoot.edge === "bottom" ? parent.height - height + slideOffset : slideOffset) + (barRoot.edge === "bottom" && barRoot.deadPixel ? -1 : 0))
-                                            width: barRoot.vertical ? Appearance.sizes.verticalBarWidth : parent.width
-                                            height: barRoot.vertical ? parent.height : Appearance.sizes.barHeight
+                                            width: barRoot.vertical ? barRoot.thickness : parent.width
+                                            height: barRoot.vertical ? parent.height : barRoot.thickness
+                                            opacity: barRoot.barVisualOpacity
                                             Behavior on x {
                                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                                             }
                                             Behavior on y {
                                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                                             }
-                                            sourceComponent: barRoot.vertical ? verticalContent : horizontalContent
+                                            sourceComponent: barContent
 
                                             Component {
-                                                id: horizontalContent
+                                                id: barContent
                                                 BarContent {
-                                                    barConfig: barRoot.barConfig
-                                                }
-                                            }
-
-                                            Component {
-                                                id: verticalContent
-                                                VerticalBarContent {
                                                     barConfig: barRoot.barConfig
                                                 }
                                             }
@@ -672,10 +751,11 @@ Scope {
 
                                         RoundCorner {
                                             id: rightPillCorner
-                                            visible: !barRoot.vertical && barRoot.centerOnly && showBarBackground && barRoot.axes.cornerStyle === 0
+                                            visible: !barRoot.vertical && barRoot.styleContext.showCenterPillCorners
+                                            opacity: barRoot.barVisualOpacity
                                             x: barRoot.centerPillX + barRoot.centerPillWidth
                                             implicitSize: barRoot.shellRadius
-                                            color: Appearance.colors.colLayer0
+                                            color: barRoot.resolvedSurfaceColor
                                             corner: RoundCorner.CornerEnum.TopLeft
 
                                             states: State {
@@ -702,21 +782,23 @@ Scope {
                                         // screen edge at the top and bottom instead of left/right.
                                         RoundCorner {
                                             id: topPillCorner
-                                            visible: barRoot.vertical && barRoot.centerOnly && showBarBackground && barRoot.axes.cornerStyle === 0
+                                            visible: barRoot.vertical && barRoot.styleContext.showCenterPillCorners
+                                            opacity: barRoot.barVisualOpacity
                                             y: barRoot.centerPillY - implicitSize
                                             x: contentLoader.x + (barRoot.edge === "right" ? -implicitSize : contentLoader.width)
                                             implicitSize: barRoot.shellRadius
-                                            color: Appearance.colors.colLayer0
+                                            color: barRoot.resolvedSurfaceColor
                                             corner: barRoot.edge === "right" ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.BottomLeft
                                         }
 
                                         RoundCorner {
                                             id: bottomPillCorner
-                                            visible: barRoot.vertical && barRoot.centerOnly && showBarBackground && barRoot.axes.cornerStyle === 0
+                                            visible: barRoot.vertical && barRoot.styleContext.showCenterPillCorners
+                                            opacity: barRoot.barVisualOpacity
                                             y: barRoot.centerPillY + (barRoot.barContent?.centerPillHeight ?? 0)
                                             x: contentLoader.x + (barRoot.edge === "right" ? -implicitSize : contentLoader.width)
                                             implicitSize: barRoot.shellRadius
-                                            color: Appearance.colors.colLayer0
+                                            color: barRoot.resolvedSurfaceColor
                                             corner: barRoot.edge === "right" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.TopLeft
                                         }
 
@@ -729,16 +811,17 @@ Scope {
                                             y: barRoot.vertical ? contentLoader.y : (barRoot.edge === "bottom" ? contentLoader.y - height : contentLoader.y + contentLoader.height)
                                             width: barRoot.vertical ? barRoot.shellRadius : contentLoader.width
                                             height: barRoot.vertical ? contentLoader.height : barRoot.shellRadius
-                                            active: (showBarBackground && barRoot.axes.cornerStyle === 0 && !barRoot.centerOnly) || barRoot.axes.cornerStyle === 4
+                                            opacity: barRoot.barVisualOpacity
+                                            active: barRoot.styleContext.showScreenDecorators
 
                                             sourceComponent: Item {
                                                 implicitWidth: barRoot.shellRadius
                                                 implicitHeight: barRoot.shellRadius
-                                                readonly property color decoratorColor: (barRoot.axes.cornerStyle === 4 || showBarBackground) ? Appearance.colors.colLayer0 : "transparent"
+                                                readonly property color decoratorColor: barRoot.styleContext.decoratorUsesBackplate ? barRoot.resolvedSurfaceColor : "transparent"
 
                                                 RoundCorner {
                                                     id: startCorner
-                                                    visible: barRoot.axes.cornerStyle === 0 || barRoot.leftLaneCount > 0
+                                                    visible: barRoot.styleContext.showStartDecorator || barRoot.leftLaneCount > 0
                                                     x: 0
                                                     y: barRoot.vertical ? 0 : (barRoot.edge === "bottom" ? parent.height - height : 0)
                                                     width: implicitSize
@@ -750,7 +833,7 @@ Scope {
                                                 }
                                                 RoundCorner {
                                                     id: endCorner
-                                                    visible: barRoot.axes.cornerStyle === 0 || barRoot.rightLaneCount > 0
+                                                    visible: barRoot.styleContext.showEndDecorator || barRoot.rightLaneCount > 0
                                                     x: barRoot.vertical ? parent.width - width : 0
                                                     y: barRoot.vertical ? parent.height - height : (barRoot.edge === "bottom" ? 0 : parent.height - height)
                                                     width: implicitSize
@@ -763,7 +846,14 @@ Scope {
                                             }
                                         }
                                     }
+                                    CompositorBlurRegion {
+                                        targetWindow: barRoot
+                                        backgroundItem: barRoot.barContent?.blurPrimaryItem ?? null
+                                        additionalBackgroundItems: barRoot.barContent?.blurAdditionalItems ?? []
+                                        blurEnabled: (barRoot.axes.blurEnabled !== false) && (barRoot.barVisualOpacity > 0) && (barRoot.styleContext.showBackplateFill || barRoot.styleContext.showCenterPill || barRoot.styleContext.lanePill)
+                                        radius: barRoot.styleContext.isFloating ? PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.windowRounding, barRoot.axes) : 0
                                     }
+                                }
                             }
                         }
                     }

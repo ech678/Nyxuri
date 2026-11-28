@@ -22,8 +22,8 @@ Item {
     required property Item di
     anchors.fill: parent
 
-    readonly property bool showMediaControls: PersonalizationConfig.islandShowMediaControls
-    readonly property string visualizerStyle: PersonalizationConfig.islandVisualizerStyle
+    readonly property bool showMediaControls: di && typeof di.option === "function" ? di.option("showMediaControls") : false
+    readonly property string visualizerStyle: di && typeof di.option === "function" ? di.option("visualizerStyle") : "dots"
 
     // Probe surface (scripts/dev/probe-bar.sh): the B-10 control matrix
     // (controls x visualizer style) and the cava lease, read at runtime.
@@ -37,7 +37,8 @@ Item {
         id: mediaMask
         anchors.fill: parent
         color: "transparent"
-        radius: height / 2
+        // Rail-safe: the capsule follows the shorter dimension on both axes.
+        radius: Math.min(width, height) / 2
 
         layer.enabled: true
         layer.effect: OpacityMask {
@@ -51,12 +52,9 @@ Item {
         Rectangle {
             id: artMask
             width: di.isMaterial ? di.pillHeight : di.pillHeight - 8
-            height: di.isMaterial ? di.pillHeight : di.pillHeight - 8
-            anchors {
-                left: parent.left
-                leftMargin: di.isMaterial ? 0 : 4
-                verticalCenter: parent.verticalCenter
-            }
+            height: width
+            x: di.vertical ? (parent.width - width) / 2 : (di.isMaterial ? 0 : 4)
+            y: di.vertical ? 4 : (parent.height - height) / 2
             radius: di.isMaterial ? Appearance.rounding?.full : Appearance.rounding?.small ?? 8
             color: Appearance.colors.colLayer1
             clip: true
@@ -92,18 +90,43 @@ Item {
             id: trackTitleMetrics
             visible: false
             text: di.activePlayer?.trackTitle ?? ""
-            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(di.widgetBar)
             font.weight: Font.DemiBold
         }
         StyledText {
             id: trackArtistMetrics
             visible: false
             text: di.activePlayer?.trackArtist ?? ""
-            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(di.widgetBar)
+        }
+
+        // D4g batch three: the rail compact face is art + play/pause stacked
+        // along the track (dux MediaCompact's isVertical face lineage); the
+        // text and controls half stays a row face (window-growth infra).
+        MouseArea {
+            anchors {
+                horizontalCenter: parent.horizontalCenter
+                top: artMask.bottom
+                topMargin: 6
+            }
+            width: 24
+            height: 24
+            visible: di.vertical
+            cursorShape: Qt.PointingHandCursor
+            onClicked: di.activePlayer?.togglePlaying()
+
+            MaterialSymbol {
+                anchors.centerIn: parent
+                text: di.activePlayer?.isPlaying ? "pause" : "play_arrow"
+                fill: 1
+                iconSize: 20
+                color: Appearance.colors.colOnLayer0
+            }
         }
 
         ColumnLayout {
             id: trackInfoColumn
+            visible: !di.vertical
             anchors {
                 left: artMask.right
                 leftMargin: 8
@@ -124,7 +147,7 @@ Item {
             StyledText {
                 Layout.fillWidth: true
                 text: di.activePlayer?.trackTitle ?? ""
-                font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+                font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(di.widgetBar)
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnLayer0
                 elide: Text.ElideRight
@@ -134,7 +157,7 @@ Item {
             StyledText {
                 Layout.fillWidth: true
                 text: di.activePlayer?.trackArtist ?? ""
-                font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+                font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(di.widgetBar)
                 color: Appearance.colors.colOnLayer0
                 opacity: 0.7
                 elide: Text.ElideRight
@@ -164,7 +187,7 @@ Item {
             maxVisualizerValue: mediaFaceCava.normalizationCeiling
             smoothing: 2
             color: Appearance.colors.colOnLayer0
-            visible: diMediaRoot.visualizerStyle === "wave"
+            visible: !di.vertical && diMediaRoot.visualizerStyle === "wave"
         }
 
         // Lease the shared cava process only while the wave is the chosen
@@ -196,7 +219,7 @@ Item {
             // are enabled; "none" shows no spectrum at all. Opacity fades with
             // the audio signal, so the cava lease inside still gates on
             // isPlaying.
-            visible: !diMediaRoot.showMediaControls && diMediaRoot.visualizerStyle === "dots"
+            visible: !di.vertical && !diMediaRoot.showMediaControls && diMediaRoot.visualizerStyle === "dots"
         }
 
         RowLayout {
@@ -207,7 +230,7 @@ Item {
                 verticalCenter: parent.verticalCenter
             }
             spacing: di.isMaterial ? -2 : -4
-            visible: diMediaRoot.showMediaControls
+            visible: !di.vertical && diMediaRoot.showMediaControls
 
             Item {
                 Layout.alignment: Qt.AlignVCenter

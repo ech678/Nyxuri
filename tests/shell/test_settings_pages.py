@@ -70,7 +70,7 @@ ANCHOR_IDS = {
     "BarAppearanceSection.qml": (
         "bar.appearance.position",
     ),
-    "BarComponentsCard.qml": (
+    "BarModulesSection.qml": (
         "bar.modules.components",
     ),
     "options/TrayOptions.qml": (
@@ -616,7 +616,7 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         self.assertIn("function showTab(", source)
 
     def test_search_anchor_ids_are_stable(self):
-        for name in ("BarAppearanceSection.qml", "BarComponentsCard.qml", "options/TrayOptions.qml"):
+        for name in ("BarAppearanceSection.qml", "BarModulesSection.qml", "options/TrayOptions.qml"):
             source = _read(name.rsplit("/", 1)[-1])
             for anchor_id in ANCHOR_IDS[name]:
                 self.assertIn('anchorId: "%s"' % anchor_id, source,
@@ -625,66 +625,65 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
     def test_atom_groups_present(self):
         appearance = _read("BarAppearanceSection.qml")
         modules = _read("BarModulesSection.qml")
-        card = _read("BarComponentsCard.qml")
-        for atom in ("PreferenceHeader", "PreferenceToggle", "PreferenceSelect", "PreferenceSlider"):
+        manager = _read("BarManagerCard.qml")
+        for atom in ("PreferenceHeader", "PreferenceGroup", "PreferenceVisualPicker",
+                     "PreferenceToggle", "PreferenceSelect", "PreferenceSlider"):
             self.assertIn(atom, appearance, f"BarAppearanceSection must use the atom: {atom}")
-        # D4b: the widget-scoped rows retired to the per-instance options
-        # pages; the modules tab keeps the header/action shape.
-        for atom in ("PreferenceHeader", "PreferenceAction"):
+        for atom in ("PreferenceHeader", "PreferenceGroup", "PreferenceAction", "BarLaneSection"):
             self.assertIn(atom, modules, f"BarModulesSection must use the atom: {atom}")
-        for atom in ("ConnectedRect",):
-            self.assertIn(atom, card, f"BarComponentsCard must use the atom: {atom}")
-        # Four selects ride the appearance tab (edge/corner/borderless/
-        # group color); the modules tab carries none anymore.
-        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 7,
-                         "the appearance selects must register the popup input region (D4c added surface/border/outline color rows)")
+        for atom in ("PreferenceHeader", "PreferenceGroup", "ConnectedRect"):
+            self.assertIn(atom, manager, f"BarManagerCard must use the atom: {atom}")
+        # Selects ride the appearance tab (corner/borderless/groupColor/density/
+        # lengthMode/surfaceColor/borderColor/widgetTextColor/outlineColor/
+        # leftScrollAction/rightScrollAction); the modules tab carries none.
+        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 11,
+                         "the appearance selects must register the popup input region")
         self.assertEqual(modules.count("inputRegionService: PopupInputRegionService"), 0,
                          "the modules selects moved to the per-widget options pages")
 
     def test_drag_fields_and_coordinators_survive(self):
-        card = _read("BarComponentsCard.qml")
+        lane = _read("BarLaneSection.qml")
         modules = _read("BarModulesSection.qml")
-        self.assertEqual(card.count("SortableMultiSelectField {"), 4,
-                         "three bar zones + the quick settings field stay drag-enabled")
-        self.assertEqual(modules.count("LayoutDragCoordinator {"), 2,
-                         "one coordinator per drag surface (zones / quick settings)")
-        self.assertIn("fields: [componentsCard.leadingField, componentsCard.middleField, componentsCard.trailingField]", modules)
-        self.assertIn("fields: [componentsCard.quickSettingsField]", modules)
-        # The overlays must not be children of the scrolling content column:
-        # they ride the section wrapper (the Item that carries the column's
-        # implicit height) as its last children.
+        self.assertEqual(modules.count("BarLaneSection {"), 3,
+                         "three bar lane sections stay drag-enabled")
+        self.assertIn("id: listDrag", modules)
+        self.assertIn("dragCoordinator: listDrag", modules)
+        self.assertIn("function beginDrag(", modules)
+        self.assertIn("drag_indicator", lane)
+        # The floating drag ghost must live outside the scrolling column.
         wrapper = modules.index("implicitHeight: modulesColumn.implicitHeight")
-        self.assertGreater(modules.index("LayoutDragCoordinator {"), wrapper,
-                           "drag coordinators must live inside the section wrapper")
+        self.assertGreater(modules.index("visible: listDrag.active"), wrapper,
+                           "drag ghost must live inside the section wrapper")
 
     def test_business_owners_unchanged(self):
         appearance = _read("BarAppearanceSection.qml")
-        card = _read("BarComponentsCard.qml")
+        lane = _read("BarLaneSection.qml")
         modules = _read("BarModulesSection.qml")
-        for owner in ("PersonalizationConfig.setBarPosition(", "PersonalizationConfig.edgePositions"):
+        qs = _read("QuickSettingsListCard.qml")
+        for owner in ("PersonalizationConfig.setBarPosition(", "edgeChoices"):
             self.assertIn(owner, appearance, f"business owner dropped: {owner}")
         for owner in (
-            "PersonalizationConfig.addBarEntry(",
             "PersonalizationConfig.removeBarEntry(",
-            "PersonalizationConfig.toggleBarEntryEnabled(",
+            "PersonalizationConfig.setBarEntryEnabled(",
+        ):
+            self.assertIn(owner, lane, f"business owner dropped: {owner}")
+        for owner in (
             "PersonalizationConfig.toggleQuickSettingsComponent(",
             "PersonalizationConfig.removeQuickSettingsComponent(",
-            "PersonalizationConfig.barLayoutEntriesLeft",
-            "PersonalizationConfig.barLayoutEntriesMiddle",
-            "PersonalizationConfig.barLayoutEntriesRight",
+            "PersonalizationConfig.moveQuickSettingsComponent(",
             "PersonalizationConfig.quickSettingsComponents",
         ):
-            self.assertIn(owner, card, f"business owner dropped: {owner}")
+            self.assertIn(owner, qs, f"business owner dropped: {owner}")
         self.assertIn("PersonalizationConfig.moveBarEntry(", modules,
                       "business owner dropped: moveBarEntry")
         self.assertIn("PersonalizationConfig.addBarEntry(", modules,
-                      "business owner dropped: addBarEntry (uid-less pool drops)")
-        self.assertIn("PersonalizationConfig.moveQuickSettingsComponent(", modules,
-                      "business owner dropped: moveQuickSettingsComponent")
+                      "business owner dropped: addBarEntry")
+        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", modules)
+        self.assertIn("PersonalizationConfig.barLayoutEntriesMiddle", modules)
+        self.assertIn("PersonalizationConfig.barLayoutEntriesRight", modules)
 
     def test_legacy_chrome_stays_out(self):
-        for name in ("GeneralBarPage.qml", "BarAppearanceSection.qml", "BarComponentsCard.qml",
-                     "BarModulesSection.qml"):
+        for name in ("GeneralBarPage.qml", "BarAppearanceSection.qml", "BarModulesSection.qml"):
             source = _read(name)
             for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "StyledSwitch",
                                               "EdgePositionSelector"):
@@ -1253,6 +1252,29 @@ class TestShortcutsPageRebuild(unittest.TestCase):
         for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "SettingsActionRow",
                                           "StyledSwitch"):
             self.assertNotIn(token, source, f"legacy token re-entered ShortcutsPage: {token}")
+
+
+class TestThemePageAtomIntegrity(unittest.TestCase):
+    """ThemePage must only bind supported properties on Preference* atoms."""
+
+    def test_preference_sliders_only_use_slider_properties(self):
+        source = _read("ThemePage.qml")
+        lines = source.splitlines()
+        for i, line in enumerate(lines):
+            if not re.match(r"^\s*PreferenceSlider\s*\{", line):
+                continue
+            depth = 0
+            for j in range(i, len(lines)):
+                l = lines[j]
+                depth += l.count("{") - l.count("}")
+                if j > i:
+                    if depth <= 0:
+                        break
+                    if depth == 1:
+                        self.assertIsNone(
+                            re.match(r"^\s*(text|subtext|checked|onToggled)\s*:", l),
+                            f"ThemePage.qml:{j + 1}: invalid property on PreferenceSlider: {l.strip()}",
+                        )
 
 
 if __name__ == "__main__":

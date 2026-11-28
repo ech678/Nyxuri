@@ -95,12 +95,12 @@ ShellRoot {
             // Slot contract: the island owns popup:notification while the bar
             // unit is on and the island is a bar layout member (B9.3: layout
             // membership is the only truth, not the retired islandEnabled
-            // key). B9.4: the vertical bar has no island shape yet, so a
-            // vertical edge keeps the standalone notification host — otherwise
-            // notifications would be handed to a widget that is filtered out
-            // of the layout. The rule is kind-keyed, so a third-party popup
-            // host yields exactly like the first-party one (S1-3 seating rule).
-            if (unit.kind === "popup:notification" && StateProjection.isEnabled("bar") && PersonalizationConfig.islandInLayout && !Config.options.bar.vertical)
+            // key). D4g 批四: the rail island faces landed (批三), so the old
+            // "vertical edge keeps the standalone host" exemption is gone —
+            // DiNotifs serves the icon compact face on rails. The rule is
+            // kind-keyed, so a third-party popup host yields exactly like the
+            // first-party one (S1-3 seating rule).
+            if (unit.kind === "popup:notification" && StateProjection.isEnabled("bar") && PersonalizationConfig.islandInLayout)
                 return false;
             return true;
         }

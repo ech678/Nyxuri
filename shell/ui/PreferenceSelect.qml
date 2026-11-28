@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.commons
+import qs.commons.i18n
 import qs.ui
 
 // Dropdown select row (Caelestia Nexus SelectRow): label plus optional
@@ -20,8 +21,11 @@ ConnectedRect {
     // fallbackText; e.g. an unset default application).
     property alias fallbackText: splitButton.fallbackText
     property var inputRegionService: null
+    property bool modified: false
+    property string resetTooltip: ""
 
     signal selected(string value)
+    signal resetRequested
 
     function closeMenu() {
         splitButton.closeMenu();
@@ -72,6 +76,19 @@ ConnectedRect {
                 font.pixelSize: NexusStyle.font.labelSmall
                 elide: Text.ElideRight
             }
+        }
+
+        IconButton {
+            visible: root.modified
+            Layout.alignment: Qt.AlignVCenter
+            width: NexusStyle.icon.small + NexusStyle.padding.small
+            height: NexusStyle.icon.small + NexusStyle.padding.small
+            controlSize: NexusStyle.icon.small + NexusStyle.padding.small
+            iconSize: NexusStyle.icon.small
+            iconName: "restart_alt"
+            accessibleName: root.resetTooltip.length > 0 ? root.resetTooltip : I18n.tr("Reset to default")
+            tooltipText: accessibleName
+            onClicked: root.resetRequested()
         }
 
         SplitMenuButton {

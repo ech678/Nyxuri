@@ -13,9 +13,18 @@ import qs.commons
 import qs.ui
 import M3Shapes
 
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
+
 Item {
     id: root
+    property var widgetEntry: null
+    property var widgetBar: null
     property bool mirrored: false
+
+    function option(key) {
+        return BarWidgetDefaults.option("island", root.widgetEntry, key);
+    }
 
     readonly property real pillHeight: 32
     readonly property real idleCollapsedWidth: 144
@@ -35,8 +44,18 @@ Item {
     readonly property real batteryWidth: 170
     readonly property real badgeSize: 32
     readonly property real badgeSpacing: 6
-    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
-    property bool vertical: Config.options.bar.vertical
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    readonly property var styleContext: BarStyle.resolve(root.barAxes, {
+        centerOnly: GlobalStates.barCenterOnly
+    })
+    readonly property bool isMaterial: root.styleContext.tint
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    // D4g batch three: the rail face is a compact pill growing ALONG the
+    // rail (D-9) — cross size is the bar thickness direction, the along
+    // length comes from the active face. dux `pillTarget(along, cross)`
+    // lineage; the island lives inside the middle lane, so a full capsule
+    // (min dimension / 2) replaces dux's edge-hugging corner split.
+    readonly property real railCrossSize: PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes)
 
     property string manualFocusId: ""
 
@@ -288,33 +307,47 @@ Item {
             id: "notification",
             active: root.latestNotification !== null,
             component: notificationComponent,
-            width: root.notificationWidth
+            width: root.notificationWidth,
+            // Text face on the row; the rail gets the icon compact face
+            // (the text face waits for the window-growth infra, D-9).
+            railLength: 56
         },
         {
             id: "battery",
             active: root.batteryAlertActive,
             component: batteryComponent,
-            width: root.batteryWidth
+            width: root.batteryWidth,
+            railLength: 76
         },
         {
             id: "osd",
             active: GlobalStates.osdKind !== "",
             component: osdComponent,
-            width: root.osdWidth
+            width: root.osdWidth,
+            railLength: 76
         },
         {
             id: "media",
             active: root.hasMedia,
             component: mediaComponent,
-            width: root.mediaWidth
+            width: root.mediaWidth,
+            railLength: 76
         },
         {
             id: "session",
             active: GlobalStates.diSessionOpen,
             component: sessionComponent,
-            width: root.sessionWidth
-        },
+            width: root.sessionWidth,
+            railLength: 168
+        }
     ]
+
+    // Rail along-length per face (idle is not a provider — it is the
+    // fallback — so its stacked length rides a callback from DiIdle, the
+    // same pattern as idleTextContentWidth; 2× cross is the pre-report
+    // floor).
+    property real idleRailContentLength: 0
+    readonly property real railPillLength: root.displayedProvider ? (root.displayedProvider.railLength ?? root.railCrossSize * 2) : Math.max(root.railCrossSize * 2, root.idleRailContentLength)
 
     readonly property var alwaysWinIds: ["session", "notification", "battery", "osd"]
 
@@ -353,10 +386,20 @@ Item {
 
     readonly property string activeContentId: root.displayedProvider?.id ?? "idle"
 
-    implicitHeight: root.pillHeight
-    implicitWidth: (root.displayedProvider?.width ?? root.idleWidth) + (!root.vertical && root.badgeProviders.length > 0 ? root.badgeProviders.length * (root.badgeSpacing + root.badgeSize) : 0)
+    implicitHeight: root.vertical ? root.railPillLength : root.pillHeight
+    implicitWidth: root.vertical ? root.railCrossSize : (root.displayedProvider?.width ?? root.idleWidth) + (root.badgeProviders.length > 0 ? root.badgeProviders.length * (root.badgeSpacing + root.badgeSize) : 0)
 
     Behavior on implicitWidth {
+        enabled: !root.vertical
+        NumberAnimation {
+            duration: 350
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
+        }
+    }
+
+    Behavior on implicitHeight {
+        enabled: root.vertical
         NumberAnimation {
             duration: 350
             easing.type: Easing.BezierSpline
@@ -369,19 +412,29 @@ Item {
 
     Rectangle {
         id: pill
-        anchors.left: parent.left
-        width: root.displayedProvider?.width ?? root.idleWidth
-        height: root.pillHeight
+        x: 0
+        y: 0
+        width: root.vertical ? root.railCrossSize : (root.displayedProvider?.width ?? root.idleWidth)
+        height: root.vertical ? root.railPillLength : root.pillHeight
         // B-3: the island paints its own capsule (BarGroup runs it with
         // paintBackground: false and the blacklist keeps the group tint off).
         // end4: material and center-only bars leave the island transparent so
         // the frame color shows through.
-        color: root.isMaterial || (GlobalStates.barCenterOnly && Config.options.bar.cornerStyle === 0) ? "transparent" : Appearance.colors.colLayer0
-        radius: height / 2
+        color: root.styleContext.islandTransparent ? "transparent" : PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.barAxes)
+        radius: Math.min(root.width, root.height) / 2
         clip: true
-        visible: !root.vertical
 
         Behavior on width {
+            enabled: !root.vertical
+            NumberAnimation {
+                duration: 350
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Appearance.animationCurves.expressiveDefaultSpatial
+            }
+        }
+
+        Behavior on height {
+            enabled: root.vertical
             NumberAnimation {
                 duration: 350
                 easing.type: Easing.BezierSpline
@@ -418,8 +471,6 @@ Item {
             id: contentLoader
             anchors.fill: parent
             sourceComponent: root.displayedProvider?.component ?? idleComponent
-            active: !root.vertical
-
             onLoaded: {
                 if (root.displayedProvider?.id === "session" && item) {
                     item.forceActiveFocus();
@@ -464,42 +515,72 @@ Item {
 
         Component {
             id: batteryComponent
-            RowLayout {
-                anchors {
-                    fill: parent
-                    leftMargin: 10
-                    rightMargin: 10
-                }
-                spacing: 6
+            Item {
+                anchors.fill: parent
 
-                StyledText {
-                    Layout.alignment: Qt.AlignVCenter
-                    text: root.batteryStatusText()
-                    font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
-                    font.weight: Font.DemiBold
-                    color: root.batteryAlertColor()
-                }
+                // D4g batch three: status + percentage stack along the rail.
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 2
+                    visible: di.vertical
 
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                MaterialSymbol {
-                    Layout.alignment: Qt.AlignVCenter
-                    text: root.batteryIcon()
-                    fill: 1
-                    iconSize: 16
-                    color: root.batteryAlertColor()
-                }
-
-                StyledText {
-                    Layout.alignment: Qt.AlignVCenter
-                    text: `${Math.round(Battery.percentage * 100)}`
-                    font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
-                    font.features: {
-                        "tnum": 1
+                    MaterialSymbol {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: root.batteryIcon()
+                        fill: 1
+                        iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
+                        color: root.batteryAlertColor()
                     }
-                    color: root.batteryAlertColor()
+
+                    StyledText {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: `${Math.round(Battery.percentage * 100)}`
+                        font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
+                        font.features: {
+                            "tnum": 1
+                        }
+                        color: root.batteryAlertColor()
+                    }
+                }
+
+                RowLayout {
+                    anchors {
+                        fill: parent
+                        leftMargin: 10
+                        rightMargin: 10
+                    }
+                    spacing: 6
+                    visible: !di.vertical
+
+                    StyledText {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: root.batteryStatusText()
+                        font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
+                        font.weight: Font.DemiBold
+                        color: root.batteryAlertColor()
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
+                    MaterialSymbol {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: root.batteryIcon()
+                        fill: 1
+                        iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
+                        color: root.batteryAlertColor()
+                    }
+
+                    StyledText {
+                        Layout.alignment: Qt.AlignVCenter
+                        text: `${Math.round(Battery.percentage * 100)}`
+                        font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
+                        font.features: {
+                            "tnum": 1
+                        }
+                        color: root.batteryAlertColor()
+                    }
                 }
             }
         }
@@ -529,7 +610,7 @@ Item {
                     color: root.isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colLayer0
                     colSymbol: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
                     text: root.iconForProviderId(badgeItem.modelData.id)
-                    iconSize: 16
+                    iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                     fill: 1
                     padding: 4
                 }

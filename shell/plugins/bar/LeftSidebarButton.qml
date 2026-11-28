@@ -3,12 +3,15 @@ import Quickshell
 import qs.services
 import qs.commons
 import qs.ui
+import "BarStyle.js" as BarStyle
 
 RippleButton {
     id: root
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property bool showPing: false
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     property real buttonPadding: 5
 
     implicitWidth: 32
@@ -53,15 +56,15 @@ RippleButton {
     CustomIcon {
         id: distroIcon
         anchors.centerIn: parent
-        width: root.isMaterial ? (root.vertical ? 24 : 22) : 19.5
-        height: root.isMaterial ? (root.vertical ? 24 : 22) : 19.5
+        width: (root.isMaterial ? (root.vertical ? 24 : 22) : 19.5) * BarScale.iconFor(root.widgetBar)
+        height: (root.isMaterial ? (root.vertical ? 24 : 22) : 19.5) * BarScale.iconFor(root.widgetBar)
         // Config.options.custom.distroIcon/colorizeIcon do not exist in iNiR;
         // ported to the same source iNiR's own LeftSidebarButton uses.
         source: (Config.options?.bar?.topLeftIcon ?? "distro") === "distro"
             ? SystemInfo.distroIcon
             : `${Config.options?.bar?.topLeftIcon ?? "distro"}-symbolic`
         colorize: true
-        color: (Config.options?.bar?.m3?.cornerStyle ?? 0) !== 3
+        color: !root.isMaterial
             ? Appearance.colors.colPrimary
             : root.toggled
                 ? M3Palette.pillInk("sidebarToggle")

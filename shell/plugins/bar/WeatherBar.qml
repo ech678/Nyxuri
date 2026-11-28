@@ -14,15 +14,18 @@ import QtQuick
 import QtQuick.Layouts
 import qs.commons
 import qs.ui
+import "BarStyle.js" as BarStyle
 
 MouseArea {
     id: root
     property bool hovered: false
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
-    // D4b click axes: "default" keeps the built-in behavior (popup on
-    // clickForDetails, right-press refresh).
+    property color contentColor: Appearance.colors.colOnLayer1
+    property bool contentColorOverridden: false
     property var widgetEntry: null
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
 
     property string weatherLeaseId: ""
     Component.onCompleted: {
@@ -39,11 +42,9 @@ MouseArea {
     readonly property string iconName: root.hasData ? WeatherService.currentIconName : "cloud"
 
     implicitWidth: vertical ? 32 : (contentLoader.item?.implicitWidth ?? 0)
-    implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
+    implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
-    property var widgetBar: null
-    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     readonly property bool clickForDetails: !root.barAxes.hoverPopouts
     hoverEnabled: true
 
@@ -79,22 +80,22 @@ MouseArea {
                 visible: !root.isMaterial
                 fill: 0
                 text: root.iconName
-                iconSize: NexusStyle.font.bodyLarge * BarScale.font
-                color: Appearance.colors.colOnLayer1
+                iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
+                color: root.contentColor
                 Layout.alignment: Qt.AlignVCenter
             }
 
             StyledText {
                 visible: !root.isMaterial
-                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
-                color: Appearance.colors.colOnLayer1
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
+                color: root.contentColor
                 text: root.tempText
                 Layout.alignment: Qt.AlignVCenter
             }
 
             StyledText {
                 visible: root.isMaterial
-                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: M3Palette.pillAccent("weatherBar", M3Palette.primary)
                 text: root.tempText
                 Layout.alignment: Qt.AlignVCenter
@@ -112,7 +113,7 @@ MouseArea {
                     anchors.centerIn: parent
                     fill: 0
                     text: root.iconName
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: M3Palette.primaryForeground
                 }
             }
@@ -128,22 +129,22 @@ MouseArea {
                 visible: !root.isMaterial
                 fill: 0
                 text: root.iconName
-                iconSize: NexusStyle.font.bodyLarge * BarScale.font
-                color: Appearance.colors.colOnLayer1
+                iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
+                color: root.contentColor
                 Layout.alignment: Qt.AlignHCenter
             }
 
             StyledText {
                 visible: !root.isMaterial
-                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
-                color: Appearance.colors.colOnLayer1
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
+                color: root.contentColor
                 text: root.tempText.replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
             }
 
             StyledText {
                 visible: root.isMaterial
-                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: M3Palette.pillAccent("weatherBar", M3Palette.primary)
                 text: root.tempText.replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
@@ -162,7 +163,7 @@ MouseArea {
                     anchors.centerIn: parent
                     fill: 0
                     text: root.iconName
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: M3Palette.primaryForeground
                 }
             }

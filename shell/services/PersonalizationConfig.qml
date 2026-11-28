@@ -8,6 +8,8 @@ import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
 import "BarWidgetDefaults.js" as BarWidgetDefaults
 import "BarDefaults.js" as BarDefaults
+import "BarStylePresets.js" as BarStylePresets
+import "DensityPresets.js" as DensityPresets
 import "ConfigMigrations.js" as ConfigMigrations
 import qs.services
 import qs.commons.i18n
@@ -300,9 +302,11 @@ Singleton {
     // B9.3: layout membership is the island's only switch. The old
     // `islandEnabled` gate is read once during load (legacy migration) and is
     // never serialized again.
-    // B8.4: idle-face satellite is an explicit optional part, not the iNiR
-    // leftWidget hardcode that rendered weather under a "clockWidget" value.
-    property string islandSatellite: "clock"
+    // D4e e5: the island's five appearance axes live on the singleton "island"
+    // lane entry overrides (BarWidgetDefaults.DEFAULTS.island); these readonly
+    // views project from there so IslandPage/HorizontalClockPage/probes keep
+    // reading one source of truth.
+    readonly property string islandSatellite: BarWidgetDefaults.option("island", root.islandEntry(), "satellite")
     readonly property var islandSatelliteOptions: [
         {
             "value": "clock",
@@ -323,8 +327,8 @@ Singleton {
     // B-10: the island media face unfreezes the end4 control set — playback
     // buttons plus a visualizer style. end4 defaults: controls off, dots;
     // cava runs only while the media face is visible and playing.
-    property bool islandShowMediaControls: false
-    property string islandVisualizerStyle: "dots"
+    readonly property bool islandShowMediaControls: BarWidgetDefaults.option("island", root.islandEntry(), "showMediaControls") === true
+    readonly property string islandVisualizerStyle: BarWidgetDefaults.option("island", root.islandEntry(), "visualizerStyle")
     readonly property var islandVisualizerStyleOptions: [
         {
             "value": "dots",
@@ -350,84 +354,76 @@ Singleton {
     // path. Setters write through withBarConfigs — nothing assigns these.
     readonly property string barPosition: root.activeBarConfig().axes.position
     // B9.7 settled keys. `barAutoHide` drives the slide-out window;
-    // pushWindows / hoverRegionWidth / super-reveal stay internal bridge
-    // defaults — consumed, but not user-visible surface.
+    // D4h moved pushWindows / superReveal / smart / peek onto the entry
+    // axes (per-bar truth) — the bridge keeps only the selected-bar
+    // projection and the internal hoverRegionWidth.
     readonly property bool barAutoHide: root.activeBarConfig().axes.autoHide
     // Screen filter for the bar windows. Empty list = every screen (end4
     // semantics); names come from Quickshell.screens.
     readonly property var barScreenList: root.activeBarConfig().axes.screenList
-    // end4 `bar.showBackground`: the frame/pill background of non-material
-    // styles. Only Hug/Float expose it; other styles ignore it downstream.
-    readonly property bool barShowBackground: root.activeBarConfig().axes.showBackground
-    readonly property var barCornerStyles: [
+    // D4f atomic style & composition views (replaces barCornerStyle /
+    // barBorderless / barShowBackground).
+    readonly property bool barBackplate: root.activeBarConfig().axes.backplate
+    readonly property bool barLanePill: root.activeBarConfig().axes.lanePill
+    readonly property bool barTint: root.activeBarConfig().axes.tint
+    readonly property string barWidgetStyle: root.activeBarConfig().axes.widgetStyle
+    readonly property string barCapsuleRadius: root.activeBarConfig().axes.capsuleRadius
+    readonly property int barWidgetRadius: root.activeBarConfig().axes.widgetRadius
+    readonly property var barWidgetStyleOptions: [
         {
-            value: 0,
-            label: I18n.tr("Hug")
+            value: "fused",
+            label: I18n.tr("Fused")
         },
         {
-            value: 1,
-            label: I18n.tr("Floating")
+            value: "separate",
+            label: I18n.tr("Separate")
         },
         {
-            value: 2,
-            label: I18n.tr("Islands")
-        },
-        {
-            value: 3,
-            label: I18n.tr("Material")
-        },
-        {
-            value: 4,
-            label: I18n.tr("Material hug")
-        },
-        {
-            value: 5,
-            label: I18n.tr("Panel")
+            value: "flat",
+            label: I18n.tr("Flat")
         }
     ]
-    readonly property int barCornerStyle: root.activeBarConfig().axes.cornerStyle
-    // Single truth for the material pill treatment (end4: cornerStyle 3 or 4).
-    // Widgets bind these instead of re-deriving `=== 3`, which kept 4/5
-    // half-styled in nine files.
-    readonly property bool barIsMaterial: root.barCornerStyle === 3 || root.barCornerStyle === 4
-    readonly property bool barIsMaterialHug: root.barCornerStyle === 4
-    readonly property bool barIsPanel: root.barCornerStyle === 5
-    // end4 style heights (ROADMAP B-2): Float adds the outer gap on both edges,
-    // Material hug and Panel add 4 for their round decorators. Everything else
-    // keeps the user's thickness, and groups/OSD/popups read the evaluated
-    // height through Appearance.sizes.barHeight.
-    readonly property real barStyleHeightBoost: root.barCornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : ((root.barIsMaterialHug || root.barIsPanel) ? 4 : 0)
+    readonly property var barCapsuleRadiusOptions: [
+        {
+            value: "pill",
+            label: I18n.tr("Pill")
+        },
+        {
+            value: "rounded",
+            label: I18n.tr("Rounded")
+        },
+        {
+            value: "px",
+            label: I18n.tr("Custom")
+        }
+    ]
+    function barStyleBoostFor(axes) {
+        const a = axes || root.barAxes;
+        return BarDefaults.styleBoost(BarDefaults.deriveStyle(a, Appearance.sizes.hyprlandGapsOut));
+    }
+
+    function resolvedBarHeight(axes) {
+        const a = axes || root.barAxes;
+        const base = a.barThickness > 0 ? a.barThickness : root.defaultBarThickness;
+        return base + root.barStyleBoostFor(a);
+    }
+
+    function resolvedVerticalBarWidth(axes) {
+        const a = axes || root.barAxes;
+        const base = a.verticalThickness > 0 ? a.verticalThickness : root.defaultBarVerticalThickness;
+        return base + root.barStyleBoostFor(a);
+    }
+
+    // D-8: Only edge-hugging lane pills keep the +4 boost for their internal
+    // outward corners. Float's edge gap is carried directly by edgeMargin /
+    // sideMargin in the window layer.
+    readonly property real barStyleHeightBoost: root.barStyleBoostFor(root.barAxes)
     Binding {
         target: Appearance
         property: "barStyleBoost"
         value: root.barStyleHeightBoost
         restoreMode: Binding.RestoreNone
     }
-    readonly property var barBorderlessModes: [
-        {
-            value: "pills",
-            label: I18n.tr("Pills")
-        },
-        {
-            value: "separated",
-            label: I18n.tr("Separated")
-        },
-        {
-            value: "segmented",
-            label: I18n.tr("Segmented")
-        },
-        {
-            value: "transparent",
-            label: I18n.tr("Transparent")
-        },
-        {
-            // D4c: bare widgets, no capsule geometry at all ("transparent"
-            // keeps the capsule shape with a transparent fill).
-            value: "flat",
-            label: I18n.tr("Flat")
-        }
-    ]
-    readonly property string barBorderless: root.activeBarConfig().axes.borderless
     readonly property string barGroupColor: root.activeBarConfig().axes.groupColor
     readonly property var barGroupColorOptions: [
         {
@@ -443,12 +439,32 @@ Singleton {
             "label": I18n.tr("Tertiary container")
         },
         {
+            "value": "surfaceContainerLow",
+            "label": I18n.tr("Surface container low")
+        },
+        {
+            "value": "surfaceContainer",
+            "label": I18n.tr("Surface container")
+        },
+        {
+            "value": "surfaceContainerHigh",
+            "label": I18n.tr("Surface container high")
+        },
+        {
+            "value": "surfaceContainerHighest",
+            "label": I18n.tr("Surface container highest")
+        },
+        {
             "value": "layer1",
             "label": I18n.tr("Surface layer")
         },
         {
             "value": "layer0",
             "label": I18n.tr("Background")
+        },
+        {
+            "value": "transparent",
+            "label": I18n.tr("Transparent")
         }
     ]
     // Per-widget style overrides (right-click style editor) ride the lane
@@ -538,6 +554,7 @@ Singleton {
     // (D4c) is the each-side margin in percent of the screen: 0 keeps full
     // width, a nonzero value centers the bar on the remaining span.
     readonly property int barEdgeMargin: root.activeBarConfig().axes.edgeMargin
+    readonly property int barInnerMargin: root.activeBarConfig().axes.innerMargin
     readonly property int barSideMargin: root.activeBarConfig().axes.sideMargin
     // Full normalized axes view for the D4c consumers (Bar window geometry,
     // BarContent/BarGroup chrome resolve through BarDefaults).
@@ -552,15 +569,12 @@ Singleton {
     // through this (multi-bar); the parameterless views above stay on the
     // settings-facing entry.
     function barStyleContextOf(axes) {
-        const cornerStyle = axes ? axes.cornerStyle : root.barCornerStyle;
-        return {
-            cornerStyle: cornerStyle,
-            borderless: axes ? axes.borderless : root.barBorderless,
-            material: cornerStyle === 3 || cornerStyle === 4,
-            materialHug: cornerStyle === 4,
-            panel: cornerStyle === 5,
-            gapsOut: Appearance.sizes.hyprlandGapsOut
-        };
+        return BarDefaults.deriveStyle(axes || root.barAxes, Appearance.sizes.hyprlandGapsOut);
+    }
+
+    function resolvedBarSideMargin(axes) {
+        const a = axes || root.barAxes;
+        return BarDefaults.resolvedSideMargin(a, root.barStyleContextOf(a), Appearance.sizes.hyprlandGapsOut);
     }
 
     // The optional trailing `axes` is the D4e multi-bar path: window hosts
@@ -606,19 +620,46 @@ Singleton {
         return color;
     }
 
-    // The bar surface background (BarContent/VerticalBarContent
-    // barBackground): the style's colLayer0 with the surfaceColor override
-    // and surfaceTransparency applied (sentinels keep the theme pipeline,
-    // which already bakes the global [effects] opacity into the palette).
+    // The bar surface background (BarContent barBackground, material pills,
+    // screen corner decorators, island): when surfaceTransparency < 0 (-1),
+    // follows the global theme opacity (Appearance.backgroundOpacity); when
+    // >= 0, uses an explicit independent alpha over the opaque base color.
     function resolvedBarSurfaceColor(baseColor, axes) {
         const a = axes || root.barAxes;
-        return root.resolvedBarAxisColor(a.surfaceColor, baseColor, a.surfaceTransparency);
+        const opacity = Number(a.surfaceTransparency);
+        if (isFinite(opacity) && opacity >= 0) {
+            const opaqueBase = Appearance.colors.colLayer0Base;
+            let color = opaqueBase;
+            if (typeof a.surfaceColor === "string" && BarDefaults.isCustomColor(a.surfaceColor))
+                color = a.surfaceColor;
+            else if (typeof a.surfaceColor === "string" && a.surfaceColor !== "" && a.surfaceColor !== "default")
+                color = Appearance.colors[`col${a.surfaceColor.charAt(0).toUpperCase()}${a.surfaceColor.slice(1)}`] ?? opaqueBase;
+            return Appearance.applyAlpha(color, opacity);
+        }
+        if (typeof a.surfaceColor === "string" && a.surfaceColor !== "" && a.surfaceColor !== "default")
+            return root.resolvedBarAxisColor(a.surfaceColor, baseColor, Appearance.backgroundOpacity);
+        return baseColor;
     }
 
-    // The group-capsule layer: widgetTransparency < 1 transparentizes the
-    // resolved capsule color (1.0 = untouched).
-    function resolvedBarWidgetColor(color, axes) {
-        return root.resolvedBarAxisColor("default", color, (axes || root.barAxes).widgetTransparency);
+    // The group-capsule layer: widgetTransparency (0..1) or per-entry opacity
+    // scales the resolved capsule color cleanly down to 0% transparent.
+    function resolvedBarWidgetColor(color, axes, entryOpacity) {
+        if (color === "transparent" || String(color) === "#00000000")
+            return "transparent";
+        const a = axes || root.barAxes;
+        const opacity = (typeof entryOpacity === "number" && isFinite(entryOpacity) && entryOpacity >= 0) ? entryOpacity : a.widgetTransparency;
+        return root.resolvedBarAxisColor("default", color, opacity);
+    }
+
+    // Bar-level foreground text/icon override ("default" = widget own color).
+    function resolvedBarWidgetTextColor(axes) {
+        const a = axes || root.barAxes;
+        const name = a.widgetTextColor;
+        if (!name || name === "default")
+            return undefined;
+        if (BarDefaults.isCustomColor(name))
+            return name;
+        return Appearance.colors[`col${name.charAt(0).toUpperCase()}${name.slice(1)}`] ?? undefined;
     }
 
     // Group-capsule outline (D4c widgetOutline*): the segmented mode's
@@ -667,6 +708,31 @@ Singleton {
     // B3-1: the island is a first-class middle widget, not a reserved gap.
     readonly property var defaultBarLayoutMiddle: ["island"]
     readonly property var defaultBarLayoutRight: ["tray", "quickSettings", "systemIcons", "powerButton"]
+    // D4g 批四 (D-9): a rail is not a rotated bar, so it carries its own
+    // default lane set. Zone names stay storage-named (left = track start,
+    // middle = centered, right = track end). activeWindow drops until its
+    // hover-popup half exists (the bare rail icon carries no data) and
+    // quickSettings yields to SystemIcons' expanded hover face.
+    readonly property var defaultRailLayoutLeft: ["launcherButton", "workspaces"]
+    readonly property var defaultRailLayoutMiddle: ["island"]
+    readonly property var defaultRailLayoutRight: ["tray", "systemIcons", "powerButton"]
+
+    // The lane defaults a bar of this position reads when storage omits
+    // them. Every "missing lane" consumer goes through here so the load
+    // normalize, the live flip and the sparse writer cannot drift apart.
+    function defaultBarLayoutsFor(position) {
+        if (position === "left" || position === "right")
+            return {
+                left: root.defaultRailLayoutLeft,
+                middle: root.defaultRailLayoutMiddle,
+                right: root.defaultRailLayoutRight
+            };
+        return {
+            left: root.defaultBarLayoutLeft,
+            middle: root.defaultBarLayoutMiddle,
+            right: root.defaultBarLayoutRight
+        };
+    }
     property var barConfigs: root.defaultBarConfigs()
 
     // D4e: which entry the settings face edits (dux SettingsUiState
@@ -706,10 +772,10 @@ Singleton {
     property bool keyboardPanelCaps: true
     property bool keyboardPanelNum: false
 
-    property bool islandHideDate: false
+    readonly property bool islandHideDate: BarWidgetDefaults.option("island", root.islandEntry(), "hideDate") === true
     // Idle-face avatar is optional: the identity circle can be hidden while the
     // satellite clock/weather and status icons stay.
-    property bool islandShowAvatar: true
+    readonly property bool islandShowAvatar: BarWidgetDefaults.option("island", root.islandEntry(), "showAvatar") !== false
     // D1's `time.dateFormat` became the clock entry's `dateFormat` axis
     // (D4b): the Qt format pattern now lives on the lane entry and the
     // clock widget formats it per instance.
@@ -854,9 +920,24 @@ Singleton {
     readonly property string numericFontFamily: FontService.configuredNumeric || FontService.defaultNumeric
     readonly property string expressiveFontFamily: FontService.configuredExpressive || Fonts.bundledFamilyName
     property real shellBackgroundOpacity: 1
+    property real shellContentTransparency: 0.9
+    property real shellCornerRadiusScale: 1.0
+    property bool shellGlobalBorderEnabled: false
+    property real shellGlobalBorderOpacity: 0.35
     property bool shellBlurEnabled: false
     property bool shellBlurXray: true
     property bool keepSidebarsLoaded: true
+    property int sidebarWidth: 420
+    property real sidebarOpacity: -1
+    property bool sidebarBlurEnabled: true
+    property string notificationPosition: "top-right"
+    property int notificationWidth: 380
+    property real notificationOpacity: -1
+    property int notificationTimeoutMs: 5000
+    property real spotlightOpacity: -1
+    property bool spotlightBlurEnabled: true
+    property int spotlightGridColumns: 5
+    property int spotlightIconSize: 56
     property var sidebarPositions: ({
             dashboard: "left",
             quickSettings: "right"
@@ -1426,19 +1507,19 @@ Singleton {
     }
 
     function setIslandSatellite(value) {
-        setValue("islandSatellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
+        setIslandEntryOverride("satellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
     }
 
     function setIslandShowMediaControls(value) {
-        setValue("islandShowMediaControls", value === true);
+        setIslandEntryOverride("showMediaControls", value === true);
     }
 
     function setIslandVisualizerStyle(value) {
-        setValue("islandVisualizerStyle", normalizedOption(root.islandVisualizerStyleOptions, value, "dots"));
+        setIslandEntryOverride("visualizerStyle", normalizedOption(root.islandVisualizerStyleOptions, value, "dots"));
     }
 
     function setIslandShowAvatar(value) {
-        setValue("islandShowAvatar", value === true);
+        setIslandEntryOverride("showAvatar", value === true);
     }
 
     function setFontFamily(role, family) {
@@ -1464,12 +1545,76 @@ Singleton {
         setValue("shellBackgroundOpacity", normalizedBoundedReal(value, 1, 0, 1));
     }
 
+    function setShellContentTransparency(value) {
+        setValue("shellContentTransparency", normalizedBoundedReal(value, 0.9, 0, 0.95));
+    }
+
+    function setShellCornerRadiusScale(value) {
+        setValue("shellCornerRadiusScale", normalizedBoundedReal(value, 1.0, 0.0, 2.0));
+    }
+
+    function setShellGlobalBorderEnabled(value) {
+        setValue("shellGlobalBorderEnabled", !!value);
+    }
+
+    function setShellGlobalBorderOpacity(value) {
+        setValue("shellGlobalBorderOpacity", normalizedBoundedReal(value, 0.35, 0, 1));
+    }
+
     function setShellBlurEnabled(value) {
         setValue("shellBlurEnabled", !!value);
     }
 
     function setShellBlurXray(value) {
         setValue("shellBlurXray", !!value);
+    }
+
+    function setSidebarWidth(value) {
+        setValue("sidebarWidth", normalizedBoundedInt(value, 420, 320, 640));
+    }
+
+    function setSidebarOpacity(value) {
+        const num = Number(value);
+        setValue("sidebarOpacity", !isFinite(num) || num < 0 ? -1 : normalizedBoundedReal(num, 1, 0, 1));
+    }
+
+    function setSidebarBlurEnabled(value) {
+        setValue("sidebarBlurEnabled", value !== false);
+    }
+
+    function setNotificationPosition(value) {
+        const valid = ["top-right", "top-left", "top-center", "bottom-right", "bottom-left", "bottom-center"];
+        setValue("notificationPosition", valid.indexOf(String(value)) !== -1 ? String(value) : "top-right");
+    }
+
+    function setNotificationWidth(value) {
+        setValue("notificationWidth", normalizedBoundedInt(value, 380, 280, 560));
+    }
+
+    function setNotificationOpacity(value) {
+        const num = Number(value);
+        setValue("notificationOpacity", !isFinite(num) || num < 0 ? -1 : normalizedBoundedReal(num, 1, 0, 1));
+    }
+
+    function setNotificationTimeoutMs(value) {
+        setValue("notificationTimeoutMs", normalizedBoundedInt(value, 5000, 1000, 30000));
+    }
+
+    function setSpotlightOpacity(value) {
+        const num = Number(value);
+        setValue("spotlightOpacity", !isFinite(num) || num < 0 ? -1 : normalizedBoundedReal(num, 1, 0, 1));
+    }
+
+    function setSpotlightBlurEnabled(value) {
+        setValue("spotlightBlurEnabled", value !== false);
+    }
+
+    function setSpotlightGridColumns(value) {
+        setValue("spotlightGridColumns", normalizedBoundedInt(value, 5, 3, 8));
+    }
+
+    function setSpotlightIconSize(value) {
+        setValue("spotlightIconSize", normalizedBoundedInt(value, 56, 36, 96));
     }
 
     function setDashboardSidebarSide(value) {
@@ -1533,28 +1678,105 @@ Singleton {
         });
     }
 
+    // D4g 批四: lanes that equal the CURRENT orientation's defaults are
+    // "not customized" — a position flip re-resolves them from the
+    // incoming orientation's defaults (top<->rail swaps the lane set
+    // live; a customized bar keeps its lanes).
+    function barLanesMatchOrientationDefaults() {
+        const config = root.activeBarConfig();
+        if (!config)
+            return false;
+        const defaults = root.defaultBarLayoutsFor(config.axes.position);
+        const usedSingletons = [];
+        return ["left", "middle", "right"].every(zone => {
+            const mine = config.lanes[zone].map(root.serializeBarEntry);
+            const stock = root.normalizeLaneEntries(defaults[zone], zone, usedSingletons, config.id).map(root.serializeBarEntry);
+            return JSON.stringify(mine) === JSON.stringify(stock);
+        });
+    }
+
     function setBarPosition(value) {
-        setBarAxis("position", normalizedEdgePosition(value));
+        const stock = root.barLanesMatchOrientationDefaults();
+        const changed = root.setBarAxis("position", normalizedEdgePosition(value));
+        if (changed && stock)
+            root.resetBarLanes();
+        return changed;
     }
 
-    function setBarCornerStyle(value) {
-        setBarAxis("cornerStyle", normalizedBoundedInt(value, 1, 0, 5));
+    function setBarBackplate(value) {
+        setBarAxis("backplate", value === true);
     }
 
-    function setBarBorderless(value) {
-        setBarAxis("borderless", BarDefaults.BORDERLESS_MODES.indexOf(String(value)) !== -1 ? String(value) : "pills");
+    function setBarLanePill(value) {
+        setBarAxis("lanePill", value === true);
+    }
+
+    function setBarTint(value) {
+        setBarAxis("tint", value === true);
+    }
+
+    function setBarWidgetStyle(value) {
+        setBarAxis("widgetStyle", BarDefaults.WIDGET_STYLES.indexOf(String(value)) !== -1 ? String(value) : BarDefaults.DEFAULTS.widgetStyle);
+    }
+
+    function setBarCapsuleRadius(value) {
+        setBarAxis("capsuleRadius", BarDefaults.CAPSULE_RADII.indexOf(String(value)) !== -1 ? String(value) : BarDefaults.DEFAULTS.capsuleRadius);
+    }
+
+    function setBarWidgetRadius(value) {
+        setBarAxis("widgetRadius", root.clampedBarSentinelInt(value, BarDefaults.DEFAULTS.widgetRadius, 0, 32));
+    }
+
+    function applyBarStylePreset(key) {
+        const preset = BarStylePresets.values(String(key || ""));
+        if (!preset)
+            return false;
+        const keys = Object.keys(preset);
+        return root.withBarConfigs(config => {
+            let changed = false;
+            keys.forEach(k => {
+                if (config.axes[k] !== preset[k]) {
+                    config.axes[k] = preset[k];
+                    changed = true;
+                }
+            });
+            return changed;
+        });
     }
 
     function setBarGroupColor(value) {
-        setBarAxis("groupColor", normalizedOption(root.barGroupColorOptions, value, "layer1"));
+        const str = String(value || "");
+        setBarAxis("groupColor", BarDefaults.isCustomColor(str) ? str : normalizedOption(root.barGroupColorOptions, str, "layer1"));
     }
 
     function setBarAutoHide(value) {
         setBarAxis("autoHide", value === true);
     }
 
-    function setBarShowBackground(value) {
-        setBarAxis("showBackground", value === true);
+    // D4h behavior additions (bar-config.md D4h). The three-state picker
+    // routes through setBarAutoHideMode; each setter stays single-key so the
+    // sparse writer sees one deviation per axis.
+    function setBarAutoHideSmart(value) {
+        setBarAxis("autoHideSmart", value === true);
+    }
+
+    function setBarPushWindows(value) {
+        setBarAxis("pushWindows", value === true);
+    }
+
+    function setBarSuperReveal(value) {
+        setBarAxis("superReveal", value === true);
+    }
+
+    function setBarPeekOnWorkspaceSwitch(value) {
+        setBarAxis("peekOnWorkspaceSwitch", value === true);
+    }
+
+    // "off" | "on" | "smart" -> the two storage keys. setBarAxis already
+    // minimal-writes, so a mode flip costs at most two deviations.
+    function setBarAutoHideMode(mode) {
+        setBarAutoHide(mode === "on" || mode === "smart");
+        setBarAutoHideSmart(mode === "smart");
     }
 
     function setBarScreenList(value) {
@@ -1570,11 +1792,15 @@ Singleton {
     }
 
     function setBarEdgeMargin(value) {
-        setBarAxis("edgeMargin", root.normalizedBoundedInt(value, 0, 0, 48));
+        setBarAxis("edgeMargin", root.normalizedBoundedInt(value, BarDefaults.DEFAULTS.edgeMargin, 0, 48));
+    }
+
+    function setBarInnerMargin(value) {
+        setBarAxis("innerMargin", root.normalizedBoundedInt(value, BarDefaults.DEFAULTS.innerMargin, 0, 48));
     }
 
     function setBarSideMargin(value) {
-        setBarAxis("sideMargin", root.normalizedBoundedInt(value, 0, 0, 96));
+        setBarAxis("sideMargin", root.clampedBarSentinelInt(value, -1, 0, 96));
     }
 
     // D4c named axis setters (the settings page calls these; every value
@@ -1609,13 +1835,44 @@ Singleton {
         setBarAxis("fontScale", isFinite(numeric) ? Math.max(0.8, Math.min(1.5, Math.round(numeric * 100) / 100)) : 1);
     }
 
+    function setBarIconScale(value) {
+        const numeric = Number(value);
+        setBarAxis("iconScale", isFinite(numeric) ? Math.max(0.8, Math.min(1.5, Math.round(numeric * 100) / 100)) : 1);
+    }
+
+    function applyBarDensityPreset(level) {
+        const preset = DensityPresets.values("bar", String(level || ""));
+        const keys = Object.keys(preset);
+        if (keys.length === 0)
+            return false;
+        return root.withBarConfigs(config => {
+            let changed = false;
+            keys.forEach(key => {
+                if (config.axes[key] !== preset[key]) {
+                    config.axes[key] = preset[key];
+                    changed = true;
+                }
+            });
+            return changed;
+        });
+    }
+
+    function setBarOpacity(value) {
+        const numeric = Number(value);
+        setBarAxis("barOpacity", isFinite(numeric) ? Math.max(0, Math.min(1, Math.round(numeric * 100) / 100)) : 1);
+    }
+
+    function setBarBlurEnabled(value) {
+        setBarAxis("blurEnabled", value !== false);
+    }
+
     function setBarSurfaceColor(value) {
         setBarAxis("surfaceColor", typeof value === "string" && value.length > 0 && value.length <= 32 ? value : "default");
     }
 
     function setBarSurfaceTransparency(value) {
         const numeric = Number(value);
-        setBarAxis("surfaceTransparency", !isFinite(numeric) || numeric >= 1 ? -1 : Math.max(0.3, Math.min(1, numeric)));
+        setBarAxis("surfaceTransparency", !isFinite(numeric) || numeric < 0 ? -1 : Math.max(0, Math.min(1, Math.round(numeric * 100) / 100)));
     }
 
     function setBarBorderEnabled(value) {
@@ -1637,7 +1894,32 @@ Singleton {
 
     function setBarWidgetTransparency(value) {
         const numeric = Number(value);
-        setBarAxis("widgetTransparency", !isFinite(numeric) || numeric >= 1 ? 1 : Math.max(0.3, Math.min(1, numeric)));
+        setBarAxis("widgetTransparency", !isFinite(numeric) || numeric >= 1 ? 1 : Math.max(0, Math.min(1, Math.round(numeric * 100) / 100)));
+    }
+
+    function setBarCapsuleVerticalInset(value) {
+        setBarAxis("capsuleVerticalInset", root.clampedBarInt(value, 0, 12, BarDefaults.DEFAULTS.capsuleVerticalInset));
+    }
+
+    function setBarWidgetTextColor(value) {
+        const str = typeof value === "string" ? value.trim() : "";
+        setBarAxis("widgetTextColor", str.length > 0 && str.length <= 32 ? str : "default");
+    }
+
+    function setBarLengthMode(value) {
+        setBarAxis("lengthMode", BarDefaults.LENGTH_MODES.indexOf(String(value)) !== -1 ? String(value) : "full");
+    }
+
+    function setBarLeftScrollAction(value) {
+        setBarAxis("leftScrollAction", BarDefaults.SCROLL_ACTIONS.indexOf(String(value)) !== -1 ? String(value) : "brightness");
+    }
+
+    function setBarRightScrollAction(value) {
+        setBarAxis("rightScrollAction", BarDefaults.SCROLL_ACTIONS.indexOf(String(value)) !== -1 ? String(value) : "volume");
+    }
+
+    function setBarShowScrollHints(value) {
+        setBarAxis("showScrollHints", value !== false);
     }
 
     function setBarWidgetOutlineEnabled(value) {
@@ -1688,6 +1970,76 @@ Singleton {
         if (!zone)
             return;
         setBarAxis(zone + "OverflowMode", normalizedOption(BarDefaults.LANE_OVERFLOW_MODES, value, "auto"));
+    }
+
+    function selectBar(barId) {
+        const id = String(barId || "");
+        if (id === "" || !root.barConfigById(id))
+            root.selectedBarId = "";
+        else
+            root.selectedBarId = id;
+    }
+
+    function resetBarAxes() {
+        const defaults = root.normalizeBarAxes({});
+        return root.withBarConfigs(config => {
+            let changed = false;
+            Object.keys(defaults).forEach(key => {
+                if (key === "position" || key === "screenList")
+                    return;
+                const same = Array.isArray(config.axes[key]) ? JSON.stringify(config.axes[key]) === JSON.stringify(defaults[key]) : config.axes[key] === defaults[key];
+                if (!same) {
+                    config.axes[key] = Array.isArray(defaults[key]) ? defaults[key].slice() : defaults[key];
+                    changed = true;
+                }
+            });
+            return changed;
+        });
+    }
+
+    function barAxesModified(axes) {
+        const a = axes || root.barAxes;
+        const defaults = BarDefaults.DEFAULTS;
+        const keys = Object.keys(defaults);
+        for (let i = 0; i < keys.length; i += 1) {
+            const key = keys[i];
+            if (key === "position" || key === "screenList")
+                continue;
+            const same = Array.isArray(a[key]) ? JSON.stringify(a[key]) === JSON.stringify(defaults[key]) : a[key] === defaults[key];
+            if (!same)
+                return true;
+        }
+        return false;
+    }
+
+    function resetBarWidgetOverrides(uid) {
+        if (!uid)
+            return false;
+        return root.withBarConfigs(config => {
+            let changed = false;
+            ["left", "middle", "right"].forEach(zone => {
+                config.lanes[zone].forEach(entry => {
+                    if (entry.uid !== uid)
+                        return;
+                    if (entry.overrides && Object.keys(entry.overrides).length > 0) {
+                        entry.overrides = {};
+                        changed = true;
+                    }
+                });
+            });
+            return changed;
+        });
+    }
+
+    function resetBarLanes() {
+        return root.withBarConfigs((config, all) => {
+            const usedSingletons = root.singletonIdsInUse(all, config, undefined);
+            const next = root.normalizeConfigLanes({}, usedSingletons, config.id, config.axes.position);
+            if (JSON.stringify(next) === JSON.stringify(config.lanes))
+                return false;
+            config.lanes = next;
+            return true;
+        });
     }
 
     // Sentinel axes (-1 = follow the style baseline) or bounded ints; the
@@ -1774,7 +2126,7 @@ Singleton {
                 id: "default",
                 name: "Bar",
                 axes: root.normalizeBarAxes({}),
-                lanes: root.normalizeConfigLanes({})
+                lanes: root.normalizeConfigLanes({}, undefined, undefined, BarDefaults.DEFAULTS.position)
             }
         ];
     }
@@ -1815,7 +2167,7 @@ Singleton {
                 name: typeof bar.name === "string" && bar.name !== "" ? bar.name : "Bar",
                 enabled: bar.enabled !== false,
                 axes: root.normalizeBarAxes(bar),
-                lanes: root.normalizeConfigLanes(rawLanes, usedSingletons, id)
+                lanes: root.normalizeConfigLanes(rawLanes, usedSingletons, id, root.normalizedEdgePosition(bar.position))
             });
         }
         return out.length > 0 ? out : root.defaultBarConfigs();
@@ -1839,21 +2191,29 @@ Singleton {
             position: normalizedEdgePosition(raw.position),
             autoHide: raw.autoHide === true,
             screenList: root.normalizedScreenList(raw.screenList),
-            showBackground: typeof raw.showBackground === "boolean" ? raw.showBackground : true,
-            cornerStyle: root.normalizedBoundedInt(raw.cornerStyle, 1, 0, 5),
-            borderless: BarDefaults.BORDERLESS_MODES.indexOf(raw.borderless) !== -1 ? raw.borderless : "pills",
-            groupColor: normalizedOption(root.barGroupColorOptions, raw.groupColor, "layer1"),
+            backplate: typeof raw.backplate === "boolean" ? raw.backplate : d.backplate,
+            lanePill: typeof raw.lanePill === "boolean" ? raw.lanePill : d.lanePill,
+            tint: typeof raw.tint === "boolean" ? raw.tint : d.tint,
+            widgetStyle: BarDefaults.WIDGET_STYLES.indexOf(raw.widgetStyle) !== -1 ? raw.widgetStyle : d.widgetStyle,
+            capsuleRadius: BarDefaults.CAPSULE_RADII.indexOf(raw.capsuleRadius) !== -1 ? raw.capsuleRadius : d.capsuleRadius,
+            widgetRadius: root.clampedBarSentinelInt(raw.widgetRadius, d.widgetRadius, 0, 32),
+            groupColor: BarDefaults.isCustomColor(String(raw.groupColor || "")) ? String(raw.groupColor) : normalizedOption(root.barGroupColorOptions, raw.groupColor, d.groupColor),
             barThickness: root.clampedBarInt(raw.barThickness, 28, 64, d.barThickness),
             verticalThickness: root.clampedBarInt(raw.verticalThickness, 28, 64, d.verticalThickness),
-            edgeMargin: root.normalizedBoundedInt(raw.edgeMargin, 0, 0, 48),
-            sideMargin: root.normalizedBoundedInt(raw.sideMargin, 0, 0, 96),
+            edgeMargin: root.normalizedBoundedInt(raw.edgeMargin, d.edgeMargin, 0, 48),
+            innerMargin: root.normalizedBoundedInt(raw.innerMargin, d.innerMargin, 0, 48),
+            sideMargin: root.clampedBarSentinelInt(raw.sideMargin, -1, 0, 96),
             sideMarginPercent: root.normalizedBoundedInt(raw.sideMarginPercent, 0, 0, 49),
+            lengthMode: BarDefaults.LENGTH_MODES.indexOf(raw.lengthMode) !== -1 ? raw.lengthMode : d.lengthMode,
             spacing: root.clampedBarSentinelInt(raw.spacing, -1, 0, 64),
             innerPadding: root.clampedBarSentinelInt(raw.innerPadding, -1, 0, 64),
             widgetPadding: root.clampedBarSentinelInt(raw.widgetPadding, -1, 0, 32),
             squareCorners: raw.squareCorners === true,
             radius: root.clampedBarSentinelInt(raw.radius, -1, 0, 32),
             fontScale: scaled(raw.fontScale, 1),
+            iconScale: scaled(raw.iconScale, 1),
+            barOpacity: fraction(raw.barOpacity, 1),
+            blurEnabled: raw.blurEnabled !== false,
             surfaceColor: typeof raw.surfaceColor === "string" && raw.surfaceColor.length <= 32 ? raw.surfaceColor : "default",
             surfaceTransparency: raw.surfaceTransparency === -1 ? -1 : fraction(raw.surfaceTransparency, -1),
             borderEnabled: raw.borderEnabled === true,
@@ -1861,16 +2221,25 @@ Singleton {
             borderOpacity: fraction(raw.borderOpacity, 1),
             borderThickness: root.clampedBarInt(raw.borderThickness, 0, 4, 1),
             widgetTransparency: fraction(raw.widgetTransparency, 1),
+            capsuleVerticalInset: root.clampedBarInt(raw.capsuleVerticalInset, 0, 12, d.capsuleVerticalInset),
+            widgetTextColor: typeof raw.widgetTextColor === "string" && raw.widgetTextColor.length > 0 && raw.widgetTextColor.length <= 32 ? raw.widgetTextColor : d.widgetTextColor,
             widgetOutlineEnabled: raw.widgetOutlineEnabled === true,
             widgetOutlineColor: typeof raw.widgetOutlineColor === "string" && raw.widgetOutlineColor !== "" ? raw.widgetOutlineColor : "outline",
             widgetOutlineOpacity: fraction(raw.widgetOutlineOpacity, 1),
             widgetOutlineThickness: root.clampedBarInt(raw.widgetOutlineThickness, 0, 4, 1),
+            leftScrollAction: BarDefaults.SCROLL_ACTIONS.indexOf(raw.leftScrollAction) !== -1 ? raw.leftScrollAction : d.leftScrollAction,
+            rightScrollAction: BarDefaults.SCROLL_ACTIONS.indexOf(raw.rightScrollAction) !== -1 ? raw.rightScrollAction : d.rightScrollAction,
+            showScrollHints: raw.showScrollHints !== false,
             // D4d behavior axes: every clamp accepts the default through the
             // same door (load or setter), and the hover-popout default is
             // opt-OUT (`!== false`) because the pre-D4d behavior was
             // hover-opens.
             autoHideDelay: root.clampedBarInt(raw.autoHideDelay, 0, 2000, 0),
             autoHideStrict: raw.autoHideStrict === true,
+            autoHideSmart: raw.autoHideSmart === true,
+            pushWindows: raw.pushWindows === true,
+            superReveal: raw.superReveal === true,
+            peekOnWorkspaceSwitch: raw.peekOnWorkspaceSwitch === true,
             hideOnFullscreen: raw.hideOnFullscreen === true,
             clickThrough: raw.clickThrough === true,
             hoverPopouts: raw.hoverPopouts !== false,
@@ -1885,17 +2254,14 @@ Singleton {
     // across every bar); sharedSingletons carries the cross-bar singleton
     // bucket (load passes one array down all entries so the first island
     // wins; a solo caller passes nothing and gets a fresh scope).
-    function normalizeConfigLanes(rawLanes, sharedSingletons, barId) {
+    function normalizeConfigLanes(rawLanes, sharedSingletons, barId, position) {
         const usedSingletons = sharedSingletons || [];
         const scope = barId !== undefined && barId !== "" ? barId : "default";
+        const defaults = root.defaultBarLayoutsFor(position);
         const lanes = {};
         ["left", "middle", "right"].forEach(zone => {
-            // Missing lane -> the default lane; explicit empty stays empty.
-            const defaults = {
-                left: root.defaultBarLayoutLeft,
-                middle: root.defaultBarLayoutMiddle,
-                right: root.defaultBarLayoutRight
-            };
+            // Missing lane -> the orientation's default lane (D4g 批四); an
+            // explicitly empty lane stays empty.
             const raw = rawLanes && Array.isArray(rawLanes[zone]) ? rawLanes[zone] : defaults[zone];
             lanes[zone] = root.normalizeLaneEntries(raw, zone, usedSingletons, scope);
         });
@@ -1973,10 +2339,15 @@ Singleton {
     // With multiple bars every entry persists (its id alone is a deviation;
     // dropping a pristine sibling would delete that bar on reload).
     function sparseBarConfigEntry(truth, fallback, keepPristine) {
+        // Lane defaults are orientation-aware (D4g 批四), so the compare
+        // asks for THIS entry's defaults: comparing a rail entry against
+        // the horizontal fallback would persist a zero-touch rail bar's
+        // whole lane set and break the minimal write.
+        const laneDefaults = root.defaultBarLayoutsFor(truth.axes.position);
         const lanes = {};
         ["left", "middle", "right"].forEach(zone => {
             const mine = truth.lanes[zone].map(root.serializeBarEntry);
-            const dflt = fallback.lanes[zone].map(root.serializeBarEntry);
+            const dflt = root.normalizeLaneEntries(laneDefaults[zone], zone, [], "sparse-default").map(root.serializeBarEntry);
             if (JSON.stringify(mine) !== JSON.stringify(dflt))
                 lanes[zone] = mine;
         });
@@ -2075,6 +2446,63 @@ Singleton {
         return false;
     }
 
+    // D4e e5: locate the unique singleton island entry across barConfigs.
+    function islandEntry() {
+        const configs = Array.isArray(root.barConfigs) ? root.barConfigs : [];
+        for (let c = 0; c < configs.length; c += 1) {
+            const lanes = configs[c].lanes || {};
+            for (const zone of ["left", "middle", "right"]) {
+                const lane = lanes[zone];
+                if (!Array.isArray(lane))
+                    continue;
+                for (let i = 0; i < lane.length; i += 1) {
+                    if (lane[i].widgetId === "island")
+                        return lane[i];
+                }
+            }
+        }
+        return null;
+    }
+
+    function setIslandEntryOverride(key, value) {
+        const configs = Array.isArray(root.barConfigs) ? root.barConfigs : [];
+        for (let c = 0; c < configs.length; c += 1) {
+            const lanes = configs[c].lanes || {};
+            for (const zone of ["left", "middle", "right"]) {
+                const lane = lanes[zone];
+                if (!Array.isArray(lane))
+                    continue;
+                for (let i = 0; i < lane.length; i += 1) {
+                    if (lane[i].widgetId !== "island")
+                        continue;
+                    const uid = lane[i].uid;
+                    const barId = configs[c].id;
+                    return root.withBarConfig(barId, config => {
+                        let changed = false;
+                        ["left", "middle", "right"].forEach(z => {
+                            config.lanes[z].forEach(entry => {
+                                if (entry.uid !== uid)
+                                    return;
+                                const defaults = BarWidgetDefaults.DEFAULTS.island || {};
+                                const next = Object.assign({}, entry.overrides);
+                                if (value === undefined || value === null || value === defaults[key])
+                                    delete next[key];
+                                else
+                                    next[key] = value;
+                                if (JSON.stringify(next) !== JSON.stringify(entry.overrides)) {
+                                    entry.overrides = next;
+                                    changed = true;
+                                }
+                            });
+                        });
+                        return changed;
+                    });
+                }
+            }
+        }
+        return false;
+    }
+
     // D4b: entry lookup by uid (the settings editor and the probe address
     // one instance — duplicate ids stay independent).
     function barEntryByUid(uid) {
@@ -2107,9 +2535,7 @@ Singleton {
     }
 
     function withBarConfig(barId, mutator) {
-        const next = JSON.parse(JSON.stringify(Array.isArray(root.barConfigs) && root.barConfigs.length > 0 ? root.barConfigs : [
-            root.activeBarConfig()
-        ]));
+        const next = JSON.parse(JSON.stringify(Array.isArray(root.barConfigs) && root.barConfigs.length > 0 ? root.barConfigs : [root.activeBarConfig()]));
         let index = -1;
         for (let i = 0; i < next.length; i += 1) {
             if (next[i].id === barId) {
@@ -2408,9 +2834,9 @@ Singleton {
         const usedIds = source.map(config => config.id);
         const usedSingletons = [];
         source.forEach(config => ["left", "middle", "right"].forEach(zone => (config.lanes[zone] || []).forEach(entry => {
-            if (BarWidgetDefaults.SINGLETON_IDS.indexOf(entry.widgetId) !== -1)
-                usedSingletons.push(entry.widgetId);
-        })));
+                    if (BarWidgetDefaults.SINGLETON_IDS.indexOf(entry.widgetId) !== -1)
+                        usedSingletons.push(entry.widgetId);
+                })));
         let serial = source.length + 1;
         let id = "bar" + serial;
         while (usedIds.indexOf(id) !== -1) {
@@ -2471,11 +2897,11 @@ Singleton {
     function barLayoutStateJson() {
         const vertical = position => position === "left" || position === "right";
         const mapped = (Array.isArray(root.barConfigs) ? root.barConfigs : []).map(config => ({
-            id: config.id,
-            enabled: config.enabled !== false,
-            position: config.axes.position,
-            screens: config.axes.screenList
-        })).sort((a, b) => {
+                    id: config.id,
+                    enabled: config.enabled !== false,
+                    position: config.axes.position,
+                    screens: config.axes.screenList
+                })).sort((a, b) => {
             const aVertical = vertical(a.position) ? 1 : 0;
             const bVertical = vertical(b.position) ? 1 : 0;
             return aVertical - bVertical || String(a.id).localeCompare(String(b.id));
@@ -2689,7 +3115,7 @@ Singleton {
     }
 
     function setIslandHideDate(value) {
-        setValue("islandHideDate", !!value);
+        setIslandEntryOverride("hideDate", !!value);
     }
 
     function setBarShowNames(value) {
@@ -2854,6 +3280,10 @@ Singleton {
             },
             "effects": {
                 "shellBackgroundOpacity": root.shellBackgroundOpacity,
+                "shellContentTransparency": root.shellContentTransparency,
+                "shellCornerRadiusScale": root.shellCornerRadiusScale,
+                "shellGlobalBorderEnabled": root.shellGlobalBorderEnabled,
+                "shellGlobalBorderOpacity": root.shellGlobalBorderOpacity,
                 "shellBlurEnabled": root.shellBlurEnabled,
                 "shellBlurXray": root.shellBlurXray
             },
@@ -2872,12 +3302,6 @@ Singleton {
                 }
             },
             "island": {
-                "satellite": root.islandSatellite,
-                "layoutMigrated": root.islandLayoutMigrated,
-                "hideDate": root.islandHideDate,
-                "showAvatar": root.islandShowAvatar,
-                "showMediaControls": root.islandShowMediaControls,
-                "visualizerStyle": root.islandVisualizerStyle,
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
                     "axes": root.cloneMap(root.horizontalClockAxes),
@@ -2888,7 +3312,22 @@ Singleton {
             "sidebar": {
                 "keepLoaded": root.keepSidebarsLoaded,
                 "dashboardSide": root.dashboardSidebarSide,
-                "quickSettingsSide": root.quickSettingsSidebarSide
+                "quickSettingsSide": root.quickSettingsSidebarSide,
+                "width": root.sidebarWidth,
+                "opacity": root.sidebarOpacity,
+                "blurEnabled": root.sidebarBlurEnabled
+            },
+            "notifications": {
+                "position": root.notificationPosition,
+                "width": root.notificationWidth,
+                "opacity": root.notificationOpacity,
+                "timeoutMs": root.notificationTimeoutMs
+            },
+            "spotlight": {
+                "opacity": root.spotlightOpacity,
+                "blurEnabled": root.spotlightBlurEnabled,
+                "gridColumns": root.spotlightGridColumns,
+                "iconSize": root.spotlightIconSize
             },
             "hotCorners": root.normalizedHotCornerActions(root.hotCornerActions),
             "desktopCards": {
@@ -2898,9 +3337,11 @@ Singleton {
             "configVersion": ConfigMigrations.CURRENT_VERSION
         };
         // Minimal write: an all-default [bar] disappears entirely instead of
-        // serializing as a bare empty table header.
-        if (json.bar && Object.keys(json.bar).length === 0)
-            delete json.bar;
+        // serializing as a bare empty table header. The section still ships
+        // as `{}` here (D4g fix): updateSections merges by key, so deleting
+        // the key outright would let a stale previous section survive in
+        // rawConfig and re-enter the file on the debounced write. The empty
+        // object is dropped at the file boundary (ConfigService.saveNow).
         return json;
     }
 
@@ -3110,18 +3551,29 @@ Singleton {
         root.iconTheme = typeof theme.iconTheme === "string" ? theme.iconTheme : "";
         FontService.setConfiguredFamilies(fonts.ui, fonts.mono, fonts.numeric, fonts.expressive);
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
+        root.shellContentTransparency = normalizedBoundedReal(effects.shellContentTransparency, 0.9, 0, 0.95);
+        root.shellCornerRadiusScale = normalizedBoundedReal(effects.shellCornerRadiusScale, 1.0, 0.0, 2.0);
+        root.shellGlobalBorderEnabled = effects.shellGlobalBorderEnabled === true;
+        root.shellGlobalBorderOpacity = normalizedBoundedReal(effects.shellGlobalBorderOpacity, 0.35, 0, 1);
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
-        // B9.3 legacy read: `enabled=false` used to hide the island while the
-        // layout still listed it. The v3 migration applies it once (via
-        // resolveBarLayouts); membership is the only truth from then on.
-        root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
-        root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
-        root.islandShowAvatar = typeof island.showAvatar === "boolean" ? island.showAvatar : true;
-        root.islandShowMediaControls = typeof island.showMediaControls === "boolean" ? island.showMediaControls : false;
-        root.islandVisualizerStyle = normalizedOption(root.islandVisualizerStyleOptions, island.visualizerStyle, "dots");
-        // D1: `time.dateFormat` (iNiR key shape) — a Qt format pattern for the
-        // long date form; empty keeps the stock "dddd, dd/MM".
+        root.sidebarWidth = root.normalizedBoundedInt(sidebar.width, 420, 320, 640);
+        root.sidebarOpacity = (sidebar.opacity === undefined || Number(sidebar.opacity) < 0) ? -1 : normalizedBoundedReal(sidebar.opacity, 1, 0, 1);
+        root.sidebarBlurEnabled = sidebar.blurEnabled !== false;
+        const notif = configSection(source.notifications);
+        const validNotifPos = ["top-right", "top-left", "top-center", "bottom-right", "bottom-left", "bottom-center"];
+        root.notificationPosition = validNotifPos.indexOf(String(notif.position || "")) !== -1 ? String(notif.position) : "top-right";
+        root.notificationWidth = root.normalizedBoundedInt(notif.width, 380, 280, 560);
+        root.notificationOpacity = (notif.opacity === undefined || Number(notif.opacity) < 0) ? -1 : normalizedBoundedReal(notif.opacity, 1, 0, 1);
+        root.notificationTimeoutMs = root.normalizedBoundedInt(notif.timeoutMs, 5000, 1000, 30000);
+        const spot = configSection(source.spotlight);
+        root.spotlightOpacity = (spot.opacity === undefined || Number(spot.opacity) < 0) ? -1 : normalizedBoundedReal(spot.opacity, 1, 0, 1);
+        root.spotlightBlurEnabled = spot.blurEnabled !== false;
+        root.spotlightGridColumns = root.normalizedBoundedInt(spot.gridColumns, 5, 3, 8);
+        root.spotlightIconSize = root.normalizedBoundedInt(spot.iconSize, 56, 36, 96);
+        // D4e e5: island appearance axes live on the singleton "island" lane
+        // entry (migrated from [island] in v6) and project reactively off
+        // barConfigs below.
         // iNiR keyboardIndicators block; the old island.capsLockOsd/numLockOsd
         // pair migrates to popup.caps/num so an existing choice is not lost.
         root.keyboardShowPopup = typeof keyboard.showPopup === "boolean" ? keyboard.showPopup : true;

@@ -22,7 +22,6 @@ BarWidgetSwitcher {
     readonly property string longDate: root.dateFormat !== "" ? Qt.formatDateTime(root.today, root.dateFormat) : Qt.formatDateTime(root.today, "dddd, dd/MM")
     property var today: new Date()
     readonly property string dateTimeString: DateTime.time
-    readonly property bool hasAmPm: dateTimeString.toLowerCase().includes("am") || dateTimeString.toLowerCase().includes("pm")
     readonly property string _timeFontFamily: Config.options?.bar?.m3?.clock?.timeFontFamily ?? ""
     readonly property int _timePixelSize: Config.options?.bar?.m3?.clock?.timePixelSize ?? 0
     readonly property string _dateFontFamily: Config.options?.bar?.m3?.clock?.dateFontFamily ?? ""
@@ -40,94 +39,148 @@ BarWidgetSwitcher {
         clockTicker.stop();
     }
 
-    colDefault: Component {
+    // D4g batch three rail face — Fork & Trim of caelestia
+    // modules/bar/components/Clock.qml (stacked clock): date block
+    // (weekday + day + divider, gated by the showDate axis), then HH / MM
+    // lines whose sizes follow caelestia's fontFor() optical matching so
+    // both lines read as one size. Two departures from the original,
+    // both noted where they happen: the fit stage (caelestia fixes a
+    // generous bar.innerWidth; our rail thickness is a 28–64 axis, so the
+    // base shrinks to the widest line) and pixel-size scaling instead of
+    // the variable-font width axis (our clock family is configurable and
+    // not guaranteed variable).
+    readonly property list<string> railTimeParts: root.dateTimeString.split(/[: ]/)
+    readonly property string railAmPm: root.railTimeParts.find(part => /^(am|pm)$/i.test(part)) ?? ""
+    readonly property string railHour: root.railTimeParts[0] ?? ""
+    readonly property string railMinute: root.railTimeParts[1] ?? ""
+    readonly property real railBaseSize: NexusStyle.font.titleLarge * BarScale.fontFor(root.widgetBar)
+    readonly property real railAvailableWidth: PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) - 8
+
+    function railFitScale(hourWidth, minuteWidth) {
+        return Math.min(1, root.railAvailableWidth / Math.max(hourWidth, minuteWidth, 1));
+    }
+
+    // caelestia fontFor(): the narrower line widens up to +5% so HH and MM
+    // optically match; "11" is visually narrow and gets a fixed boost.
+    function railLineScale(text, metricWidth, widest) {
+        if (text === "11")
+            return 1.15;
+        return Math.min(1.05, widest / Math.max(metricWidth, 1));
+    }
+
+    component RailClockFace: ColumnLayout {
+        id: railFace
+
+        property bool materialSkin: false
+
+        anchors.centerIn: parent
+        spacing: NexusStyle.padding.extraSmall
+
+        readonly property real baseSize: root.railBaseSize
+        readonly property color digitColor: railFace.materialSkin ? Appearance.colors.colPrimary : root.contentColor
+
+        TextMetrics {
+            id: hourMetrics
+
+            font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
+            font.pixelSize: railFace.baseSize
+            text: root.railHour
+        }
+
+        TextMetrics {
+            id: minMetrics
+
+            font.family: hourMetrics.font.family
+            font.pixelSize: railFace.baseSize
+            text: root.railMinute
+        }
+
+        readonly property real fitScale: root.railFitScale(hourMetrics.width, minMetrics.width)
+        readonly property real widestMetric: Math.max(hourMetrics.width, minMetrics.width)
+
+        // Date block (caelestia: weekday / day / divider).
         ColumnLayout {
-            id: column
-            anchors.centerIn: parent
-            spacing: root.hasAmPm ? 1 : 0
+            visible: root.showDate
+            spacing: 0
+            Layout.alignment: Qt.AlignHCenter
 
-            Column {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
-                spacing: -4
-
-                Repeater {
-                    model: root.dateTimeString.split(/[: ]/)
-                    delegate: StyledText {
-                        required property string modelData
-                        width: implicitWidth
-                        horizontalAlignment: Text.AlignHCenter
-                        font.letterSpacing: -0.9
-                        font.features: {
-                            "tnum": 1
-                        }
-                        font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : (/^\d+$/.test(modelData) ? Appearance.font.main : Appearance.font.main)
-                        font.pixelSize: {
-                            if (modelData.match(/am|pm/i))
-                                return NexusStyle.font.bodySmall * BarScale.font;
-                            else
-                                return root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyLarge * BarScale.font;
-                        }
-                        color: root.contentColor
-                        text: modelData.padStart(2, "0")
-                    }
-                }
+                text: Qt.formatDateTime(root.today, "ddd")
+                font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
+                font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar)
+                color: railFace.digitColor
+                opacity: 0.85
             }
 
             StyledText {
                 Layout.alignment: Qt.AlignHCenter
-                Layout.bottomMargin: 5
-                font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
-                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.labelSmall * BarScale.font
-                color: root.contentColor
-                text: DateTime.shortDate
+                text: Qt.formatDateTime(root.today, "d")
+                font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
+                font.pixelSize: railFace.baseSize * railFace.fitScale
+                font.features: {
+                    "tnum": 1
+                }
+                color: railFace.digitColor
             }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.leftMargin: -NexusStyle.padding.extraSmall
+                Layout.rightMargin: -NexusStyle.padding.extraSmall
+                Layout.topMargin: 4
+                Layout.bottomMargin: NexusStyle.padding.extraSmall / 2
+                implicitHeight: 1
+                color: Appearance.m3colors.m3outlineVariant
+            }
+        }
+
+        StyledText {
+            Layout.alignment: Qt.AlignHCenter
+            text: root.railHour
+            font.family: hourMetrics.font.family
+            font.pixelSize: railFace.baseSize * railFace.fitScale * root.railLineScale(text, hourMetrics.width, railFace.widestMetric)
+            font.letterSpacing: -0.9
+            font.features: {
+                "tnum": 1
+            }
+            color: railFace.digitColor
+        }
+
+        StyledText {
+            Layout.topMargin: -parent.spacing - 4
+            Layout.alignment: Qt.AlignHCenter
+            text: root.railMinute
+            font.family: hourMetrics.font.family
+            font.pixelSize: railFace.baseSize * railFace.fitScale * root.railLineScale(text, minMetrics.width, railFace.widestMetric)
+            font.letterSpacing: -0.9
+            font.features: {
+                "tnum": 1
+            }
+            color: railFace.digitColor
+        }
+
+        StyledText {
+            visible: root.railAmPm !== ""
+            Layout.topMargin: -parent.spacing - 2
+            Layout.alignment: Qt.AlignHCenter
+            text: root.railAmPm.toLowerCase()
+            font.family: hourMetrics.font.family
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar)
+            color: railFace.digitColor
+            opacity: 0.8
+        }
+    }
+
+    colDefault: Component {
+        RailClockFace {
+            materialSkin: false
         }
     }
 
     colMaterial: Component {
-        ColumnLayout {
-            id: clockWidget
-            spacing: 2
-            Layout.alignment: Qt.AlignHCenter
-
-            Column {
-                Layout.alignment: Qt.AlignHCenter
-                Layout.topMargin: 2
-                spacing: -4
-
-                Repeater {
-                    model: DateTime.time.split(/[: ]/)
-                    delegate: StyledText {
-                        required property string modelData
-                        width: implicitWidth
-                        horizontalAlignment: Text.AlignHCenter
-                        font.letterSpacing: -0.2
-                        font.features: {
-                            "tnum": 1
-                        }
-                        font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : (/^\d+$/.test(modelData) ? Appearance.font.main : Appearance.font.main)
-                        font.pixelSize: modelData.match(/am|pm/i) ? NexusStyle.font.labelSmall * BarScale.font - 2 : (root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyMedium * BarScale.font)
-                        color: Appearance.colors.colPrimary
-                        text: modelData.padStart(2, "0")
-                    }
-                }
-            }
-
-            Rectangle {
-                width: 25
-                height: 25
-                radius: Appearance.rounding.full
-                color: M3Palette.primary
-                Layout.alignment: Qt.AlignHCenter
-
-                MaterialSymbol {
-                    anchors.centerIn: parent
-                    fill: 0
-                    text: "calendar_clock"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
-                    color: M3Palette.primaryForeground
-                }
-            }
+        RailClockFace {
+            materialSkin: true
         }
     }
 
@@ -137,19 +190,19 @@ BarWidgetSwitcher {
             StyledText {
                 visible: root.showDate
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
-                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium * BarScale.font
+                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: root.contentColor
                 text: root.longDate
             }
             StyledText {
                 visible: root.showDate
-                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: root.contentColor
                 text: "•"
             }
             StyledText {
                 font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
-                font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyLarge * BarScale.font
+                font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyLarge * BarScale.fontFor(root.widgetBar)
                 color: root.contentColor
                 text: DateTime.time ?? ""
                 font.letterSpacing: -0.4
@@ -172,7 +225,7 @@ BarWidgetSwitcher {
             StyledText {
                 visible: root.showDate
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
-                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium * BarScale.font
+                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: M3Palette.pillInk("clockWidget")
                 // The per-instance long form (dateFormat axis) keeps the
                 // stacked-pill row identical across clock skins.
@@ -191,7 +244,7 @@ BarWidgetSwitcher {
                     id: timeText
                     anchors.centerIn: parent
                     font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
-                    font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodySmall * BarScale.font
+                    font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                     color: M3Palette.primaryForeground
                     font.weight: Font.Bold
                     text: pill.time
@@ -215,7 +268,7 @@ BarWidgetSwitcher {
                     id: ampmText
                     anchors.centerIn: parent
                     font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
-                    font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+                    font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                     color: M3Palette.primary
                     text: pill.ampm
                 }

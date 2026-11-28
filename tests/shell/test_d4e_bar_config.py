@@ -66,10 +66,13 @@ class MultiBarStoreTest(unittest.TestCase):
     def test_normalize_threads_shared_singleton_bucket(self):
         body = self.fn("normalizeBarConfigs")
         self.assertIn("const usedSingletons = [];", body)
-        self.assertIn("root.normalizeConfigLanes(rawLanes, usedSingletons, id)", body)
+        # D4g 批四: the lane defaults are orientation-aware, so the load
+        # normalize threads the entry's resolved position through.
+        self.assertIn("root.normalizeConfigLanes(rawLanes, usedSingletons, id, root.normalizedEdgePosition(bar.position))", body)
         lanes = self.fn("normalizeConfigLanes")
         self.assertIn("const usedSingletons = sharedSingletons || [];", lanes)
         self.assertIn("root.normalizeLaneEntries(raw, zone, usedSingletons, scope)", lanes)
+        self.assertIn("const defaults = root.defaultBarLayoutsFor(position);", lanes)
 
     def test_entry_enabled_flag(self):
         body = self.fn("normalizeBarConfigs")
@@ -163,10 +166,150 @@ class ProbeCoverageTest(unittest.TestCase):
         for key in ("styleStable", "positionMoved", "disableMoved"):
             self.assertIn(key, self.qml, f"d4eSignature no longer reports {key}")
 
+    def test_probe_migration_and_windows_e6_fields(self):
+        self.assertIn("function d4eMigrationV6()", self.qml)
+        for key in ("version", "foldedOnEntry", "defaultsSkipped", "clockKept",
+                    "flatStripped", "emptyIslandDeleted", "idempotent"):
+            self.assertIn(key, self.qml, f"d4eMigrationV6 no longer reports {key}")
+        for key in ("firstHeight", "secondHeight", "firstIconScale", "secondIconScale"):
+            self.assertIn(key, self.qml, f"d4eWindowsDump no longer reports {key}")
+
     def test_shell_assertions_wired(self):
         self.assertIn("d4e_store_state", self.sh)
+        self.assertIn("d4e_migration_v6_state", self.sh)
+        self.assertIn("d4e_migration_v6_ok", self.sh)
         self.assertIn("d4e_ok = d4e_store_ok and d4e_signature_ok", self.sh)
-        self.assertIn("and d4d_ok and d4e_ok)", self.sh)
+        self.assertIn("and d4d_ok and d4e_ok", self.sh)
+
+
+class SettingsSurfaceE4Test(unittest.TestCase):
+    """D4e e4: multi-bar manager, list-based widgets editor, shared atoms."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.bar_dir = os.path.join(SHELL, "plugins", "bar")
+        cls.ui_dir = os.path.join(SHELL, "ui")
+
+    def test_shared_atoms_added_and_header_supports_reset(self):
+        for name in ("PreferenceGroup.qml", "PreferenceCollapsibleGroup.qml",
+                     "PreferenceControlledBy.qml", "PreferenceVisualPicker.qml"):
+            self.assertTrue(os.path.isfile(os.path.join(self.ui_dir, name)), f"missing {name}")
+        with open(os.path.join(self.ui_dir, "PreferenceHeader.qml"), encoding="utf-8") as f:
+            hdr = f.read()
+        self.assertIn("signal resetRequested", hdr)
+        self.assertIn("property bool showReset", hdr)
+
+    def test_retired_chip_cards_stay_deleted(self):
+        for retired in ("BarComponentsCard.qml", "SortableMultiSelectField.qml",
+                        "LayoutDragCoordinator.qml"):
+            self.assertFalse(os.path.exists(os.path.join(self.bar_dir, retired)),
+                             f"{retired} must remain retired")
+
+    def test_e4_surfaces_wired_to_per_bar_store(self):
+        for name in ("BarManagerCard.qml", "BarLaneSection.qml",
+                     "BarWidgetPickerPopup.qml", "QuickSettingsListCard.qml"):
+            self.assertTrue(os.path.isfile(os.path.join(self.bar_dir, name)), f"missing {name}")
+        with open(os.path.join(self.bar_dir, "BarManagerCard.qml"), encoding="utf-8") as f:
+            mgr = f.read()
+        for token in ("PersonalizationConfig.selectBar", "PersonalizationConfig.addBarConfig",
+                      "PersonalizationConfig.deleteBarConfig", "PersonalizationConfig.renameBarConfig",
+                      "PersonalizationConfig.setBarEnabled"):
+            self.assertIn(token, mgr)
+        with open(os.path.join(self.bar_dir, "BarModulesSection.qml"), encoding="utf-8") as f:
+            mods = f.read()
+        for token in ("BarLaneSection", "BarWidgetPickerPopup", "QuickSettingsListCard",
+                      "PersonalizationConfig.resetBarLanes", "PersonalizationConfig.moveBarEntry"):
+            self.assertIn(token, mods)
+        with open(os.path.join(self.bar_dir, "BarAppearanceSection.qml"), encoding="utf-8") as f:
+            app = f.read()
+        for token in ("PreferenceGroup", "PreferenceVisualPicker",
+                      "PersonalizationConfig.resetBarAxes",
+                      "PersonalizationConfig.setBarIconScale",
+                      "PersonalizationConfig.applyBarDensityPreset"):
+            self.assertIn(token, app)
+        with open(os.path.join(self.bar_dir, "BarWidgetPage.qml"), encoding="utf-8") as f:
+            page = f.read()
+        for token in ("PersonalizationConfig.resetBarWidgetOverrides", "signal routeRequested"):
+            self.assertIn(token, page)
+
+
+class IslandFoldingE5Test(unittest.TestCase):
+    """D4e e5: island appearance axes fold onto the singleton island entry + v6."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.bar_dir = os.path.join(SHELL, "plugins", "bar")
+        cls.defaults = read(os.path.join(SERVICES_DIR, "BarWidgetDefaults.js"))
+        cls.migrations = read(os.path.join(SERVICES_DIR, "ConfigMigrations.js"))
+        cls.pc = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
+
+    def test_defaults_and_v6_migration(self):
+        for key in ("satellite", "showAvatar", "showMediaControls", "visualizerStyle", "hideDate"):
+            self.assertIn(f"{key}:", self.defaults)
+            self.assertIn(f'{key}: "{key}"', self.migrations)
+        self.assertIn("var CURRENT_VERSION = 7", self.migrations)
+        self.assertIn("function migrateIslandGlobals(config, seed)", self.migrations)
+        self.assertIn("if (version < 6)", self.migrations)
+
+    def test_island_runtime_reads_entry_and_bar_lanes(self):
+        self.assertIn("function islandEntry()", self.pc)
+        self.assertIn("function setIslandEntryOverride(key, value)", self.pc)
+        di = read(os.path.join(self.bar_dir, "DynamicIsland.qml"))
+        self.assertIn("property var widgetEntry: null", di)
+        self.assertIn("property var widgetBar: null", di)
+        self.assertIn("function option(key)", di)
+        idle = read(os.path.join(self.bar_dir, "DiIdle.qml"))
+        media = read(os.path.join(self.bar_dir, "DiMedia.qml"))
+        self.assertIn('di.option("satellite")', idle)
+        self.assertIn('di.option("showAvatar")', idle)
+        self.assertIn("di.widgetBar.lanes", idle)
+        self.assertIn('di.option("visualizerStyle")', media)
+        self.assertIn('di.option("showMediaControls")', media)
+
+    def test_island_options_registered(self):
+        opts = os.path.join(self.bar_dir, "options", "IslandOptions.qml")
+        self.assertTrue(os.path.isfile(opts))
+        cat = read(os.path.join(SHELL, "ui", "BarWidgetCatalog.qml"))
+        self.assertIn('island: "IslandOptions.qml"', cat)
+
+
+class DensityAndPerBarLeafE6Test(unittest.TestCase):
+    """D4e e6: DensityPresets, iconScale axis, and per-bar widget leaf convergence."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.bar_dir = os.path.join(SHELL, "plugins", "bar")
+        cls.density = read(os.path.join(SERVICES_DIR, "DensityPresets.js"))
+        cls.bar_defaults = read(os.path.join(SERVICES_DIR, "BarDefaults.js"))
+        cls.scale = read(os.path.join(cls.bar_dir, "BarScale.qml"))
+        cls.pc = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
+
+    def test_density_presets_and_icon_scale(self):
+        for token in ("var LEVELS =", "var PRESETS =", "comfortable", "compact", "spacious"):
+            self.assertIn(token, self.density)
+        self.assertIn("iconScale: 1.0", self.bar_defaults)
+        self.assertIn("function fontFor(widgetBar)", self.scale)
+        self.assertIn("function iconFor(widgetBar)", self.scale)
+        for token in ("function setBarIconScale(", "function applyBarDensityPreset(",
+                      "function resolvedBarHeight(", "function resolvedVerticalBarWidth(",
+                      "function barStyleBoostFor("):
+            self.assertIn(token, self.pc)
+
+    def test_per_bar_leaves_drop_global_bar_style_reads(self):
+        for name in ("Media.qml", "BatteryIndicator.qml", "SysTray.qml",
+                     "ClockWidget.qml", "UpdatesCount.qml", "DocktoPanel.qml",
+                     "Divisor.qml", "Spacer.qml"):
+            content = read(os.path.join(self.bar_dir, name))
+            self.assertIn("widgetBar", content, f"{name} missing widgetBar")
+            for forbidden in ("Config.options.bar.bottom",
+                              "Config.options?.bar?.bottom",
+                              "Config.options.bar.vertical",
+                              "Config.options.bar.cornerStyle",
+                              "Config.options?.bar?.m3?.cornerStyle"):
+                self.assertNotIn(forbidden, content, f"{name} still reads global {forbidden}")
+        group = read(os.path.join(self.bar_dir, "BarGroup.qml"))
+        self.assertIn("barAxes", group)
+        self.assertNotIn("Config.options.bar.", group)
 
 
 if __name__ == "__main__":

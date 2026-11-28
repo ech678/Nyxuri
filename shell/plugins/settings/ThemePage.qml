@@ -407,12 +407,63 @@ NexusPageBase {
         PreferenceToggle {
             last: true
             text: I18n.tr("Blur wallpaper only")
-            subtext: BlurService.niriIntegrationReady ? I18n.tr(
-                                                            "Turning this off also blurs windows and uses more resources") :
-                                                        I18n.tr("Configure Niri blur integration first")
+            subtext: BlurService.niriIntegrationReady ? I18n.tr("Turning this off also blurs windows and uses more resources") : I18n.tr("Configure Niri blur integration first")
             enabled: BlurService.available && BlurService.niriIntegrationReady
             checked: PersonalizationConfig.shellBlurXray
             onToggled: PersonalizationConfig.setShellBlurXray(checked)
+        }
+
+        // Shape & surface contrast (Phase 3 global scales)
+        PreferenceHeader {
+            text: I18n.tr("Shape and surfaces")
+        }
+
+        PreferenceSlider {
+            first: true
+            label: I18n.tr("Foreground layer contrast")
+            valueLabel: Math.round((1 - PersonalizationConfig.shellContentTransparency) * 100) + " %"
+            value: Math.round((1 - PersonalizationConfig.shellContentTransparency) * 100)
+            from: 5
+            to: 100
+            stepSize: 5
+            modified: Math.abs(PersonalizationConfig.shellContentTransparency - 0.9) > 0.005
+            onMoved: value => PersonalizationConfig.setShellContentTransparency(1 - Math.round(value) / 100)
+            onResetRequested: PersonalizationConfig.setShellContentTransparency(0.9)
+        }
+
+        PreferenceSlider {
+            label: I18n.tr("Corner roundness")
+            valueLabel: PersonalizationConfig.shellCornerRadiusScale === 0 ? I18n.tr("Square") : Math.round(PersonalizationConfig.shellCornerRadiusScale * 100) + " %"
+            value: Math.round(PersonalizationConfig.shellCornerRadiusScale * 100)
+            from: 0
+            to: 200
+            stepSize: 10
+            modified: Math.abs(PersonalizationConfig.shellCornerRadiusScale - 1.0) > 0.01
+            onMoved: value => PersonalizationConfig.setShellCornerRadiusScale(Math.round(value) / 100)
+            onResetRequested: PersonalizationConfig.setShellCornerRadiusScale(1.0)
+        }
+
+        PreferenceToggle {
+            last: !PersonalizationConfig.shellGlobalBorderEnabled
+            text: I18n.tr("Surface borders")
+            checked: PersonalizationConfig.shellGlobalBorderEnabled
+            modified: PersonalizationConfig.shellGlobalBorderEnabled
+            onToggled: PersonalizationConfig.setShellGlobalBorderEnabled(checked)
+            onResetRequested: PersonalizationConfig.setShellGlobalBorderEnabled(false)
+        }
+
+        PreferenceSlider {
+            visible: PersonalizationConfig.shellGlobalBorderEnabled
+            last: true
+            label: I18n.tr("Border opacity")
+            valueLabel: Math.round(PersonalizationConfig.shellGlobalBorderOpacity * 100) + " %"
+            value: Math.round(PersonalizationConfig.shellGlobalBorderOpacity * 100)
+            from: 0
+            to: 100
+            stepSize: 5
+            modified: Math.abs(PersonalizationConfig.shellGlobalBorderOpacity - 0.35) > 0.01
+            onMoved: value => PersonalizationConfig.setShellGlobalBorderOpacity(Math.round(value) / 100)
+            onResetRequested: PersonalizationConfig.setShellGlobalBorderOpacity(0.35)
         }
 
         InlineStatusBanner {
@@ -461,9 +512,7 @@ NexusPageBase {
                         implicitWidth: 84
                         implicitHeight: 56
                         buttonRadius: NexusStyle.rounding.small
-                        containerColor: PersonalizationConfig.superKeyStyle === modelData.value
-                                        ? Appearance.m3colors.m3secondaryContainer :
-                                          Appearance.m3colors.m3surfaceContainerHigh
+                        containerColor: PersonalizationConfig.superKeyStyle === modelData.value ? Appearance.m3colors.m3secondaryContainer : Appearance.m3colors.m3surfaceContainerHigh
                         hoverStateLayerOpacity: 0.08
                         pressedStateLayerOpacity: 0.12
                         focusStateLayerOpacity: 0.12
@@ -571,10 +620,7 @@ NexusPageBase {
             last: true
             enabled: NiriConfigService.ready("cursor")
             label: I18n.tr("Hide after timeout")
-            valueLabel: PersonalizationConfig.cursorHideAfterInactiveMs === 0 ? I18n.tr("Off") : Math.round(
-                                                                                    PersonalizationConfig.cursorHideAfterInactiveMs)
-                                                                                + " " + I18n.tr(
-                                                                                    "milliseconds")
+            valueLabel: PersonalizationConfig.cursorHideAfterInactiveMs === 0 ? I18n.tr("Off") : Math.round(PersonalizationConfig.cursorHideAfterInactiveMs) + " " + I18n.tr("milliseconds")
             value: PersonalizationConfig.cursorHideAfterInactiveMs
             from: 0
             to: 5000
@@ -677,8 +723,7 @@ NexusPageBase {
             Layout.fillWidth: true
             visible: ThemeService.generationError !== "" || TemplateService.mirrorError !== ""
             tone: "error"
-            message: ThemeService.generationError !== "" ? I18n.tr("Failed to generate Matugen colors") :
-                                                           I18n.tr("Failed to write the Noctalia palette mirror")
+            message: ThemeService.generationError !== "" ? I18n.tr("Failed to generate Matugen colors") : I18n.tr("Failed to write the Noctalia palette mirror")
             StyledToolTip {
                 extraVisibleCondition: errorHover.hovered
                 text: ThemeService.generationError || TemplateService.mirrorError
@@ -772,9 +817,7 @@ NexusPageBase {
                         Layout.fillWidth: true
                         iconName: (modelData.valid && renderError === "") ? modelData.icon : "error"
                         title: modelData.title
-                        supportingText: renderError !== "" ? renderError : !modelData.valid ? modelData.error : modelData.origin === "user" ? I18n.tr(
-                                                                                                                        "User templates") :
-                                                                                                                                  ""
+                        supportingText: renderError !== "" ? renderError : !modelData.valid ? modelData.error : modelData.origin === "user" ? I18n.tr("User templates") : ""
 
                         trailing: Item {
                             implicitWidth: templateRowActions.implicitWidth
@@ -786,8 +829,7 @@ NexusPageBase {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: implicitWidth
                                 height: implicitHeight
-                                busy: templateRow.modelData.valid && ThemeService.generating
-                                      && ThemeService.generationTemplateId === templateRow.modelData.id
+                                busy: templateRow.modelData.valid && ThemeService.generating && ThemeService.generationTemplateId === templateRow.modelData.id
                             }
 
                             RowLayout {
@@ -801,8 +843,7 @@ NexusPageBase {
                                     implicitWidth: NexusStyle.icon.large
                                     implicitHeight: NexusStyle.icon.large
                                     Accessible.role: Accessible.StaticText
-                                    Accessible.name: I18n.tr("Run after each generation: %1").arg(
-                                                         templateRow.modelData.postHook)
+                                    Accessible.name: I18n.tr("Run after each generation: %1").arg(templateRow.modelData.postHook)
 
                                     MaterialSymbol {
                                         anchors.centerIn: parent
@@ -815,17 +856,14 @@ NexusPageBase {
                                     }
                                     StyledToolTip {
                                         extraVisibleCondition: hookHover.hovered
-                                        text: I18n.tr("Run after each generation:\n%1").arg(
-                                                  templateRow.modelData.postHook)
+                                        text: I18n.tr("Run after each generation:\n%1").arg(templateRow.modelData.postHook)
                                     }
                                 }
 
                                 IconButton {
                                     visible: templateRow.modelData.origin === "user"
                                     iconName: "folder_open"
-                                    tooltipText: I18n.tr("Open template location") + "\n"
-                                                 + templateRow.modelData.inputPath + "\n" + I18n.tr(
-                                                     "Output: %1").arg(templateRow.modelData.outputPath)
+                                    tooltipText: I18n.tr("Open template location") + "\n" + templateRow.modelData.inputPath + "\n" + I18n.tr("Output: %1").arg(templateRow.modelData.outputPath)
                                     onClicked: TemplateService.openLocation(templateRow.modelData)
                                 }
 
@@ -833,21 +871,15 @@ NexusPageBase {
                                     visible: templateRow.modelData.origin === "user"
                                     iconName: "delete"
                                     tooltipText: I18n.tr("Delete template")
-                                    enabled: !TemplateService.busy && !ThemeService.generating
-                                             && PersonalizationConfig.ready
+                                    enabled: !TemplateService.busy && !ThemeService.generating && PersonalizationConfig.ready
                                     onClicked: root.requestTemplateDeletion(templateRow.modelData)
                                 }
 
                                 StyledSwitch {
-                                    enabled: templateRow.modelData.valid && !ThemeService.generating &&
-                                             !TemplateService.busy && PersonalizationConfig.ready
-                                    checked: templateRow.modelData.valid
-                                             && PersonalizationConfig.isMatugenTemplateEnabled(
-                                                 templateRow.modelData.id)
-                                    Accessible.name: I18n.tr("Enable the %1 Matugen template").arg(
-                                                         templateRow.modelData.title)
-                                    onToggled: ThemeService.setMatugenTemplateEnabled(templateRow.modelData.id,
-                                                                                      checked)
+                                    enabled: templateRow.modelData.valid && !ThemeService.generating && !TemplateService.busy && PersonalizationConfig.ready
+                                    checked: templateRow.modelData.valid && PersonalizationConfig.isMatugenTemplateEnabled(templateRow.modelData.id)
+                                    Accessible.name: I18n.tr("Enable the %1 Matugen template").arg(templateRow.modelData.title)
+                                    onToggled: ThemeService.setMatugenTemplateEnabled(templateRow.modelData.id, checked)
                                 }
                             }
                         }
@@ -870,8 +902,7 @@ NexusPageBase {
 
             anchors.centerIn: Overlay.overlay
             width: Math.min(480, root.width - 32)
-            dialogTitle: root.pendingDeleteTemplate ? I18n.tr("Delete “%1”?").arg(
-                                                          root.pendingDeleteTemplate.title) : ""
+            dialogTitle: root.pendingDeleteTemplate ? I18n.tr("Delete “%1”?").arg(root.pendingDeleteTemplate.title) : ""
             messageText: I18n.tr("Delete the template and its registration. Keep generated output files.")
             onClosed: root.pendingDeleteTemplate = null
             actionsComponent: Component {
@@ -887,8 +918,7 @@ NexusPageBase {
 
                     ActionButton {
                         text: I18n.tr("Delete")
-                        enabled: !TemplateService.busy && !ThemeService.generating
-                                 && PersonalizationConfig.ready
+                        enabled: !TemplateService.busy && !ThemeService.generating && PersonalizationConfig.ready
                         onClicked: {
                             if (root.pendingDeleteTemplate)
                                 TemplateService.remove(root.pendingDeleteTemplate.id);

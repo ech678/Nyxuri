@@ -11,9 +11,9 @@
 | **多合成器 (Multi-WM) 驱动抽象**（原 mango-adaptation 页的债务登记，KM3.5 并入） | 第三个合成器（Hyprland/Sway）接入前必须收编，禁止再往注册表外的角落塞字面量 | **非 Shell 底座已收编（2026-11-21）**：Python 侧 `nyxuri/system/compositors.py` 注册表富事实化（收束 `config_relpath`、`scripts_subpath`、`essential_scripts`、`doctor_outputs_cmd` 与 `has_glow_support`）；`templates.py` 模板渲染多态遍历注册表，`theme.py` 清退 `mmsg` 字面量，`doctor.py` 诊断探针与脚本自适应活动桌面，`greeter` 激活钩子收归 `detect_preferred_wm`；全底座零散落 mango 特判。QML 侧 `CompositorDriver` 动态分发与 `CompositorConfigService` 留待 Shell 专项重做。 |
 | **dashwindow 手写目录接注册表**（S0-3 拍板暂缓） | S1 第三方插件实际携带 settings schema 入场，或 schema 通用渲染器（S0-3b）验证成熟后重估收益 | dashboard 轨的 `DashboardSettingsCatalog`（版面）与 `SettingsControlCatalog`（控件 get/set 注册表）保持手写真值：它们是 dashboard 轨对 PersonalizationConfig 外观轴的**表现层编排**，与 manifest 路由表不同源不同义；在 schema 渲染器刚落地、存量零转换时先行迁移顺序颠倒。收敛方向：简单控件逐步改由 manifest `controls` 声明、dashboard 卡片从注册表取值 |
 | **媒体 marquee 循环滚动 / 锁宽**（iNiR 经典 bar `lockMediaWidth` 方案） | D1 媒体宽度钳制落地后，观感仍不满意（长歌名 elide 信息损失大）再引入 | 先按 D1 对齐 iNiR barM3 clamp + elide；marquee 是增强不是修复 |
-| **密度预设**（dux `DensityPresets` 四档，只迁移用户未改过的键） | D4b 几何轴全套落地后作为其收尾项 | 单一 spacing/padding 体系（design-system 8 档）先立，预设是几何轴之上的编排 |
+| **密度预设**（dux `DensityPresets` 四档，只迁移用户未改过的键） | bar 级随 D4e e6 落地；全 shell 密度刻度等 D5「几何一张表」把间距三张表归一之后（D-10，2026-11-28） | 单一 spacing/padding 体系（design-system 8 档）先立，预设是几何轴之上的编排；表没归一之前不设全局刻度 |
 | **per-screen token 配置层**（caelestia `monitors/<name>/` 覆盖） | 真实多屏用户需求出现（不同 DPI/缩放的屏组合） | 全局 token 单层；`barScreenList` 已按屏选 bar，token 分屏另议 |
-| **D3 撑大岛联动试点**（Clavis Keystone 三窗口架构 + SDF 融合） | D5 联动层铺开时同规格 morph+blur 观感不足，或作者重启岛屿风格评审 | end4 岛为唯一现行形态；试点设计留档 [shell/ROADMAP](../shell/ROADMAP.md) D3 节；SDF 融合（出生律重武器档）恢复验证前不启用（D-6，2026-11-21） |
+| **D3 撑大岛联动试点**（Clavis Keystone 三窗口架构 + SDF 融合） | D5 联动层铺开时同规格 morph+blur 观感不足，或作者重启岛屿风格评审 | end4 岛为唯一现行形态；试点设计留档 [shell/ROADMAP](../shell/ROADMAP.md) D3 节；SDF 融合（出生律重武器档）恢复验证前不启用（D-6，2026-11-21）；竖向岛不依赖本项——沿轨紧凑面进 D4g（D-9），只有文本面的跨轴生长随 D5 窗口增长基建（2026-11-28） |
 
 ## 这次重构已落地（主动覆盖延迟）
 

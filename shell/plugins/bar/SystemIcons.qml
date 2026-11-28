@@ -23,14 +23,17 @@ import qs.services
 import qs.commons
 import qs.commons.i18n
 import qs.ui
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
 
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
 
     readonly property color iconColor: root.contentColorOverridden ? root.contentColor : (root.isMaterial ? M3Palette.pillInk("systemIcons") : Appearance.colors.colOnLayer1)
 
@@ -102,6 +105,7 @@ Item {
             slotKey: "volume"
 
             isMaterial: root.isMaterial
+            widgetBar: root.widgetBar
             vertical: root.vertical
             contentColor: root.iconColor
             contentColorOverridden: true
@@ -125,6 +129,7 @@ Item {
         SystemIconSlot {
             slotKey: "mic"
             isMaterial: root.isMaterial
+            widgetBar: root.widgetBar
             vertical: root.vertical
             visible: VolumeService.sourceMuted
             contentColor: root.iconColor
@@ -138,6 +143,7 @@ Item {
         SystemIconSlot {
             slotKey: "keyboard"
             isMaterial: root.isMaterial
+            widgetBar: root.widgetBar
             vertical: root.vertical
             visible: KeyboardIndicators.hasPanelIndicators
             clickable: false
@@ -147,6 +153,7 @@ Item {
             toolTipText: KeyboardIndicators.currentLayoutName.length > 0 ? KeyboardIndicators.currentLayoutName : I18n.tr("Keyboard indicators")
 
             HyprlandXkbIndicator {
+                widgetBar: root.widgetBar
                 vertical: root.vertical
                 color: root.iconColor
             }
@@ -155,6 +162,7 @@ Item {
         SystemIconSlot {
             slotKey: "wifi"
             isMaterial: root.isMaterial
+            widgetBar: root.widgetBar
             vertical: root.vertical
             contentColor: root.iconColor
             contentColorOverridden: true
@@ -167,6 +175,7 @@ Item {
         SystemIconSlot {
             slotKey: "bluetooth"
             isMaterial: root.isMaterial
+            widgetBar: root.widgetBar
             vertical: root.vertical
             visible: BluetoothService.available
             contentColor: root.iconColor
@@ -187,6 +196,7 @@ Item {
 
                 slotKey: "peripheral"
                 isMaterial: root.isMaterial
+                widgetBar: root.widgetBar
                 vertical: root.vertical
                 clickable: false
                 isActive: true
@@ -204,6 +214,7 @@ Item {
             slotKey: "notifications"
 
             isMaterial: root.isMaterial
+            widgetBar: root.widgetBar
             vertical: root.vertical
             visible: NotificationService.silent || NotificationService.unread > 0
             contentColor: root.iconColor
@@ -219,7 +230,7 @@ Item {
                 MaterialSymbol {
                     anchors.centerIn: parent
                     text: NotificationService.silent ? "notifications_paused" : "notifications"
-                    iconSize: Appearance.sizes.barUtilIconSize
+                    iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                     color: notificationSlot.hovered && root.isMaterial ? M3Palette.primaryForeground : root.iconColor
                 }
 
@@ -243,7 +254,7 @@ Item {
 
                         visible: parent.showCount
                         anchors.centerIn: parent
-                        font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+                        font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar)
                         color: root.isMaterial ? M3Palette.primary : Appearance.colors.colLayer0
                         text: NotificationService.unread
                     }

@@ -15,7 +15,12 @@ function defaults() {
         showThumbnails: true,
         previewSize: 160,
         contextPinning: true,
-        surfaceStyle: "default"
+        surfaceStyle: "default",
+        opacity: -1,
+        blurEnabled: true,
+        edgeMargin: 8,
+        cornerRadius: 20,
+        borderEnabled: true
     };
 }
 
@@ -39,6 +44,9 @@ function option(name, value) {
     if (name === "previewSize") return Math.round(Math.max(96, Math.min(240, value)));
     if (name === "iconSize") return Math.round(Math.max(32, Math.min(80, value)));
     if (name === "magnificationScale") return Math.max(1, Math.min(2, value));
+    if (name === "opacity") return value < 0 ? -1 : Math.max(0, Math.min(1, Math.round(value * 100) / 100));
+    if (name === "edgeMargin") return Math.round(Math.max(0, Math.min(32, value)));
+    if (name === "cornerRadius") return Math.round(Math.max(0, Math.min(36, value)));
     return undefined;
 }
 

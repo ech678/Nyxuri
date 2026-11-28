@@ -29,6 +29,7 @@ Item {
     property bool vertical: false
     // D4e: the owning bar rides along for the popup's routing/delay axes.
     property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property bool open: popup.pinnedOpen
     // dux SectionOverflow closes on membership changes: a refit while open
     // re-parents widgets back before the set mutates.
@@ -96,8 +97,8 @@ Item {
             MaterialSymbol {
                 id: symbol
                 anchors.centerIn: parent
-                text: OverflowLayout.expanderIcon(Config.options.bar.edge, root.open)
-                iconSize: Appearance.sizes.barUtilIconSize
+                text: OverflowLayout.expanderIcon(root.barAxes.position, root.open)
+                iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                 fill: hover.hovered ? 1 : 0
                 color: Appearance.colors.colOnLayer1
 

@@ -86,8 +86,18 @@ Singleton {
         }
         root.savePending = false;
         try {
-            let tomlText = "# ====================================================================\n" + "# Nyxuri Shell Unified Configuration File\n" + "# nyxuri-config-schema: 5\n" + "# Automatically maintained; hand-edits are preserved on file reload.\n" + "# ====================================================================\n\n";
-            tomlText += Toml.stringify(root.rawConfig);
+            // Sections that diffed down to empty arrive as `{}` (the merge
+            // in updateSections needs a real value to overwrite the stale
+            // one); they serialize to nothing, per the D4a file contract.
+            let payload = {};
+            for (const k in root.rawConfig) {
+                const value = root.rawConfig[k];
+                const emptied = value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0;
+                if (!emptied)
+                    payload[k] = value;
+            }
+            let tomlText = "# ====================================================================\n" + "# Nyxuri Shell Unified Configuration File\n" + "# nyxuri-config-schema: 7\n" + "# Automatically maintained; hand-edits are preserved on file reload.\n" + "# ====================================================================\n\n";
+            tomlText += Toml.stringify(payload);
             configFile.setText(tomlText);
         } catch (e) {
             root.lastError = String(e);
@@ -138,11 +148,11 @@ Singleton {
         printErrors: false
         onLoaded: {
             const text = configProbe.text();
-            // D4a–D4c: the stamp version tracks config.toml's configVersion
-            // key (schema 5 = bar-level axes on the configs entry). 2..5 all
+            // D4a–D4f: the stamp version tracks config.toml's configVersion
+            // key (schema 7 = atomic bar style axes). 2..7 all
             // take the fast path — older files migrate in QML at load
             // (ConfigMigrations), not through the legacy-JSON python helper.
-            const stamped = ["# nyxuri-config-schema: 2", "# nyxuri-config-schema: 3", "# nyxuri-config-schema: 4", "# nyxuri-config-schema: 5"].some(stamp => text.indexOf(stamp) !== -1);
+            const stamped = ["# nyxuri-config-schema: 2", "# nyxuri-config-schema: 3", "# nyxuri-config-schema: 4", "# nyxuri-config-schema: 5", "# nyxuri-config-schema: 6", "# nyxuri-config-schema: 7"].some(stamp => text.indexOf(stamp) !== -1);
             if (stamped && text.indexOf("[keystone") === -1)
                 root.storeReady = true;
             else

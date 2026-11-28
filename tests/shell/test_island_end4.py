@@ -106,20 +106,26 @@ class IslandEnd4FacesContractTest(unittest.TestCase):
         self.assertNotIn("NotificationService.unread", content)
         self.assertNotIn("requestSidebarToggle(\"dashboard\")", content)
         # Three segments: avatar left-anchored, satellite centered, status
-        # icons right-anchored.
+        # icons right-anchored. 批三: the rail face stacks the same three
+        # segments along the track; the satellite centers via explicit x/y
+        # (conditional anchors are forbidden) and the weather satellite
+        # picks its row/column twin by axis.
         self.assertIn("id: statusIconsRow", content)
-        self.assertIn("anchors.centerIn: parent", content)
-        self.assertIn("sourceComponent: PersonalizationConfig.islandSatellite", content)
-        # The idle width contract still feeds the island host.
+        self.assertIn("id: statusIconsColumn", content)
+        self.assertIn("x: (parent.width - width) / 2", content)
+        self.assertIn('sourceComponent: diIdleRoot.satellite === "clock" ? clockComponent : diIdleRoot.satellite === "weather" ? (diIdleRoot.railFace ? weatherComponent : weatherRowComponent) : null', content)
+        # The idle width contract still feeds the island host; the rail
+        # length rides the批三 callback.
         self.assertIn("di.idleTextContentWidth", content)
+        self.assertIn("di.idleRailContentLength = diIdleRoot.computedRailLength", content)
 
     def test_di_media_b10_control_set(self):
         """B-10: the island media face carries the end4 control set — playback
-        buttons behind islandShowMediaControls, visualizerStyle dots/wave/none,
+        buttons behind showMediaControls, visualizerStyle dots/wave/none,
         and the wave holds its cava lease only while playing."""
         content = read_end4("DiMedia.qml")
-        self.assertIn("PersonalizationConfig.islandShowMediaControls", content)
-        self.assertIn("PersonalizationConfig.islandVisualizerStyle", content)
+        self.assertIn('di.option("showMediaControls")', content)
+        self.assertIn('di.option("visualizerStyle")', content)
         self.assertIn("id: mediaControlsRow", content)
         self.assertIn("WaveVisualizer", content)
         self.assertIn("visualizerStyle === \"wave\"", content)
@@ -127,7 +133,11 @@ class IslandEnd4FacesContractTest(unittest.TestCase):
         # Lease: the wave's CavaProcess is active only while visible+playing.
         self.assertIn("active: visualizerCanvas.visible && (di.activePlayer?.isPlaying ?? false)", content)
         # end4 visibility chain: dots yield to the controls, none shows none.
-        self.assertIn("visible: !diMediaRoot.showMediaControls && diMediaRoot.visualizerStyle === \"dots\"", content)
+        # 批三: both spectra and the control row are row-face features —
+        # the rail compact face is art + play/pause.
+        self.assertIn('visible: !di.vertical && !diMediaRoot.showMediaControls && diMediaRoot.visualizerStyle === "dots"', content)
+        self.assertIn('visible: !di.vertical && diMediaRoot.showMediaControls', content)
+        self.assertIn("visible: di.vertical\n            cursorShape: Qt.PointingHandCursor", content)
 
 
 if __name__ == "__main__":

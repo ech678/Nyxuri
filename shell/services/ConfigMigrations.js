@@ -9,7 +9,7 @@
 
 // v2: the schema-2 file without a configVersion key (pre-D4a).
 var LEGACY_VERSION = 2;
-var CURRENT_VERSION = 5;
+var CURRENT_VERSION = 7;
 
 // Explicit key map for the v3 step (dux MIGRATED_GLOBALS pattern): the
 // layout keys [[bar.configs]] supersedes. A key rename can never silently
@@ -96,6 +96,84 @@ var MIGRATED_BAR_GLOBALS = {
 // they become plain entry overrides.
 var WIDGET_STYLE_KEYS = ["color", "borderColor", "radius", "borderWidth", "padding"];
 
+// v6 explicit key map (D4e e5): [island] widget appearance axes fold onto
+// the singleton island lane entry; horizontalClock and keyboardIndicators
+// stay in their own sections.
+var MIGRATED_ISLAND_KEYS = {
+    satellite: "satellite",
+    showAvatar: "showAvatar",
+    showMediaControls: "showMediaControls",
+    visualizerStyle: "visualizerStyle",
+    hideDate: "hideDate"
+};
+
+// v7 explicit key map (D4f): cornerStyle (0..5), borderless (5 modes) and
+// showBackground fold into the atomic axes and leave the entry.
+var MIGRATED_STYLE_KEYS = ["cornerStyle", "borderless", "showBackground"];
+
+var STYLE_PRESET_MAP = {
+    0: {
+        backplate: true,
+        lanePill: false,
+        tint: false,
+        edgeMargin: 0
+    },
+    1: {
+        backplate: true,
+        lanePill: false,
+        tint: false,
+        edgeMargin: 5
+    },
+    2: {
+        backplate: false,
+        lanePill: false,
+        tint: false,
+        edgeMargin: 0,
+        groupColor: "layer0"
+    },
+    3: {
+        backplate: false,
+        lanePill: true,
+        tint: true,
+        edgeMargin: 5
+    },
+    4: {
+        backplate: false,
+        lanePill: true,
+        tint: true,
+        edgeMargin: 0
+    },
+    5: {
+        backplate: true,
+        lanePill: false,
+        tint: false,
+        edgeMargin: 0,
+        squareCorners: true,
+        capsuleRadius: "rounded"
+    }
+};
+
+var BORDERLESS_AXIS_MAP = {
+    pills: {
+        widgetStyle: "fused"
+    },
+    separated: {
+        widgetStyle: "separate"
+    },
+    segmented: {
+        widgetStyle: "fused",
+        widgetOutlineEnabled: true,
+        widgetOutlineColor: "layer0Border"
+    },
+    transparent: {
+        widgetStyle: "fused",
+        groupColor: "transparent"
+    },
+    flat: {
+        widgetStyle: "flat"
+    }
+};
+
 // Runs every pending step. seed carries what the caller (who owns the pure
 // resolve helpers and the widget whitelist) resolved from the legacy keys:
 // { lanes: {left, middle, right}, allowedIds, defaults } — defaults is the
@@ -118,6 +196,16 @@ function migrateConfig(parsed, seed) {
     if (version < 5) {
         changed = migrateBarGlobals(config, seed) || changed;
         version = 5;
+        config.configVersion = version;
+    }
+    if (version < 6) {
+        changed = migrateIslandGlobals(config, seed) || changed;
+        version = 6;
+        config.configVersion = version;
+    }
+    if (version < 7) {
+        changed = migrateBarStyleAxes(config, seed) || changed;
+        version = 7;
         config.configVersion = version;
     }
     return {
@@ -331,8 +419,134 @@ function migrateBarGlobals(config, seed) {
     return touched;
 }
 
+// v6 (D4e e5): fold [island] widget appearance axes into the singleton
+// "island" lane entry across [[bar.configs]], skipping defaults, keeping
+// any value already on the entry, and stripping the legacy keys + obsolete
+// layoutMigrated marker afterwards.
+function migrateIslandGlobals(config, seed) {
+    const island = config.island;
+    if (!island || typeof island !== "object" || Array.isArray(island))
+        return false;
+    const defaults = seed && seed.defaults && seed.defaults.island ? seed.defaults.island : {};
+    const bar = config.bar && typeof config.bar === "object" && !Array.isArray(config.bar) ? config.bar : null;
+    const configs = bar && Array.isArray(bar.configs) ? bar.configs : [];
+    let touched = false;
+
+    for (let b = 0; b < configs.length; b++) {
+        const lanes = configs[b] && configs[b].lanes;
+        if (!lanes || typeof lanes !== "object")
+            continue;
+        for (const zone of ["left", "middle", "right"]) {
+            const lane = lanes[zone];
+            if (!Array.isArray(lane))
+                continue;
+            for (let i = 0; i < lane.length; i++) {
+                const raw = lane[i];
+                const id = typeof raw === "string" ? raw : (raw && typeof raw === "object" ? raw.id : null);
+                if (id !== "island" && id !== "dynamicIsland")
+                    continue;
+                const entry = typeof raw === "string" ? {
+                    id: raw
+                } : raw;
+                let copied = false;
+                for (const entryKey in MIGRATED_ISLAND_KEYS) {
+                    const flatKey = MIGRATED_ISLAND_KEYS[entryKey];
+                    const value = island[flatKey];
+                    if (value === undefined || entry[entryKey] !== undefined)
+                        continue;
+                    if (defaults[entryKey] !== undefined && value === defaults[entryKey])
+                        continue;
+                    entry[entryKey] = value;
+                    copied = true;
+                }
+                if (copied) {
+                    lane[i] = entry;
+                    touched = true;
+                }
+            }
+        }
+    }
+
+    for (const entryKey in MIGRATED_ISLAND_KEYS) {
+        const flatKey = MIGRATED_ISLAND_KEYS[entryKey];
+        if (island[flatKey] !== undefined) {
+            delete island[flatKey];
+            touched = true;
+        }
+    }
+    if (island.layoutMigrated !== undefined) {
+        delete island.layoutMigrated;
+        touched = true;
+    }
+    if (Object.keys(island).length === 0)
+        delete config.island;
+    return touched;
+}
+
 function isDefaultAxis(def, value) {
     if (Array.isArray(def) && Array.isArray(value))
         return JSON.stringify(def) === JSON.stringify(value);
     return def === value;
+}
+
+// v7 (D4f): fold cornerStyle (0..5), borderless (5 modes) and
+// showBackground onto the atomic axes (backplate, lanePill, tint,
+// widgetStyle, capsuleRadius, groupColor, edgeMargin, squareCorners,
+// widgetOutline*). Already-present atomic keys win; default-equal keys
+// skip; the retired keys are stripped afterwards. Idempotent.
+function migrateBarStyleAxes(config, seed) {
+    const bar = config.bar;
+    if (!bar || typeof bar !== "object" || Array.isArray(bar) || !Array.isArray(bar.configs))
+        return false;
+    const defaults = seed && seed.barDefaults ? seed.barDefaults : {};
+    let touched = false;
+
+    for (let i = 0; i < bar.configs.length; i += 1) {
+        const entry = bar.configs[i];
+        if (!entry || typeof entry !== "object")
+            continue;
+        const hasCorner = entry.cornerStyle !== undefined;
+        const hasBorderless = entry.borderless !== undefined;
+        const hasShowBg = entry.showBackground !== undefined;
+        if (!hasCorner && !hasBorderless && !hasShowBg)
+            continue;
+
+        const cs = hasCorner ? Math.max(0, Math.min(5, Number(entry.cornerStyle) || 0)) : 1;
+        const showBg = hasShowBg ? entry.showBackground === true : true;
+        const styleAxes = Object.assign({}, STYLE_PRESET_MAP[cs] || STYLE_PRESET_MAP[1]);
+        if (cs === 0 || cs === 1 || cs === 5)
+            styleAxes.backplate = showBg;
+
+        const bl = hasBorderless ? String(entry.borderless) : "";
+        const blAxes = BORDERLESS_AXIS_MAP[bl] || null;
+        if (blAxes) {
+            for (const k in blAxes)
+                styleAxes[k] = blAxes[k];
+        }
+
+        for (const axisKey in styleAxes) {
+            if (entry[axisKey] !== undefined)
+                continue;
+            const val = styleAxes[axisKey];
+            if (defaults[axisKey] !== undefined && isDefaultAxis(defaults[axisKey], val))
+                continue;
+            entry[axisKey] = val;
+        }
+
+        for (let k = 0; k < MIGRATED_STYLE_KEYS.length; k += 1) {
+            const oldKey = MIGRATED_STYLE_KEYS[k];
+            if (entry[oldKey] !== undefined) {
+                delete entry[oldKey];
+                touched = true;
+            }
+        }
+    }
+    for (let k = 0; k < MIGRATED_STYLE_KEYS.length; k += 1) {
+        const oldKey = MIGRATED_STYLE_KEYS[k];
+        if (bar[oldKey] !== undefined) {
+            delete bar[oldKey];
+            touched = true;
+        }
+    }
+    return touched;
 }

@@ -48,7 +48,7 @@ bar 级几何/样式轴已随 D4c 迁入 configs 条目（见「bar 级轴（D4c
 entry.overrides[key] → DEFAULTS[widgetId][key] → GLOBAL_DEFAULTS[key]
 ```
 
-**部件代码从不直接碰存储**：宿主（BarContent/VerticalBarContent）把 lane 条目经
+**部件代码从不直接碰存储**：宿主（BarContent 单宿主，D4g 起横竖两向共用）把 lane 条目经
 **属性注入协议**推进部件——声明 `property var widgetEntry` 的部件在 Loader
 `onLoaded` 时收到条目对象，自身轴经 `option()` 解析。首个消费者是 Spacer
 （`size` 轴）；D4b 随每部件实例配置逐个迁移存量扁平轴读取。
@@ -172,7 +172,7 @@ StyledPopup 硬编码，不是被认可的默认）。全部新键、无改名�
   `resolve(sections, options, previous)`：flexible 先收缩（shrink-to-fit）再按
   priority 让位、`always` 直接入溢出、pinned（spacer/separator/island）永不离开、
   迟滞恢复（restoreMargin + previous 状态）。lane 名 middle↔center 在宿主边界映射。
-- **引擎**（BarContent/VerticalBarContent 各一）：活跃分支 Repeater 测量 →
+- **引擎**（BarContent 单宿主，D4g 起横竖两向共用）：活跃分支 Repeater 测量 →
   `resolve()`（1ms Timer 防抖——**禁 Qt.callLater**：初始绑定求值排入的 callLater
   会在孵化完成前触发，引擎方法尚未挂载，probe 实证崩溃）→ 隐藏集回写
   `BarGroup.inOverflow`（融合角经 SegmentRoles 参与度自动重排）+ flexible 配给
@@ -339,7 +339,7 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
 - `PersonalizationConfig`：`barStyleContextOf(axes)` + `resolvedBar*` /
   `barStyleContext` / `barWidgetOutline*` / `barSurfaceBorder*` 全部接受可选
   `axes` 尾参（缺省 = settings-facing 条目）——宿主与 BarGroup 传自己的。
-- 内容宿主（BarContent/VerticalBarContent）：`barConfig` 注入（默认绑定
+- 内容宿主（BarContent 单宿主，D4g 起横竖两向共用）：`barConfig` 注入（默认绑定
   active 保证 probe/独立装载可用，窗口覆写）；`axes` 别名；lanes 视图直接读
   `barConfig.lanes.*`；`isMaterial/isMaterialHug/isPanel`、laneMargin、
   shellRadius、背景色、rowSpacing/laneSpacing、overflow 回退、`onRight` 全部走
@@ -358,6 +358,22 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   的 `Qt.callLater` 补宿主守卫（销毁竞态下不得碰服务）。门禁：`test_d1`
   新增「全库 `Appearance.animation.<token>` 必须落在 Animations.qml 令牌表」。
 
+### D4e e4–e6 设置面、岛接入与叶级收口（2026-11-28）
+
+- **e4 设置面与共享原子**：
+  - `shell/ui/` 新增四件复用原子 `PreferenceGroup.qml`（自动识别 `isPreferenceRow` 可见子行打圆角，避免手动 `first`/`last` 漂移）、`PreferenceCollapsibleGroup.qml`（高度裁剪折叠容器，规避 Quickshell `ColumnLayout` 切换 `visible` 的零宽 bug）、`PreferenceControlledBy.qml`、`PreferenceVisualPicker.qml`（`edge` / `icon` 视觉选择卡），并为 `PreferenceHeader` 与输入原子（Toggle / Slider / Select / Input）统一补齐 `modified` / `showReset` / `resetRequested` 复位槽。
+  - `BarManagerCard.qml` 在 `GeneralBarPage` 顶部管理 `barConfigs`（单选激活 `selectBar`、内联重命名、新增（上限 4）、启停切换、保护默认/末条不删、全停警示）。
+  - 退役 `BarComponentsCard.qml` / `SortableMultiSelectField.qml` / `LayoutDragCoordinator.qml`（chip 卡），改用 `BarModulesSection.qml` 中的跨栏拖拽协调器 + 三栏 `BarLaneSection.qml` 列表编辑器（拖拽手柄、溢出模式折页、spacer 内联 `MaterialStepper`、行点进 `BarWidgetPage`、单部件开关/删除、`BarWidgetPickerPopup` 添加并守卫 `island` 单例）；`quickSettingsComponents` 独立收口在 `QuickSettingsListCard.qml`。
+  - 部件选项页 schema 化评估结论：**保留 13 页手写 `options/*.qml`**，`Manifest`/`SchemaSettingsPage.qml` 的 5 型 `controls` 词表绑定 `PluginSettings` 且缺节标题、`visibleWhen`、hex 校验、`PreferenceAction`、`argv` 拆分与 `SettingsSearchAnchor`；改为在手写页内升级 `PreferenceGroup` 与复位槽。
+- **e5 灵动岛迁入条目与 v6 迁移**：
+  - `BarWidgetDefaults.DEFAULTS.island` 接管五项外形键（`satellite: "clock"`、`showAvatar: true`、`showMediaControls: false`、`visualizerStyle: "dots"`、`hideDate: false`）。
+  - `ConfigMigrations` 升至 **`CURRENT_VERSION = 6`**（`ConfigService.qml` 头标 `# nyxuri-config-schema: 6`，fast-path `2..6`）；`MIGRATED_ISLAND_KEYS` 在 `version < 6` 时将非默认键折叠进各 bar 的 `island` / `dynamicIsland` 条目、剥离旧平铺键与废弃 `layoutMigrated`、仅在无 `[island.horizontalClock]` 等子节时删除空 `[island]`；`horizontalClock`（字体轴/字形排版）与 `bar.island` 状态灯保持独立配置节。
+  - `DynamicIsland` 接收 `widgetEntry`/`widgetBar` 并暴露 `option(key)`；`DiIdle`（含按 `di.widgetBar.lanes` 判定 `systemIconsElsewhere`）与 `DiMedia` 改读条目覆盖；新增 `options/IslandOptions.qml` 并注册到 `BarWidgetCatalog`。
+- **e6 `DensityPresets`、`iconScale` 与叶级清扫**：
+  - `DensityPresets.js`（Fork & Trim 自 dux `DensityPresets.js`）提供 `compact` / `comfortable`（对齐 `BarDefaults.DEFAULTS` 基线）/ `spacious` 三档预设，作用域为当前选中 bar（`applyBarDensityPreset`）。
+  - `BarDefaults.DEFAULTS` 新增 `iconScale: 1.0`；`BarScale.qml` 提供 `fontFor(widgetBar)` 与 `iconFor(widgetBar)`；`PersonalizationConfig` 提供 `resolvedBarHeight(axes)` / `resolvedVerticalBarWidth(axes)` / `barStyleBoostFor(axes)`，解耦设置态与每窗实况高度。
+  - `Bar` / `BarContent` / `VerticalBarContent` / `BarGroup` / `BarGroupStylePopup` / `StyledPopup` / `LaneOverflowHost` 及全部 bar 部件叶组件收敛为消费各自 `widgetBar` / `barAxes`、`resolved*` 尺寸与 `BarScale.fontFor` / `BarScale.iconFor`，断开对全局 `Config.options.bar.bottom` / `vertical` / `cornerStyle` 的回源依赖。
+
 ### D4e e1–e3 证据
 
 - probe `d4e` 节（store / signature / windows 三段）：双 bar 存储往返、
@@ -367,6 +383,185 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
 - 契约测试 `tests/shell/test_d4e_bar_config.py`（16 例）+ d4a–d4d 及
   bar_end4/shell_architecture 的钉随形态升级；全量 784 例绿。
 - 实机待验：多 bar 排布手感、屏幕集合、双 bar 弹层锚定。
+
+## 单宿主与轨（D4g）
+
+> 竖置 = 轨（rail），不是转 90° 的横条（D-9）。同一组轴横竖同值；orientation
+> 真相是 `axes.position`（left/right → 轨），不再有第二份竖向宿主。
+
+- **单宿主**（2026-11-28 批一）：`VerticalBarContent.qml` 退役并回
+  `BarContent.qml`——一份 lane 树经 `AxisContext`（dux 原件整抄剪裁，61 行：
+  `edge`/`isVertical`/`primarySize`/`crossSize`）在行与轨两种方向下排版。
+  `Bar.qml` 单挂载（`sourceComponent: barContent`），翻边不再重建内容：
+  几何绑定轴条件化重算，部件经 `injectWidgetEntry` 注入的
+  `Qt.binding(() => root.axis.isVertical)` 活体换轴（widgetEntry/widgetBar
+  注入协议不变）。
+- **显式几何铁律**（承 Bar.qml 翻边回归）：所有随轴翻转的位置绑定用
+  x/y/width/height 显式表达式，禁止条件锚（QML 绑定产出 `undefined` 不清锚）。
+  三个 lane 的行/列布局合并为单个 `GridLayout`：`columns: vertical ? 1 :
+  lane.length + 1`，子项 `fillWidth`/`fillHeight` 轴翻转。
+- **zone 即真相**：lane 内部 id 与宿主引擎沿用 left/middle/right 存储区名——
+  轨上 left = 起点（top）、right = 终点（bottom）；溢出按钮六 id
+  （`left/middle/rightOverflowHost(Material)`）双方向共用。probe 面横竖并集
+  导出（`laneCenterX/Width` + `laneCenterY/Height`、`laneLeft/RightWidth` +
+  `laneTop/BottomHeight`、`centerPillX/Y/Width/Height`），各方向探针读自己那组。
+- **轨保留 end4 竖向行为**：middle lane 过滤 island（竖向岛形状归批三）、
+  竖向 spacing ladder（`resolvedBarSpacing(true, axes)`）、融合角/胶囊壳半径
+  按「镜像面朝屏幕附着边」逐角轴分支（行：top/bottom，轨：left/right）。
+  边缘滚动条在轨上零延展（轨向滚动动作归 D4h）。
+- 批次：批一单宿主并回（本节）→ 批二部件能力目录（本节批二段）→ 批三
+  clock/systemMonitor 竖向语法 + 竖向岛 → 批四a 竖置默认布局 + 仲裁收口（本节批四段，
+  已落地）→ 批四b 避让让位基建 + 横竖转角接合（待开始）。
+- **批二（部件能力目录，2026-11-28）**：设置面据此对轨禁用并说明，引擎零消费。
+  - `ui/BarWidgetCatalog.qml` 每条目声明 `orientations`（横/竖支持）；竖向可用的
+    再加 `verticalMode`，词表闭合 D-9 三语法（`stack` 沿轨重排/`rotate` ±90°/
+    `iconPopup` 轨上图标面 + 弹层）。**缺 `verticalMode` = 无轨面判定**，无第四值。
+  - 分类是逐部件审计结果（今日轨上实态，B9.4 轨化遗产，非愿望）：`stack` =
+    tray/systemIcons/utilButtons+quickSettings/workspaces/visualizer/weather/
+    separator/spacer/launcherButton/powerButton；`rotate` = battery（进度条
+    -90°）；`iconPopup` = activeWindow/media（轨上是裸图标退化面——dux 竖向
+    退化基线，悬停弹层半边未建）；无轨面 = island（轨上被 middle lane 过滤，
+    紧凑面归批三）/clock（批三首位）/systemMonitor（表盘未适配轨宽）。
+  - 设置面三处消费 `supportsVertical()`（选中 bar 为轨时生效）：添加 picker
+    禁用（block 图标 + 「竖向状态栏上暂不可用」）、`BarLaneSection` 在册行
+    subtitle 追加说明、`BarWidgetPage` 实例页 capability 提示行；**不删除用户
+    配置，装载不变**（批三语法落地前轨上照挂现状）。
+  - helper `supportsVertical(id)` / `verticalMode(id)` 纯函数读目录声明；
+    probe `d4gCatalog` 节做数据级断言（分类判定 + 词表闭合 + 逐行
+    vertical⟺mode 配对），设置面禁用手感归作者实机。
+- **批三（竖向岛紧凑面 + clock 轨面升级，2026-11-28）**：
+  - **竖向岛**：撤销 end4 的轨上岛过滤——岛作为 middle lane 成员在轨上装载，
+    pill 沿轨生长（宽 = 轨厚 `resolvedVerticalBarWidth`，高 = 活动面沿轨长度
+    `railPillLength`），整胶囊 `min(w,h)/2`，宽/高动画各随己轴（`Behavior
+    enabled` 门，禁条件锚）。四面 column 变体（dux `compactColumn` /
+    `pillTarget(along, cross)` 血统；岛住 middle lane，用整胶囊代 dux 贴边角
+    拆分）：idle = 头像上 / 时钟卫星（`ClockContent` vertical，edge =
+    `axes.position`）中 / 状态图标列下，长度经 `idleRailContentLength` 回调
+    上报（同 `idleTextContentWidth` 模式）；OSD = 图标上 + 数值下（dux
+    `SystemLevelCompact` `verticalFace` 血统，无滑杆故无轨道）；媒体 = 封面上
+    + 播放键下，文字/控制/频谱半边是行面专属（挂窗口增长基建）；会话 = 四动作
+    竖排（`ActionDelegate` inline component 复用）；通知 = 图标紧凑面（文本面
+    同窗口增长基建）；电池警报 = 图标 + 百分数。badges 行仍横面专属。
+  - **clock 轨面升级**：caelestia `modules/bar/components/Clock.qml` Fork &
+    Trim 换血 colDefault/colMaterial——单 `RailClockFace` inline component
+    （`materialSkin` 分色），日期块（weekday/日/分隔线，`showDate` 轴门控）+
+    HH/MM 逐行 TextMetrics 光学匹配（`fontFor` 血统：窄行最多 +5%、"11" 固定
+    +15%）+ am/pm 行；dateFormat 长格式仍是行面专属。两处对原件的偏离如实
+    登记：fit 阶段（轨厚是 28–64 轴，基号向最宽行收缩，原件内宽固定充裕）与
+    像素缩放代替可变字体 width 轴（钟体可配置不保证 variable）。
+  - **systemMonitor**：轨面早已存在（五仪表竖排 colDefault/colMaterial），
+    批三仅修正目录判定，无新语法。
+  - **目录判定修正（批二勘误）**：clock/systemMonitor/island → 轨可用
+    （stack）——批二按 roadmap「clock 与 systemMonitor 没有竖向处理」钉的判定
+    与代码不符（两者都有 B9.4 轨面），批三以证据拨正；「缺 verticalMode = 无
+    轨面」协议保留（现行 17 部件全部轨可用，该判定空集待未来部件使用）。
+  - 机器证据：契约测试 `test_d4g_bar_config.py`（判定翻转 + IslandRailFaceTest
+    批三钉）+ bar 系 286 例绿；probe `d4gCatalog` 判定翻转 + 竖排 rail 实况节
+    （default 场景 middle=[island]、idle 紧凑胶囊 36×132 沿轨居中、`ipc osd
+    volume` 触发 OSD 轨面 36×76）；会话 probe exit=0 全绿零 logErrors。
+    实机项归作者：轨上岛四面观感与手感、clock 堆叠轨宽适配实观。
+- **批四a（轨默认布局 + 仲裁收口，2026-11-28）**：
+  - **轨默认集**（D-9，作者拍板裁剪版）：`defaultRailLayout*` 独立成表——
+    起点（left zone）`[launcherButton, workspaces]`、middle `[island]`、
+    终点（right zone）`[tray, systemIcons, powerButton]`。activeWindow 不进轨
+    默认（悬停弹层半边未建，裸图标无信息量），quickSettings 让位 SystemIcons
+    的 hover 展开面。横排三表原样保留。
+  - **单入口解析**：`defaultBarLayoutsFor(position)` 是「缺 lane 读默认」的唯一
+    入口——load normalize（`normalizeConfigLanes` 增 `position` 参）、lane 复位
+    （`resetBarLanes` 传条目 `axes.position`）、sparse 写入比较三方同源，不漂移。
+  - **翻边活体语义**：`setBarPosition` 先判 `barLanesMatchOrientationDefaults`
+    （lanes 等于**当前方向**默认 = 未定制），翻边后未定制条目随新方向重解析
+    （top↔rail 活体换默认集），定制过的随人。新建 bar 默认仍 top。
+  - **sparse 方向感知**（坑修复）：`sparseBarConfigEntry` 的 lane 比较基线改
+    `defaultBarLayoutsFor(truth.axes.position)`——原实现拿横排 fallback 比较，
+    零定制轨条目会整段落盘，破最小化写入。
+  - **落盘合并根因修复**（批四踩响的既有潜伏 bug）：`updateSections` 按键合并
+    覆盖，而 `toJson` 对全默认段 `delete json.bar`——段「非默认→变默认」的那次
+    保存清不掉 `rawConfig` 里上一轮的旧段，debounce 落盘写回瞬态（翻边
+    top→rail→top 实测复现）。修法：`toJson` 保留空段对象，`ConfigService.saveNow`
+    落盘前统一剔除空段——文件契约不变（全默认 `[bar]` 仍整段消失）。
+  - **桥视图退役**：`Config.options.bar.bottom`/`.vertical` 零消费者退役
+    （`SystemIconSlot` tooltip 改读注入 `barAxes`，对齐 UtilButton 先例）；
+    probe 舞台改读 `PersonalizationConfig.barPosition`。
+  - **岛仲裁收口**：`shell.qml` popup:notification 仲裁删竖排豁免——批三轨面
+    岛已落地，`islandInLayout` 即岛独占槽（轨上 DiNotifs 走图标紧凑面）。
+  - **probe `d4g.defaults` 节**：store 视图断言轨默认集/横排集双向读回 +
+    toml 稀疏快照（`left\t0`/`top\t0`，lanes 键零写入）。
+  - 机器证据：`test_d4g_bar_config.py` RailDefaultLayoutTest（轨默认表/单入口/
+    sparse 方向感知/翻边重解析/仲裁无方向门/桥零残留）；tests/shell 全量
+    827 例绿；会话 probe exit=0 全绿零 logErrors。遗留补账：批三岛轨钉
+    （test_bar_runtime ×6）、D4f schema 钉（stamp 6→7）、D4f 词典清账
+    （死键 ×4 + 缺失文案 ×13）一并修复。实机项归作者：翻边手感与轨默认观感。
+- **批四b（避让让位基建 + 转角接合，2026-11-28）**：
+  - **投影单例**（唯一让位真相）：`services/ScreenBarLayout.qml` + 纯库
+    `commons/BarScreenLayout.js`（dux `LayoutResolver.js` Fork & Trim：岛/
+    帧/哥特翼/行堆叠等 dux 特有分支全裁）。输入只取 barConfigs × 屏（配置
+    真相，不读窗口实例），输出每屏每边 band 预留 + 逐 bar tuck insets；
+    预留 = `BarGeometry.screenReservation`（`edgeMargin + exclusiveZone`，其中窗口绑定的 `BarGeometry.exclusiveZone` 只含 `thickness + boostExtra + innerMargin`，避免在 `wlr-layer-shell` 中把 `edgeMargin` 叠算两次），autoHide 条目
+    预留 0（dux `reserves` 血统）。屏幕列表语义沿 D4e（空 = 全屏，无匹配
+    回落全屏）。
+  - **转角接合**（作者拍板，偏离 dux）：同角相遇按 configOrder 裁决——先建
+    图者通长占角、贴屏装饰归它；后建图者让出共享沿轴端 = 对方 band 预留 +
+    4px 接缝（dux `spacing ?? 4` 血统）。逐角独立裁决，双端可同时 tuck
+    （两侧轨都早于横 bar 时横 bar 让两端）。tuck 走窗口 margins 叠加
+    （`windowMargins` 逐轴相加），exclusiveZone 不变；内容随缩短的窗口
+    自动重排，融合角/胶囊装饰随内容边缘走。
+  - **消费面**：通知 popup（per-screen 每边预留 + 12 呼吸，裸角 16 基线）、
+    两侧栏面板（同边轨吃 x 跨度，上下横 bar 吃 y 跨度——Overlay 不再压过
+    Top 层 bar）。**登记边界**：启动器（全屏 overlay 居中内容）不让位不改
+    （登记）；dock 角接合不做（dock 不在 barConfigs，resolver 可扩）；通知
+    只避 top/right（窄屏左轨重叠登记）；quickpanel 按钮（BluetoothButton/
+    Network）仍读选中 bar 的 `barPosition`，归后续部件轴收口。
+  - **桥键全退**：`Config.options.bar` 的 `edge`/`bottom`/`vertical` 三派生
+    视图退役——StyledPopup 七实例全部由宿主 widget 注入 `widgetBar`（逐点
+    核实），不可达 fallback 删除；通知 popup 迁投影；SystemIconSlot tooltip
+    读注入 `barAxes`（批四a）。
+  - **probe `d4g.avoid` 节**：配置侧三幕（solo 基线 41/0 → 后建轨 tuck
+    top=45=topBand+4、top 零 tuck → autoHide 轨预留归零且 tuck 随塌 → 反序
+    轨先建、后建 top bar tuck left=45）；窗口侧钉 margins 绑定
+    （top = sideMargin + tuck，逐轴）+ 高度上界（session probe 与作者
+    live shell 同屏，窗口高吸收环境 zone，不做精确断言——weston 沙箱可
+    精确复验）。
+  - 机器证据：`test_d4g_bar_config.py` CornerJunctionTest（fork 头/configOrder
+    裁决/单源投影/margins 合并/消费面/桥零残留/probe 钉）；tests/shell 全量
+    834 例绿；会话 probe exit=0 全绿零 logErrors。实机项归作者：双 bar 转角
+    观感与接缝、通知/侧栏让位手感、autoHide 往返下的让位节奏。
+
+## 行为补遗（D4h）
+
+D4d 七轴之外的调研补件，2026-11-28 落地。**每个默认值 = D4h 前现行行为**，全新键、
+无 configVersion 迁移（版本链停在 7）。四个轴全部落在 `[[bar.configs]]` 条目上，
+多 bar 各配各的。
+
+### 轴表（`BarDefaults.DEFAULTS` 增量）
+
+| 轴 | 默认 | 语义 |
+| --- | --- | --- |
+| `autoHideSmart` | false | 智能隐藏（noctalia `smart_auto_hide` 语义）：本输出活跃工作区有窗→入 autoHide 通道（边缘条揭示），无窗→常驻+占位。`autoHideEnabled = autoHide \|\| fullscreenAutoHide \|\| (smart && workspaceHasWindows)`，完全复用既有 hideHold/掩码/边缘条机器；数据面 `CompositorDriver.activeWorkspaceForOutput` + `windowsForWorkspace`（wallpaper 服务同型消费）。无驱动环境（探针）读作常驻。设置面一个三态分段控件（关/开/智能）经 `setBarAutoHideMode` 写两键 |
+| `pushWindows` | false | 隐藏时占位：bar 显出期间保留 exclusiveZone（reservationShow/HideTimer 往返，D4d 既有机器）。原 `Config` 桥同名内部键升格为条目轴 |
+| `superReveal` | false | 按住 Super 显出：Bar.qml `superShow` + Workspaces 图标演示面（`superPressAndHeld`）双消费者都读所在 bar 的条目轴。原桥 `showWhenPressingSuper.enable` 升格；delay 100ms 降为共享常量 `BarDefaults.SUPER_REVEAL_DELAY_MS` |
+| `peekOnWorkspaceSwitch` | false | 切工作区 peek：本输出活跃工作区切换→80ms 去抖→450ms 停留（常量 `PEEK_DEBOUNCE_MS`/`PEEK_STAY_MS`，一套节奏不设轴）。`peekShow` 接进 `mustShow` 链（复用 reveal 机器，无第二套滑出实现）；有效→有效的 id 转换才算切换（驱动连接/开关翻转不触发）；设置面仅在自动隐藏开启时可见 |
+
+### 轨滚动区（D-9 对照）
+
+BarContent 两条滚轴区方向感知：行=中道两侧竖条（现状不变），轨=沿轨的上半/下半
+（zone 即真相——start 半区吃 start 动作、end 半区吃 end 动作，**同一组轴横竖同值**，
+按中道几何旋转，非字面对半）。动作沿用 `leftScrollAction`/`rightScrollAction`，
+词表 brightness/volume/workspace/none + OSD + ScrollHint 全套复用，零新键。
+ScrollHint 增 top/bottom 侧语义（贴中缝两端；箭头本就上下竖排）。clickThrough 下
+与行侧滚轴同规失效（D4d 既有登记边界）。
+
+### 桥收敛与登记边界
+
+- `Config.options.bar.autoHide` 收敛为 `enable`（selected-bar 投影，probe/migrate
+  消费）+ `hoverRegionWidth`（输入掩码角挖口，无设置面）；`pushWindows`/
+  `showWhenPressingSuper` QtObject 形状退役（vendor 参考树不在运行时）。
+- 设置面 Behavior 组：三态 picker 替换 Autohide toggle，五行（延迟/严格/占位/Super/
+  peek）仅 mode≠off 可见——默认视图不增行；搜索锚 `bar.behavior.autohide` 登记 manifest。
+- 登记边界：`ScreenBarLayout` 避让投影是静态配置投影，smart 隐藏（有窗）期间侧栏/
+  通知仍按 band 让位——让位跟随轴、不跟随实况可见性，宁多让不让不足；实况级让位
+  挂窗口增长基建（D5）。peek 的实窗证据由探针直驱 `noteWorkspaceSwitch()`（容器无
+  合成器工作区事件）；工作区事件驱动的实况归作者实机验收。
 
 ## 证据
 
@@ -388,5 +583,32 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   契约测试 `tests/shell/test_d4d_bar_config.py`（30 例）；weston 沙箱 probe 全绿。
   实机项归作者：溢出按钮手感、穿透空隙点击、strict 收起节奏、全屏进出 reveal、
   150ms 弹层体感。
+- **D4f**：样式原子化 + v7 迁移（2026-11-28）——
+  - `cornerStyle`（6 档）× `borderless`（5 档）× `showBackground` 退役为正交原子轴，存储在 `[[bar.configs]].axes`：
+    - 结构/材质：`backplate`（bool）、`lanePill`（bool）、`tint`（bool）
+    - 外边距：`edgeMargin`（int，屏幕外侧边距，`0` = 贴边，`>0` = 悬浮，默认 `5`）、`innerMargin`（int，窗口内侧边距，默认 `0`）、`sideMargin`（int，哨兵 `-1` = `floating && backplate` 时解析为 `gapsOut`，否则 `0`）
+    - 部件外观：`widgetStyle`（`"fused"` / `"separate"` / `"flat"`）、`capsuleRadius`（`"pill"` / `"rounded"` / `"px"`）、`widgetRadius`（`0..32`，`capsuleRadius === "px"` 时生效）、`groupColor` 补齐 `"transparent"`
+  - 两层纯解析：`services/BarDefaults.js` 提供 `deriveStyle(axes, gapsOut)` / `styleBoost(style)` / `resolvedSideMargin(axes, style, gapsOut)` / `capsuleFullRadius` / `capsuleMidRadius`；`plugins/bar/BarStyle.js` 组合 `deriveStyle` 输出窗口/内容/分组/岛/弹层消费的展示上下文（满足插件与服务解耦边界）。
+  - 外形起点配方：`services/BarStylePresets.js` 定义六档只写轴不落盘配方（`hug` / `floating` / `islands` / `material` / `materialHug` / `panel`），`applyBarStylePreset(key)` 按键写入、`currentPreset(axes)` 匹配高亮（偏离任何样式键即失亮为自定义）。
+  - 单一外边距真值与 D-8 暗加成清账：`Bar.qml` `windowMargins` 统一承担外边距，废除 `layerGap` / `m3OuterGap` / `barBackground.anchors.margins` 叠套；`styleBoost` 仅保留 `isLaneHug`（`lanePill && !backplate && edgeMargin === 0`）的 `+4` 贴角装饰余量，退役 Islands `-6` exclusiveZone、Islands 8px 内角（统一 `6`）与 Panel `+4` 高度/exclusiveZone；`BarGeometry.margins` 与 `exclusiveZone` 不再接收 `cornerStyle`/`layerGap`。
+  - schema v7：`ConfigMigrations.CURRENT_VERSION = 7`（头标 `# nyxuri-config-schema: 7`，fast-path `2..7`），`version < 7` 通过显式映射表将历史 `cornerStyle`/`borderless`/`showBackground` 折叠为上述原子轴并剥离旧键与平铺遗留键。
+  - 设置面重排：`BarAppearanceSection.qml` 顺序收敛为 `Appearance`（6 枚 `PreferenceVisualPicker` 预设卡）→ `Layout`（可折叠 `Advanced` 数值微调）→ `Screens` → `Structure` → `Surface`（可折叠 `Widget layer`）→ `Behavior`。
+  - 机器证据：契约测试 `tests/shell/test_d4f_bar_style.py` + `tests/shell/` 回归绿；probe `d4f` 节（v7 迁移、预设写入/自定义失亮、D-8 退役校验、`capsuleRadius` + `groupColor: "transparent"`、`vertical` 仅 `materialHug` +4）与 Weston 运行态 probe 全绿；实机视觉过目（六档外观等价与设置页折叠体验）归作者。
+- **D4h**：probe `d4h` 节——行为轴往返（默认保现行/稀疏写入/复位）、方向感知滚轴
+  （行 1182×36 两侧 / 轨 36×649 上下半、start 先于 end）、窗口相（smart 无窗→常驻
+  带预留 zone=41、peek 直驱 `noteWorkspaceSwitch`→held `peekShow/mustShow` true→
+  ~0.85s 过期 false→clean 复位）。契约测试 `tests/shell/test_d4h_bar_config.py`
+  （25 例）；tests/shell 全量 859 例绿；session probe exit=0 全绿。实机项归作者：
+  智能隐藏手感（有窗/无窗切换）、peek 体感、Super 按住显出、隐藏占位的窗口避让、
+  轨滚轮上下半动作与 ScrollHint 视觉。
+- **D4g 批一（单宿主并回）**：`AxisContext.qml` 整抄（dux 61 行剪裁）+
+  `VerticalBarContent` 并回 `BarContent` + `Bar.qml` 单挂载（翻边不重建）+
+  probe 装载轴驱动。机器证据：bar 相关契约测试 275 例绿（end4/d4a–f/runtime/
+  manifests/architecture）；会话 probe 全绿零 logErrors——`vertical` 六例
+  （左右 × floating/materialHug/centerOnly，轨宽 36/40、居中 678/84、岛过滤）、
+  `windowProbe` top→left→right→bottom→top 往返零残留（条件锚回归门）、
+  d4a–d4f/b96/b97 回归节全 OK。`VerticalBarContent.qml` 删除（-716 行）。
+  实机项归作者：左右轨排布与融合角视觉（B9.4 验收项不变）。
+
 
 

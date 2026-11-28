@@ -48,6 +48,15 @@ context = "GeneralBarPage"
 icon = "expand_more"
 aliases = ["general.bar.section.tray", "bar.section.tray"]
 
+# D4h: the three-state autohide segmented control (off / on / smart).
+[[settings]]
+id = "bar.behavior.autohide"
+route = "bar"
+title = "Autohide"
+context = "GeneralBarPage"
+icon = "visibility_off"
+aliases = ["general.bar.section.autohide", "bar.section.autohide"]
+
 # ── Island (B1: merged from the retired island unit; one plugin, one bar) ────
 # The island is a bar layout part, so its settings live INSIDE the Bar tab:
 # bar.island is a routed subpage of bar (context GeneralBarPage), and the

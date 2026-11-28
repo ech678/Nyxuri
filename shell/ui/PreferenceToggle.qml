@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.commons
+import qs.commons.i18n
 import qs.ui
 
 // Full-row toggle (Caelestia Nexus ToggleRow). Double-line text on the left,
@@ -13,8 +14,11 @@ ConnectedRect {
     property string subtext: ""
     property string icon: ""
     property alias checked: toggleItem.checked
+    property bool modified: false
+    property string resetTooltip: ""
 
     signal toggled
+    signal resetRequested
 
     function toggle(): void {
         if (!enabled)
@@ -89,6 +93,19 @@ ConnectedRect {
                 font.pixelSize: NexusStyle.font.labelSmall
                 elide: Text.ElideRight
             }
+        }
+
+        IconButton {
+            visible: root.modified
+            Layout.alignment: Qt.AlignVCenter
+            width: NexusStyle.icon.small + NexusStyle.padding.small
+            height: NexusStyle.icon.small + NexusStyle.padding.small
+            controlSize: NexusStyle.icon.small + NexusStyle.padding.small
+            iconSize: NexusStyle.icon.small
+            iconName: "restart_alt"
+            accessibleName: root.resetTooltip.length > 0 ? root.resetTooltip : I18n.tr("Reset to default")
+            tooltipText: accessibleName
+            onClicked: root.resetRequested()
         }
 
         StyledSwitch {

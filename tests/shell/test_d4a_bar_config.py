@@ -141,7 +141,8 @@ class FallbackChainTest(unittest.TestCase):
                          "a widget must not read the store directly")
 
     def test_hosts_inject_entries(self):
-        for name in ("BarContent.qml", "VerticalBarContent.qml"):
+        # D4g: one host file serves both orientations.
+        for name in ("BarContent.qml",):
             content = read(os.path.join(BAR_DIR, name))
             self.assertIn("function injectWidgetEntry(loader, entry)", content, name)
             self.assertIn("widgetEntry: modelData", content, name)
@@ -229,8 +230,15 @@ class MinimalWriteTest(unittest.TestCase):
         self.assertIn("return entry.widgetId;", body)
 
     def test_all_default_bar_section_disappears(self):
-        self.assertIn("if (json.bar && Object.keys(json.bar).length === 0)", self.pc)
-        self.assertIn("delete json.bar", self.pc)
+        # D4g 批四 fix: toJson keeps the section object (possibly `{}`) so
+        # updateSections' merge-overwrite actually clears a section that
+        # became all-default; the file contract lives at the boundary —
+        # saveNow drops emptied sections before stringify.
+        self.assertNotIn("delete json.bar", self.pc,
+                         "the key delete lost the section-clearing race with the merge")
+        config_service = read(os.path.join(SERVICES_DIR, "ConfigService.qml"))
+        self.assertIn("function saveNow", config_service)
+        self.assertIn("Object.keys(value).length === 0", config_service)
 
     def test_config_version_written(self):
         self.assertIn('"configVersion": ConfigMigrations.CURRENT_VERSION', self.pc)
@@ -245,9 +253,9 @@ class VersionChainTest(unittest.TestCase):
         cls.config_service = read(os.path.join(SERVICES_DIR, "ConfigService.qml"))
 
     def test_version_constants(self):
-        # D4c bumped the chain to 5 (bar-level axes on the configs entry);
+        # D4f bumped the chain to 7 (atomic bar style axes);
         # the LEGACY floor stays 2.
-        self.assertIn("var CURRENT_VERSION = 5", self.migrations)
+        self.assertIn("var CURRENT_VERSION = 7", self.migrations)
         self.assertIn("var LEGACY_VERSION = 2", self.migrations)
 
     def test_explicit_legacy_layout_keys(self):
@@ -266,36 +274,37 @@ class VersionChainTest(unittest.TestCase):
                         pc.index("const source = configSection(migration.config)"))
 
     def test_stamp_bumped_and_fast_path_keeps_v2(self):
-        # D4c writes stamp 5; the fast path accepts 2..5.
-        self.assertIn("# nyxuri-config-schema: 5\\n", self.config_service)
+        # D4f writes stamp 7; the fast path accepts 2..7.
+        self.assertIn("# nyxuri-config-schema: 7\\n", self.config_service)
         self.assertIn('"# nyxuri-config-schema: 2"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 3"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 4"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 5"', self.config_service)
+        self.assertIn('"# nyxuri-config-schema: 6"', self.config_service)
+        self.assertIn('"# nyxuri-config-schema: 7"', self.config_service)
 
 
 class CatalogConsumersTest(unittest.TestCase):
-    """The settings surfaces consume the unified catalog."""
+    """The settings surfaces consume the unified catalog (D4e e4 list editor)."""
 
     def test_card_uses_catalog_and_entries(self):
-        card = read(os.path.join(BAR_DIR, "BarComponentsCard.qml"))
-        self.assertIn("BarWidgetCatalog {", card)
-        self.assertIn("options: widgetCatalog.options()", card)
-        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", card)
-        self.assertIn("allowDuplicates: true", card)
-        self.assertNotIn("PersonalizationConfig.barComponentOptions", card)
+        modules = read(os.path.join(BAR_DIR, "BarModulesSection.qml"))
+        self.assertIn("BarWidgetCatalog {", modules)
+        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", modules)
+        self.assertNotIn("PersonalizationConfig.barComponentOptions", modules)
+        picker = read(os.path.join(BAR_DIR, "BarWidgetPickerPopup.qml"))
+        self.assertIn("widgetCatalog.options()", picker)
 
     def test_field_supports_entries_and_enabled_toggle(self):
-        field = read(os.path.join(BAR_DIR, "SortableMultiSelectField.qml"))
-        self.assertIn("signal enabledToggled(string entryKey)", field)
-        self.assertIn("property bool allowDuplicates: false", field)
-        self.assertIn("function valueKey(value)", field)
-        self.assertIn('"visibility_off"', field)
+        section = read(os.path.join(BAR_DIR, "BarLaneSection.qml"))
+        self.assertIn("signal configureRequested(string entryUid)", section)
+        self.assertIn("PersonalizationConfig.setBarEntryEnabled(", section)
+        self.assertIn("PersonalizationConfig.removeBarEntry(", section)
 
     def test_coordinator_drags_by_uid(self):
-        coordinator = read(os.path.join(BAR_DIR, "LayoutDragCoordinator.qml"))
-        self.assertIn("property string componentUid", coordinator)
-        self.assertIn("signal dropped(string componentUid, string componentId, string targetZone, int targetIndex)", coordinator)
+        modules = read(os.path.join(BAR_DIR, "BarModulesSection.qml"))
+        self.assertIn("property string dragUid:", modules)
+        self.assertIn("PersonalizationConfig.moveBarEntry(uid, zone, index)", modules)
 
     def test_dashboard_uses_shared_catalog(self):
         card = read(os.path.join(REPO_ROOT, "shell", "plugins", "settings",

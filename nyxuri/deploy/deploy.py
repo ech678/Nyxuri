@@ -308,6 +308,19 @@ def run_user_hooks() -> List[str]:
     return diagnostics
 
 
+def sync_gateway_scripts() -> None:
+    """Deploy the engine-owned gateway scripts (session-shell / shell-action).
+
+    No plugin payload carries them, so no ``plugin_on`` transaction does
+    either: every deploy path has to call this itself. Never blocks a deploy.
+    """
+    try:
+        from nyxuri.system.shell import ensure_compositor_gateway_scripts
+        ensure_compositor_gateway_scripts()
+    except Exception as e:
+        log_msg("WARN", f"Gateway scripts sync failed during deploy: {e}")
+
+
 def _phase_post_install_services() -> None:
     """Run built-in post-deployment work (gateway scripts sync and theme sync).
 
@@ -315,11 +328,7 @@ def _phase_post_install_services() -> None:
     replay their declared hooks via ``engine.replay_enabled_hooks()``
     in the workflow; the retired module direct-calls are gone (KM3).
     """
-    try:
-        from nyxuri.system.shell import ensure_compositor_gateway_scripts
-        ensure_compositor_gateway_scripts()
-    except Exception as e:
-        log_msg("WARN", f"Gateway scripts sync failed during deploy: {e}")
+    sync_gateway_scripts()
 
     try:
         from nyxuri.system.theme import sync

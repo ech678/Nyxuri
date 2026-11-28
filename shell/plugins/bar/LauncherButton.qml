@@ -11,16 +11,17 @@ import qs.services
 import qs.commons
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 RippleButton {
     id: root
+    property var widgetEntry: null
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
-    // D4b click axes: "default" stays the launcher toggle (the button's
-    // identity); overriding routes the buttons through the gateway.
-    property var widgetEntry: null
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
 
     implicitWidth: 22
     implicitHeight: 22
@@ -42,7 +43,7 @@ RippleButton {
 
     MaterialSymbol {
         anchors.centerIn: parent
-        iconSize: 18
+        iconSize: 18 * BarScale.iconFor(root.widgetBar)
         text: "search"
         color: root.contentColor
     }

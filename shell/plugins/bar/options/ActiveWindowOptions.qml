@@ -30,6 +30,25 @@ ColumnLayout {
         onMoved: value => root.page.set("maxWidth", Math.round(value) === 280 ? undefined : Math.round(value))
     }
 
+    PreferenceToggle {
+        text: I18n.tr("Show app icon")
+        checked: root.page.value("showIcon")
+        onToggled: checked => root.page.set("showIcon", checked || undefined)
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Compact single-line")
+        checked: root.page.value("compactMode")
+        onToggled: checked => root.page.set("compactMode", checked || undefined)
+    }
+
+    PreferenceToggle {
+        last: true
+        text: I18n.tr("Hide when no window focused")
+        checked: root.page.value("hideWhenEmpty")
+        onToggled: checked => root.page.set("hideWhenEmpty", checked || undefined)
+    }
+
     PreferenceHeader {
         text: I18n.tr("Actions")
     }

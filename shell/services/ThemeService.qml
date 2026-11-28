@@ -52,8 +52,7 @@ Singleton {
         }
         for (const update of updates)
             Appearance.m3colors[update[0]] = update[1];
-        LogService.info("theme", "palette applied: " + updates.length + " tokens (source: " + root.lastSource
-                        + ")");
+        LogService.info("theme", "palette applied: " + updates.length + " tokens (source: " + root.lastSource + ")");
     }
 
     function reloadColors() {
@@ -85,6 +84,26 @@ Singleton {
         target: Appearance
         property: "backgroundOpacity"
         value: PersonalizationConfig.shellBackgroundOpacity
+    }
+    Binding {
+        target: Appearance
+        property: "contentTransparency"
+        value: PersonalizationConfig.shellContentTransparency
+    }
+    Binding {
+        target: Appearance
+        property: "cornerRadiusScale"
+        value: PersonalizationConfig.shellCornerRadiusScale
+    }
+    Binding {
+        target: Appearance
+        property: "globalBorderEnabled"
+        value: PersonalizationConfig.shellGlobalBorderEnabled
+    }
+    Binding {
+        target: Appearance
+        property: "globalBorderOpacity"
+        value: PersonalizationConfig.shellGlobalBorderOpacity
     }
     Binding {
         target: Resources
@@ -121,8 +140,7 @@ Singleton {
         const revision = root.iconThemeRevision;
         if (!player)
             return "";
-        const entry = DesktopEntries.heuristicLookup(player.desktopEntry || "")
-              || DesktopEntries.heuristicLookup(player.identity || "");
+        const entry = DesktopEntries.heuristicLookup(player.desktopEntry || "") || DesktopEntries.heuristicLookup(player.identity || "");
         return entry && entry.icon ? Quickshell.iconPath(entry.icon, true) : "";
     }
 
@@ -136,16 +154,15 @@ Singleton {
     property string lastSource: ""
     readonly property bool cursorIntegrationReady: NiriConfigService.ready("cursor")
     readonly property string cursorLastError: NiriConfigService.error
-    readonly property bool cursorSyncBusy: NiriConfigService.busy && NiriConfigService.activeFeature
-                                           === "cursor"
+    readonly property bool cursorSyncBusy: NiriConfigService.busy && NiriConfigService.activeFeature === "cursor"
     property var availableIconThemes: [({
-                                            "label": I18n.tr("System default"),
-                                            "value": ""
-                                        })]
+                "label": I18n.tr("System default"),
+                "value": ""
+            })]
     property var availableCursorThemes: [({
-                                              "label": I18n.tr("System default"),
-                                              "value": ""
-                                          })]
+                "label": I18n.tr("System default"),
+                "value": ""
+            })]
     readonly property string systemDefaultIconTheme: iconThemeController.systemThemeName
     readonly property int iconThemeRevision: iconThemeController.revision
     property string systemDefaultCursorTheme: ""
@@ -222,8 +239,7 @@ Singleton {
     }
 
     function effectiveCursorTheme() {
-        return PersonalizationConfig.cursorTheme !== "" ? PersonalizationConfig.cursorTheme :
-                                                          root.systemDefaultCursorTheme;
+        return PersonalizationConfig.cursorTheme !== "" ? PersonalizationConfig.cursorTheme : root.systemDefaultCursorTheme;
     }
 
     function unique(values) {
@@ -283,15 +299,15 @@ Singleton {
         const sorted = root.unique(names).sort((a, b) => a.localeCompare(b));
         for (let j = 0; j < sorted.length; j += 1)
             options.push({
-                             "label": sorted[j],
-                             "value": sorted[j]
-                         });
+                "label": sorted[j],
+                "value": sorted[j]
+            });
 
         if (currentValue !== "" && !root.hasOption(options, currentValue))
             options.splice(1, 0, {
-                               "label": currentValue,
-                               "value": currentValue
-                           });
+                "label": currentValue,
+                "value": currentValue
+            });
 
         return options;
     }
@@ -331,9 +347,7 @@ Singleton {
 
         root.applyConfigToAppearance();
         root.lastSource = path;
-        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--image", path, "--scheme",
-                         PersonalizationConfig.matugenScheme, "--mode", PersonalizationConfig.themeMode,
-                         "--generated-home", Paths.generatedHome];
+        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--image", path, "--scheme", PersonalizationConfig.matugenScheme, "--mode", PersonalizationConfig.themeMode, "--generated-home", Paths.generatedHome];
         root.startGeneration(command, templateId);
     }
 
@@ -341,9 +355,7 @@ Singleton {
         if (generateColorsProcess.running || !TemplateService.ready || !PersonalizationConfig.ready) {
             root.pendingGenerationTemplateId = templateId || "";
             root.pendingGeneration = command;
-            LogService.warn("theme", "generation deferred (" + (generateColorsProcess.running ? "busy" :
-                                                                                                "services not ready")
-                            + "), last request wins");
+            LogService.warn("theme", "generation deferred (" + (generateColorsProcess.running ? "busy" : "services not ready") + "), last request wins");
             return;
         }
         root.generationTemplateId = templateId || "";
@@ -353,8 +365,7 @@ Singleton {
         root.coreReloaded = false;
         generateColorsProcess.command = command;
         generateColorsProcess.running = true;
-        LogService.info("theme", "generation started: " + root.lastSource + " scheme="
-                        + PersonalizationConfig.matugenScheme + " mode=" + PersonalizationConfig.themeMode);
+        LogService.info("theme", "generation started: " + root.lastSource + " scheme=" + PersonalizationConfig.matugenScheme + " mode=" + PersonalizationConfig.themeMode);
     }
 
     function resumeGeneration() {
@@ -402,9 +413,7 @@ Singleton {
         const sourceColor = root.opaqueHexFromColor(value);
         root.applyConfigToAppearance();
         root.lastSource = value;
-        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--color",
-                         sourceColor, "--scheme", PersonalizationConfig.matugenScheme, "--mode",
-                         PersonalizationConfig.themeMode, "--generated-home", Paths.generatedHome];
+        const command = ["bash", Paths.scriptPath("theme", "generate-matugen-colors.sh"), "--color", sourceColor, "--scheme", PersonalizationConfig.matugenScheme, "--mode", PersonalizationConfig.themeMode, "--generated-home", Paths.generatedHome];
         root.startGeneration(command, templateId);
     }
 
@@ -489,8 +498,7 @@ Singleton {
         id: detectIconThemesProcess
         stdout: StdioCollector {
             onStreamFinished: {
-                root.availableIconThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"),
-                                                                    PersonalizationConfig.iconTheme, false);
+                root.availableIconThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"), PersonalizationConfig.iconTheme, false);
             }
         }
     }
@@ -499,9 +507,7 @@ Singleton {
         id: detectCursorThemesProcess
         stdout: StdioCollector {
             onStreamFinished: {
-                root.availableCursorThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"),
-                                                                      PersonalizationConfig.cursorTheme,
-                                                                      true);
+                root.availableCursorThemes = root.parseDetectedThemes(this.text, I18n.tr("System default"), PersonalizationConfig.cursorTheme, true);
             }
         }
     }
@@ -513,7 +519,7 @@ Singleton {
     Process {
         id: generateColorsProcess
         onRunningChanged: if (running)
-                              root.generating = true
+            root.generating = true
         stderr: StdioCollector {
             id: generationStderr
         }
@@ -541,10 +547,8 @@ Singleton {
             if (exitCode === 0 && !root.coreReloaded)
                 root.reloadColors();
             if (exitCode !== 0) {
-                root.generationError = root.generationError || generationStderr.text.trim() || I18n.tr(
-                            "Failed to generate Matugen colors");
-                LogService.error("theme", "generation failed (exit " + exitCode + "): "
-                                 + generationStderr.text.trim().substring(0, 300));
+                root.generationError = root.generationError || generationStderr.text.trim() || I18n.tr("Failed to generate Matugen colors");
+                LogService.error("theme", "generation failed (exit " + exitCode + "): " + generationStderr.text.trim().substring(0, 300));
             }
             if (root.pendingGeneration)
                 Qt.callLater(root.resumeGeneration);

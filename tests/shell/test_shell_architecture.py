@@ -527,7 +527,7 @@ class TestShellManagement(unittest.TestCase):
         nm_path = os.path.join(shell_dir, "services", "NotificationService.qml")
         with open(nm_path, "r", encoding="utf-8") as f:
             nm_content = f.read()
-        self.assertIn("defaultPopupTimeoutMs: 7000", nm_content)
+        self.assertIn("defaultPopupTimeoutMs: PersonalizationConfig.notificationTimeoutMs", nm_content)
         self.assertIn("notifications.json", nm_content)
         self.assertIn("silent: UiPreferences.dndEnabled", nm_content)
         self.assertIn("popupInhibited:", nm_content)
@@ -668,12 +668,13 @@ class TestShellManagement(unittest.TestCase):
         self.assertIn("CompositorBlurRegion {", host_content)
         self.assertIn("StyledRectangularShadow {", host_content)
 
-        # 4. Respects Bar collision avoidance. B9.4/B9.5: the real bar
-        # thickness and outer edge margin, not the legacy scaled Sizes tokens.
-        self.assertIn('barEdge === "top"', host_content)
-        self.assertIn('barEdge === "right"', host_content)
-        self.assertIn("Appearance.sizes.verticalBarWidth", host_content)
-        self.assertIn("Config.options?.bar?.edgeMargin", host_content)
+        # 4. Respects Bar collision avoidance. D4g 批四b: the insets come
+        # from the topology projection — per-screen, per-edge, autoHide
+        # bars reserve nothing (the selected-bar bridge read could not
+        # see a rail on another entry).
+        self.assertIn('ScreenBarLayout.reservation(modelData, "top")', host_content)
+        self.assertIn('ScreenBarLayout.reservation(modelData, "right")', host_content)
+        self.assertNotIn("Config.options", host_content)
         self.assertNotIn("Sizes.barVisualThickness", host_content)
 
         # 5. Non-intrusive: does not steal keyboard focus

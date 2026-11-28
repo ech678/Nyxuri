@@ -30,10 +30,57 @@ Item {
         }
     }
 
+    // D4g batch three: the rail face is the icon compact face — the
+    // summary/body text face waits for the window-growth infra (D-9).
+    ColumnLayout {
+        visible: di.vertical
+        anchors.centerIn: parent
+        spacing: 4
+
+        Item {
+            width: 20
+            height: 20
+            Layout.alignment: Qt.AlignHCenter
+
+            Image {
+                id: railNotifIcon
+                anchors.fill: parent
+                source: ThemeService.resolveIcon(diNotifsRoot.notif?.appIcon ?? "")
+                visible: (diNotifsRoot.notif?.appIcon ?? "") !== "" && status !== Image.Error
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+            }
+
+            MaterialShapeWrappedMaterialSymbol {
+                anchors.fill: parent
+                wrappedShape: MaterialShapeCanvas.Shape.Cookie12Sided
+                color: Appearance.colors.colPrimary
+                colSymbol: Appearance.colors.colOnPrimary
+                text: "notifications"
+                iconSize: (di.isMaterial ? 20 : 14) * BarScale.iconFor(di.widgetBar)
+                fill: 1
+                padding: 2
+                visible: !railNotifIcon.visible
+            }
+        }
+
+        StyledText {
+            Layout.alignment: Qt.AlignHCenter
+            text: TimeService.hours + ":" + TimeService.minutes
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(di.widgetBar)
+            font.features: {
+                "tnum": 1
+            }
+            color: Appearance.colors.colOnLayer0
+            opacity: 0.8
+        }
+    }
+
     Item {
         id: iconWrapper
         width: 20
         height: 20
+        visible: !di.vertical
         anchors {
             left: parent.left
             // end4 anchors the two icons separately (4/12 vs 0/4); the wrapper
@@ -58,7 +105,7 @@ Item {
             color: Appearance.colors.colPrimary
             colSymbol: Appearance.colors.colOnPrimary
             text: "notifications"
-            iconSize: di.isMaterial ? 20 : 14
+            iconSize: (di.isMaterial ? 20 : 14) * BarScale.iconFor(di.widgetBar)
             fill: 1
             padding: 2
             visible: !notifIcon.visible
@@ -67,6 +114,7 @@ Item {
 
     ColumnLayout {
         id: notifTextColumn
+        visible: !di.vertical
         anchors {
             left: iconWrapper.right
             leftMargin: di.isMaterial ? 14 : 2
@@ -79,7 +127,7 @@ Item {
         StyledText {
             Layout.fillWidth: true
             text: (diNotifsRoot.notif?.summary ?? "").replace(/\n/g, " ")
-            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(di.widgetBar)
             font.weight: Font.DemiBold
             color: Appearance.colors.colOnLayer0
             elide: Text.ElideRight
@@ -89,7 +137,7 @@ Item {
         StyledText {
             Layout.fillWidth: true
             text: (diNotifsRoot.notif?.body ?? "").replace(/\n/g, " ")
-            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(di.widgetBar)
             color: Appearance.colors.colOnLayer0
             opacity: 0.7
             elide: Text.ElideRight
@@ -106,8 +154,9 @@ Item {
             rightMargin: 10
             topMargin: 8
         }
+        visible: !di.vertical
         text: TimeService.hours + ":" + TimeService.minutes
-        font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font - 2
+        font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(di.widgetBar) - 2
         color: Appearance.colors.colOnLayer0
         opacity: 0.8
     }

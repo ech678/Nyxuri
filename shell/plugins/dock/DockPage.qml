@@ -28,17 +28,13 @@ NexusPageBase {
 
         NiriSetupPrompt {
             Layout.fillWidth: true
-            visible: DockService.supportsMinimizeEffects && integrationState !== "ready" && (integrationState
-                                                                                             !== "loading"
-                                                                                             || error.length
-                                                                                             > 0)
+            visible: DockService.supportsMinimizeEffects && integrationState !== "ready" && (integrationState !== "loading" || error.length > 0)
             title: I18n.tr("First-time setup")
             description: I18n.tr("Set up window minimization animations.")
             integrationState: NiriConfigService.state("minimize-animation")
             busy: NiriConfigService.busy && NiriConfigService.activeFeature === "minimize-animation"
             blocked: NiriConfigService.busy
-            error: NiriConfigService.errorFeature === "minimize-animation" ? NiriConfigService.error :
-                                                                             NiriConfigService.readError
+            error: NiriConfigService.errorFeature === "minimize-animation" ? NiriConfigService.error : NiriConfigService.readError
             onSetupRequested: NiriConfigService.setup("minimize-animation")
         }
 
@@ -113,7 +109,6 @@ NexusPageBase {
         }
 
         PreferenceSelect {
-            last: true
             label: I18n.tr("Surface style")
             model: [
                 {
@@ -128,6 +123,58 @@ NexusPageBase {
             currentValue: DockService.surfaceStyle
             inputRegionService: PopupInputRegionService
             onSelected: value => DockService.setOption("surfaceStyle", String(value))
+        }
+
+        PreferenceToggle {
+            text: I18n.tr("Follow theme opacity")
+            checked: DockService.opacity < 0
+            onToggled: DockService.setOption("opacity", checked ? -1 : PersonalizationConfig.shellBackgroundOpacity)
+        }
+
+        PreferenceSlider {
+            visible: DockService.opacity >= 0
+            label: I18n.tr("Dock opacity")
+            valueLabel: Math.round(Math.max(0, DockService.opacity) * 100) + " %"
+            value: Math.round(Math.max(0, DockService.opacity) * 100)
+            from: 0
+            to: 100
+            stepSize: 5
+            onMoved: value => DockService.setOption("opacity", Math.round(value) / 100)
+        }
+
+        PreferenceToggle {
+            text: I18n.tr("Background blur")
+            enabled: BlurService.enabled
+            checked: DockService.blurEnabled
+            onToggled: DockService.setOption("blurEnabled", checked)
+        }
+
+        PreferenceSlider {
+            visible: DockService.surfaceStyle !== "notch"
+            label: I18n.tr("Screen edge margin")
+            valueLabel: Math.round(DockService.edgeMargin) + " px"
+            value: DockService.edgeMargin
+            from: 0
+            to: 32
+            stepSize: 1
+            onMoved: value => DockService.setOption("edgeMargin", Math.round(value))
+        }
+
+        PreferenceSlider {
+            label: I18n.tr("Corner radius")
+            valueLabel: Math.round(DockService.cornerRadius) + " px"
+            value: DockService.cornerRadius
+            from: 0
+            to: 36
+            stepSize: 1
+            onMoved: value => DockService.setOption("cornerRadius", Math.round(value))
+        }
+
+        PreferenceToggle {
+            last: true
+            text: I18n.tr("Surface border")
+            checked: DockService.borderEnabled
+            onToggled: DockService.setOption("borderEnabled", checked)
         }
 
         // Behavior
@@ -165,17 +212,8 @@ NexusPageBase {
         PreferenceSelect {
             visible: !DockService.supportsMinimizeEffects || NiriConfigService.ready("minimize-animation")
             label: I18n.tr("Minimize animation")
-            subtext: !DockService.supportsMinimizeEffects ? I18n.tr(
-                                                                "Window animation selection is unavailable in this session") :
-                                                            NiriConfigService.minimizeAnimationsDisabled
-                                                            ? I18n.tr(
-                                                                  "Animations are disabled in your configuration") :
-                                                              NiriConfigService.busy
-                                                              && NiriConfigService.activeFeature
-                                                              === "minimize-animation" ? I18n.tr("Checking…") :
-                                                                                         ""
-            enabled: DockService.supportsMinimizeEffects && NiriConfigService.ready("minimize-animation") &&
-                     !NiriConfigService.busy
+            subtext: !DockService.supportsMinimizeEffects ? I18n.tr("Window animation selection is unavailable in this session") : NiriConfigService.minimizeAnimationsDisabled ? I18n.tr("Animations are disabled in your configuration") : NiriConfigService.busy && NiriConfigService.activeFeature === "minimize-animation" ? I18n.tr("Checking…") : ""
+            enabled: DockService.supportsMinimizeEffects && NiriConfigService.ready("minimize-animation") && !NiriConfigService.busy
             model: [
                 {
                     "label": I18n.tr("Genie"),
@@ -206,8 +244,7 @@ NexusPageBase {
 
         InlineStatusBanner {
             Layout.fillWidth: true
-            visible: NiriConfigService.ready("minimize-animation") && NiriConfigService.errorFeature
-                     === "minimize-animation" && NiriConfigService.error.length > 0
+            visible: NiriConfigService.ready("minimize-animation") && NiriConfigService.errorFeature === "minimize-animation" && NiriConfigService.error.length > 0
             tone: "error"
             message: NiriConfigService.error
         }

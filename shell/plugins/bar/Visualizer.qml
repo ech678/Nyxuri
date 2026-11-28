@@ -5,11 +5,14 @@ import Quickshell.Services.Mpris
 import qs.services
 import qs.commons
 import qs.ui
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     property bool spectrumMirrored: false
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
     readonly property bool isPlaying: activePlayer?.isPlaying ?? false
@@ -36,9 +39,9 @@ Item {
     }
     property real dotSize: 3
     property real dotSpacing: 3
-    property real maxBarHeight: (vertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight) * 0.7
-    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (isMaterial ? barsRow.implicitWidth + 16 : barCount * (dotSize + dotSpacing))
-    implicitHeight: vertical ? (isMaterial ? barsColumn.implicitHeight + 16 : barCount * (dotSize + dotSpacing)) : Appearance.sizes.barHeight
+    property real maxBarHeight: (vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : PersonalizationConfig.resolvedBarHeight(root.barAxes)) * 0.7
+    implicitWidth: vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : (isMaterial ? barsRow.implicitWidth + 16 : barCount * (dotSize + dotSpacing))
+    implicitHeight: vertical ? (isMaterial ? barsColumn.implicitHeight + 16 : barCount * (dotSize + dotSpacing)) : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     transform: Scale {
         xScale: !root.vertical && root.spectrumMirrored ? -1 : 1

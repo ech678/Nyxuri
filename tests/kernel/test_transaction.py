@@ -910,6 +910,48 @@ class TestR03ActivationPipeline(unittest.TestCase):
             self.assertEqual(store.get_plugin("demo_app")["state"], "enabled")
             self.assertIsNone(store.get_plugin("wallpapers"))
 
+    def test_installer_deploys_gateway_scripts(self):
+        """A fresh install must leave the gateway scripts on disk.
+
+        The compositor templates start the shell through
+        ``~/.config/nyxuri/scripts/session-shell.sh`` and route every shell
+        keybind through ``shell-action.sh``. No plugin payload carries them,
+        so an install that only dispatches ``plugin_on`` reports success and
+        then boots into a bare compositor: no bar, no wallpaper, dead binds.
+        """
+        from nyxuri.ui.workflows import install_configs_workflow
+        with TempEnv() as ctx:
+            _stage(ctx, {"demo_app": {"manifest": "", "files": {"demo.conf": "hello = 1\n"}}})
+
+            with mock.patch("sys.stdin.isatty", return_value=False), \
+                 mock.patch("nyxuri.ui.workflows.wallpapers_pack_present", return_value=True), \
+                 mock.patch("nyxuri.ui.workflows._finish_successful_deploy"), \
+                 mock.patch.object(engine, "missing_packages", return_value=[]):
+                ok = install_configs_workflow(mode="config")
+
+            self.assertTrue(ok)
+            scripts = ctx.home / ".config" / "nyxuri" / "scripts"
+            for name in ("session-shell.sh", "shell-action.sh"):
+                self.assertTrue(os.access(scripts / name, os.X_OK), name)
+
+    def test_installer_deploys_gateway_scripts_when_a_plugin_fails(self):
+        """Plugins that did enable still reference the gateway scripts, so a
+        partial failure must not skip the sync."""
+        from nyxuri.ui.workflows import install_configs_workflow
+        with TempEnv() as ctx:
+            _stage(ctx, {"demo_app": {"manifest": "", "files": {"demo.conf": "hello = 1\n"}}})
+
+            with mock.patch("sys.stdin.isatty", return_value=False), \
+                 mock.patch("nyxuri.ui.workflows.wallpapers_pack_present", return_value=True), \
+                 mock.patch("nyxuri.ui.workflows.render_completion_screen"), \
+                 mock.patch.object(engine, "plugin_on", return_value=[]):
+                ok = install_configs_workflow(mode="config")
+
+            self.assertFalse(ok)
+            scripts = ctx.home / ".config" / "nyxuri" / "scripts"
+            for name in ("session-shell.sh", "shell-action.sh"):
+                self.assertTrue(os.access(scripts / name, os.X_OK), name)
+
     def test_registry_and_vault_reject_unsafe_ids_r0_4(self):
         """R0-4: catalog and engine reject traversal or unsafe plugin ids (#48 lesson)."""
         from nyxuri.deploy import catalog
