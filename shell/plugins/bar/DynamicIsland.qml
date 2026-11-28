@@ -14,6 +14,7 @@ import qs.ui
 import M3Shapes
 
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -44,7 +45,10 @@ Item {
     readonly property real badgeSize: 32
     readonly property real badgeSpacing: 6
     readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
-    readonly property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    readonly property var styleContext: BarStyle.resolve(root.barAxes, {
+        centerOnly: GlobalStates.barCenterOnly
+    })
+    readonly property bool isMaterial: root.styleContext.tint
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
 
     property string manualFocusId: ""
@@ -385,7 +389,7 @@ Item {
         // paintBackground: false and the blacklist keeps the group tint off).
         // end4: material and center-only bars leave the island transparent so
         // the frame color shows through.
-        color: root.isMaterial || (GlobalStates.barCenterOnly && root.barAxes.cornerStyle === 0) ? "transparent" : Appearance.colors.colLayer0
+        color: root.styleContext.islandTransparent ? "transparent" : Appearance.colors.colLayer0
         radius: height / 2
         clip: true
         visible: !root.vertical

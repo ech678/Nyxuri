@@ -5,13 +5,14 @@ import Quickshell.Services.Mpris
 import qs.services
 import qs.commons
 import qs.ui
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
     property var widgetBar: null
     readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     property bool spectrumMirrored: false
     readonly property MprisPlayer activePlayer: MprisController.activePlayer
     readonly property bool isPlaying: activePlayer?.isPlaying ?? false

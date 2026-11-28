@@ -6,6 +6,7 @@ import qs.services
 import qs.commons
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -19,7 +20,7 @@ Item {
     property bool showOverflowMenu: true
     property var activeMenu: null
     readonly property bool isOnLeft: root.widgetBar ? (root.widgetBar.lanes?.left ?? []).some(e => e.enabled !== false && e.widgetId === "tray") : PersonalizationConfig.barLayoutLeft.includes("tray")
-    readonly property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    readonly property bool isMaterial: BarStyle.isTinted(root.barAxes)
     readonly property bool tintIcons: BarWidgetDefaults.option("tray", root.widgetEntry, "tintIcons")
     readonly property bool showItemId: BarWidgetDefaults.option("tray", root.widgetEntry, "showItemId")
     readonly property bool hidePassive: BarWidgetDefaults.option("tray", root.widgetEntry, "hidePassive")

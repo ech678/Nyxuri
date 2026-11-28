@@ -11,6 +11,7 @@ import qs.services
 import qs.commons
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 RippleButton {
     id: root
@@ -20,7 +21,7 @@ RippleButton {
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
 
     implicitWidth: 22
     implicitHeight: 22

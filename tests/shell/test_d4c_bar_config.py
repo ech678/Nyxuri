@@ -83,14 +83,16 @@ class BarDefaultsTest(unittest.TestCase):
         checks = {
             "position": '"top"',
             "autoHide": "false",
-            "showBackground": "true",
-            "cornerStyle": "1",
-            "borderless": '"pills"',
+            "backplate": "true",
+            "lanePill": "false",
+            "tint": "false",
+            "widgetStyle": '"fused"',
+            "capsuleRadius": '"pill"',
             "groupColor": '"layer1"',
             "barThickness": "36",
             "verticalThickness": "36",
-            "edgeMargin": "0",
-            "sideMargin": "0",
+            "edgeMargin": "5",
+            "sideMargin": "-1",
             "sideMarginPercent": "0",
             "squareCorners": "false",
             "fontScale": "1.0",
@@ -103,15 +105,15 @@ class BarDefaultsTest(unittest.TestCase):
         for key, value in checks.items():
             self.assertIn(f"\n    {key}: {value},", body, f"{key} default changed")
 
-    def test_borderless_vocabulary_gains_flat(self):
-        match = re.search(r"var BORDERLESS_MODES = \[(.*?)\];", self.defaults, re.S)
+    def test_widget_style_vocabulary_includes_flat(self):
+        match = re.search(r"var WIDGET_STYLES = \[(.*?)\];", self.defaults, re.S)
         self.assertIsNotNone(match)
         modes = set(re.findall(r'"([a-z]+)"', match.group(1)))
-        self.assertEqual(modes, {"pills", "separated", "segmented", "transparent", "flat"})
+        self.assertEqual(modes, {"fused", "separate", "flat"})
 
     def test_baselines_carry_the_end4_values(self):
         self.assertIn("return style.vertical ? -4 : -7;", self.defaults)
-        self.assertIn("return style.panel ? 3 : (style.vertical ? -2 : -1);", self.defaults)
+        self.assertIn("return style.squareCorners ? 3 : (style.vertical ? -2 : -1);", self.defaults)
         self.assertIn("return style.gapsOut;", self.defaults)
         self.assertIn("return 5;", self.defaults)
 
@@ -119,7 +121,7 @@ class BarDefaultsTest(unittest.TestCase):
         body = js_var_body(self.defaults, "DEFAULTS")
         for key in ("shadowIntensity", "shadowOpacity"):
             self.assertNotIn(f"\n    {key}:", body, f"{key} must not ship as a live axis (D5 material)")
-        self.assertIn("D4e material", self.defaults)
+        self.assertIn("D5 window-growth material", self.defaults)
 
     def test_is_custom_color_guard(self):
         self.assertIn("function isCustomColor(value)", self.defaults)
@@ -135,9 +137,10 @@ class MigrationV5Test(unittest.TestCase):
         cls.defaults = read(os.path.join(SERVICES_DIR, "BarDefaults.js"))
         cls.pc = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
 
-    def test_version_is_five(self):
-        self.assertIn("var CURRENT_VERSION = 6", self.migrations)
+    def test_version_is_seven(self):
+        self.assertIn("var CURRENT_VERSION = 7", self.migrations)
         self.assertIn("changed = migrateBarGlobals(config, seed) || changed;", self.migrations)
+        self.assertIn("changed = migrateBarStyleAxes(config, seed) || changed;", self.migrations)
 
     def test_explicit_bar_globals_map(self):
         match = re.search(r"var MIGRATED_BAR_GLOBALS = \{(.*?)\};", self.migrations, re.S)
@@ -145,10 +148,12 @@ class MigrationV5Test(unittest.TestCase):
         found = set(re.findall(r"^\s{4}([a-zA-Z_][a-zA-Z0-9_]*):", match.group(1), re.M))
         self.assertEqual(found, MIGRATED_BAR_KEYS)
 
-    def test_every_mapped_key_is_a_real_axis(self):
+    def test_every_mapped_key_is_a_real_axis_or_folded_in_v7(self):
         body = js_var_body(self.defaults, "DEFAULTS")
         axes = js_object_keys(body)
-        self.assertTrue(MIGRATED_BAR_KEYS <= axes, MIGRATED_BAR_KEYS - axes)
+        retired_to_v7 = {"showBackground", "cornerStyle", "borderless"}
+        self.assertTrue((MIGRATED_BAR_KEYS - retired_to_v7) <= axes,
+                        (MIGRATED_BAR_KEYS - retired_to_v7) - axes)
 
     def test_widget_style_keys_match_the_popup_vocabulary(self):
         match = re.search(r"var WIDGET_STYLE_KEYS = \[(.*?)\];", self.migrations, re.S)
@@ -181,9 +186,10 @@ class StoreShapeTest(unittest.TestCase):
         self.assertEqual(missing, [], f"normalizeBarAxes misses axes: {missing}")
 
     def test_bar_level_views_are_derived_not_assigned(self):
-        for prop in ("barPosition", "barAutoHide", "barScreenList", "barShowBackground",
-                     "barCornerStyle", "barBorderless", "barGroupColor", "barThickness",
-                     "barVerticalThickness", "barEdgeMargin", "barSideMargin"):
+        for prop in ("barPosition", "barAutoHide", "barScreenList", "barBackplate",
+                     "barLanePill", "barTint", "barWidgetStyle", "barCapsuleRadius",
+                     "barGroupColor", "barThickness", "barVerticalThickness",
+                     "barEdgeMargin", "barSideMargin"):
             self.assertRegex(
                 self.pc,
                 rf"readonly property \w+ {prop}: root\.activeBarConfig\(\)\.axes\.",
@@ -205,14 +211,14 @@ class StoreShapeTest(unittest.TestCase):
             self.assertIn(f"function {setter}(", self.pc)
 
     def test_widget_styles_api_retired(self):
-        for gone in ("barWidgetStyleEntry", "setBarWidgetStyle", "resetBarWidgetStyle",
+        for gone in ("barWidgetStyleEntry", "setBarWidgetStyle(mode", "resetBarWidgetStyle",
                      "normalizedBarWidgetStyles", "property var barWidgetStyles"):
             self.assertNotIn(gone, self.pc, gone)
         for qml in os.listdir(BAR_DIR):
             if not qml.endswith(".qml"):
                 continue
             content = read(os.path.join(BAR_DIR, qml))
-            for gone in ("setBarWidgetStyle", "resetBarWidgetStyle", "barWidgetStyleEntry"):
+            for gone in ("setBarWidgetStyle(mode", "resetBarWidgetStyle(", "barWidgetStyleEntry"):
                 self.assertNotIn(gone, content, f"{qml} still reads {gone}")
 
     def test_entry_style_writers_are_uid_addressed(self):
@@ -302,7 +308,7 @@ class ConsumptionTest(unittest.TestCase):
         self.assertIn("root.shellRadius", self.content)
 
     def test_flat_mode_capsule_chrome(self):
-        self.assertIn('readonly property bool isFlat: root.borderlessMode === "flat"', self.group)
+        self.assertIn("readonly property bool isFlat: root.styleContext.capsuleFlat", self.group)
         self.assertIn("if (root.isFlat)", self.group)
 
     def test_widget_layer_axes_reach_the_capsule(self):
@@ -365,7 +371,7 @@ class SettingsPageTest(unittest.TestCase):
                      'PersonalizationConfig.setBarRadius(', 'PersonalizationConfig.setBarSurfaceColor(',
                      'PersonalizationConfig.setBarSurfaceTransparency(', 'PersonalizationConfig.setBarBorderEnabled(',
                      'PersonalizationConfig.setBarWidgetOutlineEnabled(', 'PersonalizationConfig.setBarWidgetTransparency(',
-                     'PersonalizationConfig.setBarScreenList(', 'PersonalizationConfig.setBarShowBackground(',
+                     'PersonalizationConfig.setBarScreenList(', 'PersonalizationConfig.setBarBackplate(',
                      'PersonalizationConfig.setBarAutoHide('):
             self.assertIn(call, self.page, call)
 

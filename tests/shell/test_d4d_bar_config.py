@@ -356,16 +356,17 @@ class SettingsPageTest(unittest.TestCase):
         cls.widget_page = read(os.path.join(BAR_DIR, "BarWidgetPage.qml"))
 
     def test_behavior_group_rows(self):
-        section = self.appearance[:self.appearance.index("Behavior") + 4000]
+        behavior_idx = self.appearance.index('text: I18n.tr("Behavior")')
+        section = self.appearance[behavior_idx:]
         for text in (
             "setBarAutoHideDelay", "setBarAutoHideStrict", "setBarHideOnFullscreen",
             "setBarClickThrough", "setBarHoverPopouts", "setBarHoverPopoutDelay",
         ):
             self.assertIn(text, section)
-        # The auto-hide toggle moved here from Style & Corner (single home).
-        self.assertLess(self.appearance.index("Behavior"), self.appearance.index('text: I18n.tr("Autohide")'))
-        style_corner = self.appearance[self.appearance.index("Style & Corner"):self.appearance.index("Behavior")]
-        self.assertNotIn("setBarAutoHide", style_corner)
+        # The auto-hide toggle moved here from Structure/Style (single home).
+        self.assertLess(behavior_idx, self.appearance.index('text: I18n.tr("Autohide")'))
+        style_section = self.appearance[self.appearance.index('text: I18n.tr("Structure")'):behavior_idx]
+        self.assertNotIn("setBarAutoHide", style_section)
 
     def test_widget_editor_overflow_group(self):
         self.assertIn('["spacer", "separator", "island"].indexOf(root.widgetId) === -1', self.widget_page)

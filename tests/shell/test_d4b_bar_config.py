@@ -190,13 +190,13 @@ class MigrationV4Test(unittest.TestCase):
         cls.pc = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
 
     def test_version_constants(self):
-        # D4e e5 bumped the chain to 6; the v4 step itself is unchanged.
-        self.assertIn("var CURRENT_VERSION = 6", self.migrations)
+        # D4f bumped the chain to 7; the v4 step itself is unchanged.
+        self.assertIn("var CURRENT_VERSION = 7", self.migrations)
 
     def test_stamp_bumped_and_fast_path_keeps_older(self):
-        # D4e e5 writes stamp 6; the fast path accepts 2..6.
-        self.assertIn("# nyxuri-config-schema: 6\\n", self.config_service)
-        for stamp in ("2", "3", "4", "5", "6"):
+        # D4f writes stamp 7; the fast path accepts 2..7.
+        self.assertIn("# nyxuri-config-schema: 7\\n", self.config_service)
+        for stamp in ("2", "3", "4", "5", "6", "7"):
             self.assertIn(f'"# nyxuri-config-schema: {stamp}"', self.config_service)
 
     def test_migration_map_targets_canonical_ids(self):

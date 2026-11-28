@@ -79,7 +79,7 @@ Singleton {
         }
         root.savePending = false;
         try {
-            let tomlText = "# ====================================================================\n" + "# Nyxuri Shell Unified Configuration File\n" + "# nyxuri-config-schema: 6\n" + "# Automatically maintained; hand-edits are preserved on file reload.\n" + "# ====================================================================\n\n";
+            let tomlText = "# ====================================================================\n" + "# Nyxuri Shell Unified Configuration File\n" + "# nyxuri-config-schema: 7\n" + "# Automatically maintained; hand-edits are preserved on file reload.\n" + "# ====================================================================\n\n";
             tomlText += Toml.stringify(root.rawConfig);
             configFile.setText(tomlText);
         } catch (e) {
@@ -128,11 +128,11 @@ Singleton {
         printErrors: false
         onLoaded: {
             const text = configProbe.text();
-            // D4a–D4e: the stamp version tracks config.toml's configVersion
-            // key (schema 6 = island axes on the lane entry). 2..6 all
+            // D4a–D4f: the stamp version tracks config.toml's configVersion
+            // key (schema 7 = atomic bar style axes). 2..7 all
             // take the fast path — older files migrate in QML at load
             // (ConfigMigrations), not through the legacy-JSON python helper.
-            const stamped = ["# nyxuri-config-schema: 2", "# nyxuri-config-schema: 3", "# nyxuri-config-schema: 4", "# nyxuri-config-schema: 5", "# nyxuri-config-schema: 6"].some(stamp => text.indexOf(stamp) !== -1);
+            const stamped = ["# nyxuri-config-schema: 2", "# nyxuri-config-schema: 3", "# nyxuri-config-schema: 4", "# nyxuri-config-schema: 5", "# nyxuri-config-schema: 6", "# nyxuri-config-schema: 7"].some(stamp => text.indexOf(stamp) !== -1);
             if (stamped && text.indexOf("[keystone") === -1)
                 root.storeReady = true;
             else

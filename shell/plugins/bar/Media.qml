@@ -10,6 +10,7 @@ import Quickshell.Wayland
 import qs.commons
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -21,7 +22,7 @@ Item {
     property var widgetBar: null
     readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     readonly property real mediaMinWidth: BarWidgetDefaults.option("media", root.widgetEntry, "minWidth")
     readonly property real mediaMaxWidth: BarWidgetDefaults.option("media", root.widgetEntry, "maxWidth")
     readonly property bool showTitle: BarWidgetDefaults.option("media", root.widgetEntry, "showTitle")

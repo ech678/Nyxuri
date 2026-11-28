@@ -74,10 +74,10 @@ class BarRuntimeProbeTest(unittest.TestCase):
             # so only require a boolean here.
             self.assertIsInstance(keyboard.get("num"), bool)
         self.assertEqual(len(report["styles"]), 6)
-        self.assertEqual([entry["cornerStyle"] for entry in report["styles"]],
-                         [0, 1, 2, 3, 4, 5])
+        self.assertEqual([entry["preset"] for entry in report["styles"]],
+                         ["hug", "floating", "islands", "material", "materialHug", "panel"])
         for entry in report["styles"]:
-            with self.subTest(cornerStyle=entry["cornerStyle"]):
+            with self.subTest(preset=entry["preset"]):
                 self.assertTrue(entry["ready"])
                 geometry = entry["geometry"]
                 self.assertGreater(geometry["width"], 0)
@@ -96,13 +96,13 @@ class BarRuntimeProbeTest(unittest.TestCase):
 
         self.assertTrue(report["borderless"]["ok"], report["borderless"])
         self.assertEqual(report["borderless"]["modes"],
-                         ["pills", "separated", "segmented", "transparent"])
+                         ["fused", "separate", "flat"])
 
         self.assertTrue(report["mediaHidden"]["ok"], report["mediaHidden"])
         cases = report["mediaHidden"]["cases"]
-        self.assertEqual([case["cornerStyle"] for case in cases], ["1", "3"])
+        self.assertEqual([case["preset"] for case in cases], ["floating", "material"])
         for case in cases:
-            with self.subTest(mediaHiddenStyle=case["cornerStyle"]):
+            with self.subTest(mediaHiddenStyle=case["preset"]):
                 self.assertLessEqual(abs(case["leftWidth"]), 0.5,
                                      "a lane whose only widget is hidden kept capsule padding")
                 self.assertLessEqual(abs(case["centerWidth"]), 0.5)
@@ -160,7 +160,7 @@ class BarRuntimeProbeTest(unittest.TestCase):
         self.assertTrue(d4a["persistence"]["enabledViewDropsDisabled"], d4a["persistence"])
 
         # B9.4 vertical bar: both edges evaluate real geometry with the island
-        # filtered out, and the Float style boost lands on the vertical axis.
+        # filtered out, and the D-8 laneHug +4 boost lands on the vertical axis.
         vertical = report["vertical"]
         self.assertTrue(vertical["ok"], vertical)
         self.assertTrue(vertical["boost"], vertical)
@@ -209,6 +209,13 @@ class BarRuntimeProbeTest(unittest.TestCase):
                 if case["vertical"]:
                     self.assertEqual(case["middle"], [],
                                      "the vertical layout must filter the island")
+
+        d4f = report["d4f"]
+        self.assertTrue(d4f["ok"], d4f)
+        self.assertTrue(d4f["style"]["v7Migrated"], d4f["style"])
+        self.assertEqual(d4f["style"]["presetCount"], 6)
+        self.assertTrue(d4f["style"]["d8BonusesRetired"], d4f["style"])
+        self.assertTrue(d4f["style"]["radiusVocabulary"], d4f["style"])
 
 
 if __name__ == "__main__":

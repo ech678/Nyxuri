@@ -23,6 +23,7 @@ import qs.services
 import qs.commons
 import qs.commons.i18n
 import qs.ui
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -32,7 +33,7 @@ Item {
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
 
     readonly property color iconColor: root.contentColorOverridden ? root.contentColor : (root.isMaterial ? M3Palette.pillInk("systemIcons") : Appearance.colors.colOnLayer1)
 

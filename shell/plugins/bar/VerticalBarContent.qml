@@ -26,6 +26,7 @@ import qs.ui
 import "BarWidgetFiles.js" as BarWidgetFiles
 import "SegmentRoles.js" as SegmentRoles
 import "OverflowLayout.js" as OverflowLayout
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -44,9 +45,14 @@ Item {
     readonly property bool onRight: root.axes.position === "right"
 
     readonly property real barPadding: 0
-    readonly property bool isMaterial: root.axes.cornerStyle === 3 || root.axes.cornerStyle === 4
-    readonly property bool isMaterialHug: root.axes.cornerStyle === 4
-    readonly property bool isPanel: root.axes.cornerStyle === 5
+    readonly property var styleContext: BarStyle.resolve(root.axes, {
+        gapsOut: Config.options.bar.m3.gapsOut,
+        shellRadius: root.shellRadius,
+        centerOnly: root.centerOnly
+    })
+    readonly property bool isMaterial: root.styleContext.lanePill
+    readonly property bool isMaterialHug: root.styleContext.isLaneHug
+    readonly property bool isPanel: root.styleContext.isSquare
     // Same inset relationship as the horizontal lanes (ROADMAP B9.0); the
     // per-style values are the baseline under the D4c innerPadding axis.
     readonly property real laneMargin: PersonalizationConfig.resolvedBarInnerPadding(root.axes)
@@ -247,7 +253,7 @@ Item {
     }
 
     function shouldPaintMaterialPill(name) {
-        if (!root.isMaterial)
+        if (!root.styleContext.tint)
             return false;
         const blacklist = ["workspaces", "separator", "powerButton", "docktoPanel", "leftSidebarButton", "rightSidebarButton", "activeWindow", "dynamicIsland", "island", "avatar"];
         return !blacklist.includes(name);
@@ -263,11 +269,10 @@ Item {
         id: barBackground
         objectName: "barBackground"
         anchors.fill: parent
-        anchors.margins: root.axes.cornerStyle === 1 ? Config.options.bar.m3.gapsOut : 0
-        color: (!root.centerOnly && root.axes.showBackground === true && root.axes.cornerStyle !== 2 && !root.isMaterial) ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.axes) : "transparent"
-        radius: root.axes.cornerStyle === 1 ? Appearance.rounding.windowRounding : 0
-        border.width: PersonalizationConfig.barSurfaceBorderWidth(!root.centerOnly && root.axes.cornerStyle === 1 ? 1 : 0)
-        border.color: PersonalizationConfig.barSurfaceBorderColor(root.axes.cornerStyle === 1 && root.axes.showBackground !== true ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8))
+        color: root.styleContext.showBackplateFill ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.axes) : "transparent"
+        radius: root.styleContext.isFloating ? PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.windowRounding, root.axes) : 0
+        border.width: PersonalizationConfig.barSurfaceBorderWidth(root.styleContext.defaultSurfaceBorderWidth, root.axes)
+        border.color: PersonalizationConfig.barSurfaceBorderColor(root.styleContext.surfaceBorderTransparent ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8), root.axes)
     }
 
     // center-only
@@ -282,20 +287,20 @@ Item {
 
     Rectangle {
         id: centerPill
-        visible: root.centerOnly && root.axes.showBackground === true && root.axes.cornerStyle !== 2
+        visible: root.styleContext.showCenterPill
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.verticalCenter: parent.verticalCenter
         height: absoluteCenter.hasContent ? middleCol.implicitHeight + 10 : 0
-        width: parent.width - (root.axes.cornerStyle === 1 ? Config.options.bar.m3.gapsOut * 2 : 0)
-        color: root.isMaterial ? "transparent" : Appearance.colors.colLayer0
-        radius: root.axes.cornerStyle === 1 || root.isMaterial ? Appearance.rounding.windowRounding : 0
-        border.width: root.axes.cornerStyle === 1 ? 1 : 0
-        border.color: Appearance.colors.colLayer0Border
+        width: parent.width
+        color: root.styleContext.lanePill ? "transparent" : PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.axes)
+        radius: root.styleContext.isFloating || root.styleContext.lanePill ? PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.windowRounding, root.axes) : 0
+        border.width: PersonalizationConfig.barSurfaceBorderWidth(root.styleContext.isFloating ? 1 : 0, root.axes)
+        border.color: PersonalizationConfig.barSurfaceBorderColor(Appearance.colors.colLayer0Border, root.axes)
 
-        bottomRightRadius: root.axes.cornerStyle === 0 && !root.onRight ? 0 : radius
-        topRightRadius: root.axes.cornerStyle === 0 && !root.onRight ? root.shellRadius : radius
-        bottomLeftRadius: root.axes.cornerStyle === 0 && root.onRight ? 0 : radius
-        topLeftRadius: root.axes.cornerStyle === 0 && root.onRight ? root.shellRadius : radius
+        bottomRightRadius: root.styleContext.showCenterPillCorners && !root.onRight ? 0 : radius
+        topRightRadius: root.styleContext.showCenterPillCorners && !root.onRight ? root.shellRadius : radius
+        bottomLeftRadius: root.styleContext.showCenterPillCorners && root.onRight ? 0 : radius
+        topLeftRadius: root.styleContext.showCenterPillCorners && root.onRight ? root.shellRadius : radius
     }
 
     Item {
@@ -331,7 +336,7 @@ Item {
                 ColumnLayout {
                     id: topMaterialCol
                     anchors.centerIn: parent
-                    spacing: 3
+                    spacing: root.laneSpacing
 
                     Repeater {
                         id: leftMaterialGroups
@@ -415,6 +420,8 @@ Item {
                         segmentRole: root.leftSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
+                        paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                        bgColor: root.getMaterialPillColor(modelData.widgetId)
                         Loader {
                             Layout.fillWidth: true
                             active: !root.isMaterial
@@ -468,7 +475,7 @@ Item {
                 ColumnLayout {
                     id: centerMaterialCol
                     anchors.centerIn: parent
-                    spacing: 3
+                    spacing: root.laneSpacing
 
                     Repeater {
                         id: middleMaterialGroups
@@ -553,6 +560,8 @@ Item {
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
                         paintBackground: modelData.widgetId !== "island"
+                        paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                        bgColor: root.getMaterialPillColor(modelData.widgetId)
                         Loader {
                             Layout.fillWidth: true
                             active: !root.isMaterial
@@ -607,7 +616,7 @@ Item {
                 ColumnLayout {
                     id: bottomMaterialCol
                     anchors.centerIn: parent
-                    spacing: 3
+                    spacing: root.laneSpacing
 
                     LaneOverflowHost {
                         widgetBar: root.barConfig
@@ -680,6 +689,8 @@ Item {
                         segmentRole: root.rightSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
+                        paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
+                        bgColor: root.getMaterialPillColor(modelData.widgetId)
                         Loader {
                             Layout.fillWidth: true
                             active: !root.isMaterial

@@ -29,6 +29,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 ButtonMouseArea {
     id: root
@@ -141,7 +142,7 @@ ButtonMouseArea {
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
     property bool superPressAndHeld: false // Relevant modifications at bottom of file
 
-    property real workspaceButtonWidth: (root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4) ? 30 : 26
+    property real workspaceButtonWidth: BarStyle.isTinted(root.barAxes) ? 30 : 26
     property real activeWorkspaceMargin: 2
     property real activeWorkspaceSize: workspaceButtonWidth - activeWorkspaceMargin * 2
     property real workspaceIconSize: workspaceButtonWidth * 0.69

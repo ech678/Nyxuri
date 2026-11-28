@@ -7,6 +7,7 @@ import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
 import "BarWidgetDefaults.js" as BarWidgetDefaults
 import "BarDefaults.js" as BarDefaults
+import "BarStylePresets.js" as BarStylePresets
 import "DensityPresets.js" as DensityPresets
 import "ConfigMigrations.js" as ConfigMigrations
 import qs.services
@@ -343,45 +344,45 @@ Singleton {
     // Screen filter for the bar windows. Empty list = every screen (end4
     // semantics); names come from Quickshell.screens.
     readonly property var barScreenList: root.activeBarConfig().axes.screenList
-    // end4 `bar.showBackground`: the frame/pill background of non-material
-    // styles. Only Hug/Float expose it; other styles ignore it downstream.
-    readonly property bool barShowBackground: root.activeBarConfig().axes.showBackground
-    readonly property var barCornerStyles: [
+    // D4f atomic style & composition views (replaces barCornerStyle /
+    // barBorderless / barShowBackground).
+    readonly property bool barBackplate: root.activeBarConfig().axes.backplate
+    readonly property bool barLanePill: root.activeBarConfig().axes.lanePill
+    readonly property bool barTint: root.activeBarConfig().axes.tint
+    readonly property string barWidgetStyle: root.activeBarConfig().axes.widgetStyle
+    readonly property string barCapsuleRadius: root.activeBarConfig().axes.capsuleRadius
+    readonly property int barWidgetRadius: root.activeBarConfig().axes.widgetRadius
+    readonly property var barWidgetStyleOptions: [
         {
-            value: 0,
-            label: I18n.tr("Hug")
+            value: "fused",
+            label: I18n.tr("Fused")
         },
         {
-            value: 1,
-            label: I18n.tr("Floating")
+            value: "separate",
+            label: I18n.tr("Separate")
         },
         {
-            value: 2,
-            label: I18n.tr("Islands")
-        },
-        {
-            value: 3,
-            label: I18n.tr("Material")
-        },
-        {
-            value: 4,
-            label: I18n.tr("Material hug")
-        },
-        {
-            value: 5,
-            label: I18n.tr("Panel")
+            value: "flat",
+            label: I18n.tr("Flat")
         }
     ]
-    readonly property int barCornerStyle: root.activeBarConfig().axes.cornerStyle
-    // Single truth for the material pill treatment (end4: cornerStyle 3 or 4).
-    // Widgets bind these instead of re-deriving `=== 3`, which kept 4/5
-    // half-styled in nine files.
-    readonly property bool barIsMaterial: root.barCornerStyle === 3 || root.barCornerStyle === 4
-    readonly property bool barIsMaterialHug: root.barCornerStyle === 4
-    readonly property bool barIsPanel: root.barCornerStyle === 5
+    readonly property var barCapsuleRadiusOptions: [
+        {
+            value: "pill",
+            label: I18n.tr("Pill")
+        },
+        {
+            value: "rounded",
+            label: I18n.tr("Rounded")
+        },
+        {
+            value: "px",
+            label: I18n.tr("Custom")
+        }
+    ]
     function barStyleBoostFor(axes) {
-        const cornerStyle = axes ? axes.cornerStyle : root.barCornerStyle;
-        return cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : ((cornerStyle === 4 || cornerStyle === 5) ? 4 : 0);
+        const a = axes || root.barAxes;
+        return BarDefaults.styleBoost(BarDefaults.deriveStyle(a, Appearance.sizes.hyprlandGapsOut));
     }
 
     function resolvedBarHeight(axes) {
@@ -396,10 +397,9 @@ Singleton {
         return base + root.barStyleBoostFor(a);
     }
 
-    // end4 style heights (ROADMAP B-2): Float adds the outer gap on both edges,
-    // Material hug and Panel add 4 for their round decorators. Everything else
-    // keeps the user's thickness, and groups/OSD/popups read the evaluated
-    // height through Appearance.sizes.barHeight (or per-bar resolvedBarHeight).
+    // D-8: Only edge-hugging lane pills keep the +4 boost for their internal
+    // outward corners. Float's edge gap is carried directly by edgeMargin /
+    // sideMargin in the window layer.
     readonly property real barStyleHeightBoost: root.barStyleBoostFor(root.barAxes)
     Binding {
         target: Appearance
@@ -407,31 +407,6 @@ Singleton {
         value: root.barStyleHeightBoost
         restoreMode: Binding.RestoreNone
     }
-    readonly property var barBorderlessModes: [
-        {
-            value: "pills",
-            label: I18n.tr("Pills")
-        },
-        {
-            value: "separated",
-            label: I18n.tr("Separated")
-        },
-        {
-            value: "segmented",
-            label: I18n.tr("Segmented")
-        },
-        {
-            value: "transparent",
-            label: I18n.tr("Transparent")
-        },
-        {
-            // D4c: bare widgets, no capsule geometry at all ("transparent"
-            // keeps the capsule shape with a transparent fill).
-            value: "flat",
-            label: I18n.tr("Flat")
-        }
-    ]
-    readonly property string barBorderless: root.activeBarConfig().axes.borderless
     readonly property string barGroupColor: root.activeBarConfig().axes.groupColor
     readonly property var barGroupColorOptions: [
         {
@@ -453,6 +428,10 @@ Singleton {
         {
             "value": "layer0",
             "label": I18n.tr("Background")
+        },
+        {
+            "value": "transparent",
+            "label": I18n.tr("Transparent")
         }
     ]
     // Per-widget style overrides (right-click style editor) ride the lane
@@ -556,15 +535,12 @@ Singleton {
     // through this (multi-bar); the parameterless views above stay on the
     // settings-facing entry.
     function barStyleContextOf(axes) {
-        const cornerStyle = axes ? axes.cornerStyle : root.barCornerStyle;
-        return {
-            cornerStyle: cornerStyle,
-            borderless: axes ? axes.borderless : root.barBorderless,
-            material: cornerStyle === 3 || cornerStyle === 4,
-            materialHug: cornerStyle === 4,
-            panel: cornerStyle === 5,
-            gapsOut: Appearance.sizes.hyprlandGapsOut
-        };
+        return BarDefaults.deriveStyle(axes || root.barAxes, Appearance.sizes.hyprlandGapsOut);
+    }
+
+    function resolvedBarSideMargin(axes) {
+        const a = axes || root.barAxes;
+        return BarDefaults.resolvedSideMargin(a, root.barStyleContextOf(a), Appearance.sizes.hyprlandGapsOut);
     }
 
     // The optional trailing `axes` is the D4e multi-bar path: window hosts
@@ -1541,12 +1517,45 @@ Singleton {
         setBarAxis("position", normalizedEdgePosition(value));
     }
 
-    function setBarCornerStyle(value) {
-        setBarAxis("cornerStyle", normalizedBoundedInt(value, 1, 0, 5));
+    function setBarBackplate(value) {
+        setBarAxis("backplate", value === true);
     }
 
-    function setBarBorderless(value) {
-        setBarAxis("borderless", BarDefaults.BORDERLESS_MODES.indexOf(String(value)) !== -1 ? String(value) : "pills");
+    function setBarLanePill(value) {
+        setBarAxis("lanePill", value === true);
+    }
+
+    function setBarTint(value) {
+        setBarAxis("tint", value === true);
+    }
+
+    function setBarWidgetStyle(value) {
+        setBarAxis("widgetStyle", BarDefaults.WIDGET_STYLES.indexOf(String(value)) !== -1 ? String(value) : BarDefaults.DEFAULTS.widgetStyle);
+    }
+
+    function setBarCapsuleRadius(value) {
+        setBarAxis("capsuleRadius", BarDefaults.CAPSULE_RADII.indexOf(String(value)) !== -1 ? String(value) : BarDefaults.DEFAULTS.capsuleRadius);
+    }
+
+    function setBarWidgetRadius(value) {
+        setBarAxis("widgetRadius", root.clampedBarSentinelInt(value, BarDefaults.DEFAULTS.widgetRadius, 0, 32));
+    }
+
+    function applyBarStylePreset(key) {
+        const preset = BarStylePresets.values(String(key || ""));
+        if (!preset)
+            return false;
+        const keys = Object.keys(preset);
+        return root.withBarConfigs(config => {
+            let changed = false;
+            keys.forEach(k => {
+                if (config.axes[k] !== preset[k]) {
+                    config.axes[k] = preset[k];
+                    changed = true;
+                }
+            });
+            return changed;
+        });
     }
 
     function setBarGroupColor(value) {
@@ -1555,10 +1564,6 @@ Singleton {
 
     function setBarAutoHide(value) {
         setBarAxis("autoHide", value === true);
-    }
-
-    function setBarShowBackground(value) {
-        setBarAxis("showBackground", value === true);
     }
 
     function setBarScreenList(value) {
@@ -1574,11 +1579,11 @@ Singleton {
     }
 
     function setBarEdgeMargin(value) {
-        setBarAxis("edgeMargin", root.normalizedBoundedInt(value, 0, 0, 48));
+        setBarAxis("edgeMargin", root.normalizedBoundedInt(value, BarDefaults.DEFAULTS.edgeMargin, 0, 48));
     }
 
     function setBarSideMargin(value) {
-        setBarAxis("sideMargin", root.normalizedBoundedInt(value, 0, 0, 96));
+        setBarAxis("sideMargin", root.clampedBarSentinelInt(value, -1, 0, 96));
     }
 
     // D4c named axis setters (the settings page calls these; every value
@@ -1937,14 +1942,17 @@ Singleton {
             position: normalizedEdgePosition(raw.position),
             autoHide: raw.autoHide === true,
             screenList: root.normalizedScreenList(raw.screenList),
-            showBackground: typeof raw.showBackground === "boolean" ? raw.showBackground : true,
-            cornerStyle: root.normalizedBoundedInt(raw.cornerStyle, 1, 0, 5),
-            borderless: BarDefaults.BORDERLESS_MODES.indexOf(raw.borderless) !== -1 ? raw.borderless : "pills",
-            groupColor: normalizedOption(root.barGroupColorOptions, raw.groupColor, "layer1"),
+            backplate: typeof raw.backplate === "boolean" ? raw.backplate : d.backplate,
+            lanePill: typeof raw.lanePill === "boolean" ? raw.lanePill : d.lanePill,
+            tint: typeof raw.tint === "boolean" ? raw.tint : d.tint,
+            widgetStyle: BarDefaults.WIDGET_STYLES.indexOf(raw.widgetStyle) !== -1 ? raw.widgetStyle : d.widgetStyle,
+            capsuleRadius: BarDefaults.CAPSULE_RADII.indexOf(raw.capsuleRadius) !== -1 ? raw.capsuleRadius : d.capsuleRadius,
+            widgetRadius: root.clampedBarSentinelInt(raw.widgetRadius, d.widgetRadius, 0, 32),
+            groupColor: normalizedOption(root.barGroupColorOptions, raw.groupColor, d.groupColor),
             barThickness: root.clampedBarInt(raw.barThickness, 28, 64, d.barThickness),
             verticalThickness: root.clampedBarInt(raw.verticalThickness, 28, 64, d.verticalThickness),
-            edgeMargin: root.normalizedBoundedInt(raw.edgeMargin, 0, 0, 48),
-            sideMargin: root.normalizedBoundedInt(raw.sideMargin, 0, 0, 96),
+            edgeMargin: root.normalizedBoundedInt(raw.edgeMargin, d.edgeMargin, 0, 48),
+            sideMargin: root.clampedBarSentinelInt(raw.sideMargin, -1, 0, 96),
             sideMarginPercent: root.normalizedBoundedInt(raw.sideMarginPercent, 0, 0, 49),
             spacing: root.clampedBarSentinelInt(raw.spacing, -1, 0, 64),
             innerPadding: root.clampedBarSentinelInt(raw.innerPadding, -1, 0, 64),

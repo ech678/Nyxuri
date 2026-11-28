@@ -5,13 +5,13 @@ import qs.ui
 
 // Visual card selector grid (dux SettingsLayoutPicker lineage, skinned in
 // NexusStyle / ConnectedRect / StateLayer). Each choice is
-// { key, label, icon?, preview?: "top"|"bottom"|"left"|"right", enabled? }.
+// { key, label, icon?, preview?: "top"|"bottom"|"left"|"right"|"hug"|"floating"|"islands"|"material"|"materialHug"|"panel", enabled? }.
 ConnectedRect {
     id: root
 
     property var choices: []
     property string selectedKey: ""
-    property string previewMode: "edge" // "edge" | "icon"
+    property string previewMode: "edge" // "edge" | "icon" | "barStyle"
 
     signal selected(string key)
 
@@ -102,12 +102,111 @@ ConnectedRect {
                         }
 
                         MaterialSymbol {
-                            visible: root.previewMode !== "edge" && String(card.modelData.icon ?? "").length > 0
+                            visible: root.previewMode === "icon" && String(card.modelData.icon ?? "").length > 0
                             anchors.centerIn: parent
                             text: String(card.modelData.icon ?? "")
                             iconSize: NexusStyle.icon.medium
                             fill: card.isActive ? 1 : 0
                             color: card.isActive ? Appearance.m3colors.m3primary : Appearance.m3colors.m3onSurfaceVariant
+                        }
+
+                        // Mini bar shape previews for D4f starter presets.
+                        Item {
+                            id: barStylePreview
+
+                            readonly property string preset: String(card.modelData.preview ?? card.modelData.key ?? "floating")
+                            readonly property color barAccent: card.isActive ? Appearance.m3colors.m3primary : Appearance.m3colors.m3onSurfaceVariant
+                            readonly property color barSubtle: Qt.alpha(barAccent, 0.35)
+
+                            visible: root.previewMode === "barStyle"
+                            anchors.fill: parent
+
+                            // Hug / Panel full-width flush bar
+                            Rectangle {
+                                visible: barStylePreview.preset === "hug" || barStylePreview.preset === "panel"
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                height: 10
+                                radius: 0
+                                bottomLeftRadius: barStylePreview.preset === "hug" ? NexusStyle.rounding.extraSmall : 0
+                                bottomRightRadius: barStylePreview.preset === "hug" ? NexusStyle.rounding.extraSmall : 0
+                                color: barStylePreview.barAccent
+                            }
+
+                            // Floating inset pill bar
+                            Rectangle {
+                                visible: barStylePreview.preset === "floating"
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.margins: 3
+                                height: 9
+                                radius: NexusStyle.rounding.full
+                                color: barStylePreview.barAccent
+                            }
+
+                            // Islands: independent widget capsules with no backplate
+                            Row {
+                                visible: barStylePreview.preset === "islands"
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.margins: 3
+                                spacing: 4
+
+                                Rectangle {
+                                    width: 14
+                                    height: 8
+                                    radius: NexusStyle.rounding.full
+                                    color: barStylePreview.barAccent
+                                }
+                                Item {
+                                    width: 10
+                                    height: 8
+                                }
+                                Rectangle {
+                                    width: 16
+                                    height: 8
+                                    radius: NexusStyle.rounding.full
+                                    color: barStylePreview.barAccent
+                                }
+                            }
+
+                            // Material / Material hug: per-lane tinted pills
+                            Row {
+                                visible: barStylePreview.preset === "material" || barStylePreview.preset === "materialHug"
+                                anchors.top: parent.top
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.topMargin: barStylePreview.preset === "material" ? 3 : 0
+                                anchors.leftMargin: barStylePreview.preset === "material" ? 3 : 0
+                                anchors.rightMargin: barStylePreview.preset === "material" ? 3 : 0
+                                spacing: 4
+
+                                Rectangle {
+                                    width: 15
+                                    height: 9
+                                    radius: barStylePreview.preset === "material" ? NexusStyle.rounding.full : 0
+                                    bottomRightRadius: NexusStyle.rounding.extraSmall
+                                    color: barStylePreview.barAccent
+                                }
+                                Rectangle {
+                                    width: 14
+                                    height: 9
+                                    radius: barStylePreview.preset === "material" ? NexusStyle.rounding.full : 0
+                                    bottomLeftRadius: NexusStyle.rounding.extraSmall
+                                    bottomRightRadius: NexusStyle.rounding.extraSmall
+                                    color: barStylePreview.barSubtle
+                                }
+                                Rectangle {
+                                    width: 15
+                                    height: 9
+                                    radius: barStylePreview.preset === "material" ? NexusStyle.rounding.full : 0
+                                    bottomLeftRadius: NexusStyle.rounding.extraSmall
+                                    color: barStylePreview.barAccent
+                                }
+                            }
                         }
                     }
 

@@ -6,13 +6,12 @@ import qs.services
 import qs.ui
 import qs.commons.i18n
 import "../../services/BarDefaults.js" as BarDefaults
+import "../../services/BarStylePresets.js" as BarStylePresets
 import "../../services/DensityPresets.js" as DensityPresets
 
-// Appearance tab of the Bar page: the bar's frame — position, outer
-// margins, the screen filter, style, and the D4c fine-grained axes
-// (spacing/padding/scale/shape/surface effects). Wrapped in PreferenceGroup
-// for dynamic first/last rounding across conditional rows, with row-level and
-// page-level reset affordances (D4e e4).
+// Appearance tab of the Bar page (D4f):
+//   Appearance starter presets -> Layout (with Advanced fine-tuning) ->
+//   Structure (atomic style axes) -> Surface & Widget material -> Behavior.
 ColumnLayout {
     id: root
 
@@ -20,6 +19,14 @@ ColumnLayout {
     readonly property var detectedScreens: Quickshell.screens
     readonly property var axes: PersonalizationConfig.barAxes
     readonly property bool axesModified: PersonalizationConfig.barAxesModified(root.axes)
+    readonly property string activePreset: BarStylePresets.currentPreset(root.axes)
+    readonly property bool layoutAdvancedModified: root.axes.sideMargin !== BarDefaults.DEFAULTS.sideMargin
+        || root.axes.sideMarginPercent !== BarDefaults.DEFAULTS.sideMarginPercent
+        || root.axes.spacing !== BarDefaults.DEFAULTS.spacing
+        || root.axes.innerPadding !== BarDefaults.DEFAULTS.innerPadding
+        || root.axes.widgetPadding !== BarDefaults.DEFAULTS.widgetPadding
+        || Math.abs(root.axes.fontScale - BarDefaults.DEFAULTS.fontScale) > 0.001
+        || Math.abs(root.axes.iconScale - BarDefaults.DEFAULTS.iconScale) > 0.001
 
     readonly property string densityLevel: DensityPresets.currentLevel("bar", root.axes)
     readonly property var densityOptions: [
@@ -38,6 +45,39 @@ ColumnLayout {
         {
             "value": "dense",
             "label": I18n.tr("Dense")
+        }
+    ]
+
+    readonly property var stylePresetChoices: [
+        {
+            key: "hug",
+            label: I18n.tr("Hug"),
+            preview: "hug"
+        },
+        {
+            key: "floating",
+            label: I18n.tr("Floating"),
+            preview: "floating"
+        },
+        {
+            key: "islands",
+            label: I18n.tr("Islands"),
+            preview: "islands"
+        },
+        {
+            key: "material",
+            label: I18n.tr("Material"),
+            preview: "material"
+        },
+        {
+            key: "materialHug",
+            label: I18n.tr("Material hug"),
+            preview: "materialHug"
+        },
+        {
+            key: "panel",
+            label: I18n.tr("Panel"),
+            preview: "panel"
         }
     ]
 
@@ -109,13 +149,27 @@ ColumnLayout {
 
     spacing: NexusStyle.padding.extraSmall / 2
 
-    // Layout
+    // 1. Starter presets (write-only axis recipes, highlight on exact match)
     PreferenceHeader {
         first: true
-        text: I18n.tr("Layout")
+        text: I18n.tr("Appearance")
         showReset: root.axesModified
         resetText: I18n.tr("Reset bar appearance")
         onResetRequested: PersonalizationConfig.resetBarAxes()
+    }
+
+    PreferenceGroup {
+        PreferenceVisualPicker {
+            previewMode: "barStyle"
+            choices: root.stylePresetChoices
+            selectedKey: root.activePreset
+            onSelected: key => PersonalizationConfig.applyBarStylePreset(key)
+        }
+    }
+
+    // 2. Layout
+    PreferenceHeader {
+        text: I18n.tr("Layout")
     }
 
     PreferenceGroup {
@@ -141,20 +195,75 @@ ColumnLayout {
             valueLabel: Math.round(PersonalizationConfig.barEdgeMargin) + " px"
             from: 0
             to: 48
-            stepSize: 2
+            stepSize: 1
             modified: PersonalizationConfig.barEdgeMargin !== BarDefaults.DEFAULTS.edgeMargin
             onMoved: value => PersonalizationConfig.setBarEdgeMargin(Math.round(value))
             onResetRequested: PersonalizationConfig.setBarEdgeMargin(BarDefaults.DEFAULTS.edgeMargin)
         }
 
         PreferenceSlider {
-            label: I18n.tr("Bar end margin")
-            value: PersonalizationConfig.barSideMargin
-            valueLabel: Math.round(PersonalizationConfig.barSideMargin) + " px"
-            from: 0
-            to: 96
+            visible: root.horizontalBar
+            label: I18n.tr("Bar thickness")
+            value: PersonalizationConfig.barThickness
+            valueLabel: Math.round(PersonalizationConfig.barThickness) + " px"
+            from: 28
+            to: 56
             stepSize: 2
-            modified: PersonalizationConfig.barSideMargin !== BarDefaults.DEFAULTS.sideMargin
+            modified: PersonalizationConfig.barThickness !== BarDefaults.DEFAULTS.barThickness
+            onMoved: value => PersonalizationConfig.setBarThickness(Math.round(value))
+            onResetRequested: PersonalizationConfig.setBarThickness(BarDefaults.DEFAULTS.barThickness)
+        }
+
+        PreferenceSlider {
+            visible: !root.horizontalBar
+            label: I18n.tr("Vertical bar thickness")
+            value: PersonalizationConfig.barVerticalThickness
+            valueLabel: Math.round(PersonalizationConfig.barVerticalThickness) + " px"
+            from: 28
+            to: 64
+            stepSize: 2
+            modified: PersonalizationConfig.barVerticalThickness !== BarDefaults.DEFAULTS.verticalThickness
+            onMoved: value => PersonalizationConfig.setBarVerticalThickness(Math.round(value))
+            onResetRequested: PersonalizationConfig.setBarVerticalThickness(BarDefaults.DEFAULTS.verticalThickness)
+        }
+
+        PreferenceSelect {
+            label: I18n.tr("Density")
+            model: root.densityOptions
+            currentValue: root.densityLevel
+            fallbackText: I18n.tr("Custom")
+            inputRegionService: PopupInputRegionService
+            modified: root.densityLevel !== "comfortable"
+            onSelected: value => PersonalizationConfig.applyBarDensityPreset(String(value))
+            onResetRequested: PersonalizationConfig.applyBarDensityPreset("comfortable")
+        }
+
+        PreferenceControlledBy {
+            visible: root.densityLevel === "compact" || root.densityLevel === "spacious"
+            icon: "density_medium"
+            title: root.densityLevel === "compact" ? I18n.tr("Compact density active") : I18n.tr("Spacious density active")
+            reason: I18n.tr("Drives bar thickness, margins, font scale, and icon scale")
+            actionLabel: I18n.tr("Reset")
+            onActionClicked: PersonalizationConfig.applyBarDensityPreset("comfortable")
+        }
+    }
+
+    PreferenceCollapsibleGroup {
+        id: advancedLayoutGroup
+
+        title: I18n.tr("Advanced")
+        subtitle: I18n.tr("Margins, spacing, and content scaling")
+        icon: "tune"
+        expanded: root.layoutAdvancedModified
+
+        PreferenceSlider {
+            label: I18n.tr("Bar end margin")
+            value: root.axes.sideMargin
+            valueLabel: root.sentinelLabel(root.axes.sideMargin)
+            from: -1
+            to: 96
+            stepSize: 1
+            modified: root.axes.sideMargin !== BarDefaults.DEFAULTS.sideMargin
             onMoved: value => PersonalizationConfig.setBarSideMargin(Math.round(value))
             onResetRequested: PersonalizationConfig.setBarSideMargin(BarDefaults.DEFAULTS.sideMargin)
         }
@@ -230,29 +339,9 @@ ColumnLayout {
             onMoved: value => PersonalizationConfig.setBarIconScale(value)
             onResetRequested: PersonalizationConfig.setBarIconScale(BarDefaults.DEFAULTS.iconScale)
         }
-
-        PreferenceSelect {
-            label: I18n.tr("Density")
-            model: root.densityOptions
-            currentValue: root.densityLevel
-            fallbackText: I18n.tr("Custom")
-            inputRegionService: PopupInputRegionService
-            modified: root.densityLevel !== "comfortable"
-            onSelected: value => PersonalizationConfig.applyBarDensityPreset(String(value))
-            onResetRequested: PersonalizationConfig.applyBarDensityPreset("comfortable")
-        }
-
-        PreferenceControlledBy {
-            visible: root.densityLevel === "compact" || root.densityLevel === "spacious"
-            icon: "density_medium"
-            title: root.densityLevel === "compact" ? I18n.tr("Compact density active") : I18n.tr("Spacious density active")
-            reason: I18n.tr("Drives bar thickness, margins, font scale, and icon scale")
-            actionLabel: I18n.tr("Reset")
-            onActionClicked: PersonalizationConfig.applyBarDensityPreset("comfortable")
-        }
     }
 
-    // Screens
+    // Screens (multi-monitor filter)
     PreferenceHeader {
         visible: root.detectedScreens.length > 1
         text: I18n.tr("Screens")
@@ -283,59 +372,67 @@ ColumnLayout {
         }
     }
 
-    // Style & Corner
+    // 3. Structure (atomic composition axes)
     PreferenceHeader {
-        text: I18n.tr("Style")
+        text: I18n.tr("Structure")
     }
 
     PreferenceGroup {
-        PreferenceSelect {
-            label: I18n.tr("Corner style")
-            model: PersonalizationConfig.barCornerStyles
-            currentValue: PersonalizationConfig.barCornerStyle
-            inputRegionService: PopupInputRegionService
-            modified: PersonalizationConfig.barCornerStyle !== BarDefaults.DEFAULTS.cornerStyle
-            onSelected: value => PersonalizationConfig.setBarCornerStyle(Number(value))
-            onResetRequested: PersonalizationConfig.setBarCornerStyle(BarDefaults.DEFAULTS.cornerStyle)
-        }
-
-        PreferenceSelect {
-            label: I18n.tr("Borderless mode")
-            model: PersonalizationConfig.barBorderlessModes
-            currentValue: PersonalizationConfig.barBorderless
-            inputRegionService: PopupInputRegionService
-            modified: PersonalizationConfig.barBorderless !== BarDefaults.DEFAULTS.borderless
-            onSelected: value => PersonalizationConfig.setBarBorderless(String(value))
-            onResetRequested: PersonalizationConfig.setBarBorderless(BarDefaults.DEFAULTS.borderless)
+        PreferenceToggle {
+            text: I18n.tr("Bar backplate")
+            checked: PersonalizationConfig.barBackplate
+            modified: PersonalizationConfig.barBackplate !== BarDefaults.DEFAULTS.backplate
+            onToggled: PersonalizationConfig.setBarBackplate(checked)
+            onResetRequested: PersonalizationConfig.setBarBackplate(BarDefaults.DEFAULTS.backplate)
         }
 
         PreferenceToggle {
-            text: I18n.tr("Square corners")
-            checked: root.axes.squareCorners
-            modified: root.axes.squareCorners !== BarDefaults.DEFAULTS.squareCorners
-            onToggled: PersonalizationConfig.setBarSquareCorners(checked)
-            onResetRequested: PersonalizationConfig.setBarSquareCorners(BarDefaults.DEFAULTS.squareCorners)
+            text: I18n.tr("Lane pill")
+            checked: PersonalizationConfig.barLanePill
+            modified: PersonalizationConfig.barLanePill !== BarDefaults.DEFAULTS.lanePill
+            onToggled: PersonalizationConfig.setBarLanePill(checked)
+            onResetRequested: PersonalizationConfig.setBarLanePill(BarDefaults.DEFAULTS.lanePill)
+        }
+
+        PreferenceToggle {
+            text: I18n.tr("Material tint")
+            checked: PersonalizationConfig.barTint
+            modified: PersonalizationConfig.barTint !== BarDefaults.DEFAULTS.tint
+            onToggled: PersonalizationConfig.setBarTint(checked)
+            onResetRequested: PersonalizationConfig.setBarTint(BarDefaults.DEFAULTS.tint)
+        }
+
+        PreferenceSelect {
+            label: I18n.tr("Widget style")
+            model: PersonalizationConfig.barWidgetStyleOptions
+            currentValue: PersonalizationConfig.barWidgetStyle
+            inputRegionService: PopupInputRegionService
+            modified: PersonalizationConfig.barWidgetStyle !== BarDefaults.DEFAULTS.widgetStyle
+            onSelected: value => PersonalizationConfig.setBarWidgetStyle(String(value))
+            onResetRequested: PersonalizationConfig.setBarWidgetStyle(BarDefaults.DEFAULTS.widgetStyle)
+        }
+
+        PreferenceSelect {
+            label: I18n.tr("Capsule radius")
+            model: PersonalizationConfig.barCapsuleRadiusOptions
+            currentValue: PersonalizationConfig.barCapsuleRadius
+            inputRegionService: PopupInputRegionService
+            modified: PersonalizationConfig.barCapsuleRadius !== BarDefaults.DEFAULTS.capsuleRadius
+            onSelected: value => PersonalizationConfig.setBarCapsuleRadius(String(value))
+            onResetRequested: PersonalizationConfig.setBarCapsuleRadius(BarDefaults.DEFAULTS.capsuleRadius)
         }
 
         PreferenceSlider {
-            label: I18n.tr("Corner radius")
-            value: root.axes.radius
-            valueLabel: root.axes.radius < 0 ? I18n.tr("Auto") : Math.round(root.axes.radius) + " px"
+            visible: PersonalizationConfig.barCapsuleRadius === "px" || (PersonalizationConfig.barCapsuleRadius === "pill" && PersonalizationConfig.barWidgetStyle === "fused")
+            label: PersonalizationConfig.barCapsuleRadius === "px" ? I18n.tr("Custom capsule radius") : I18n.tr("Joined inner radius")
+            value: PersonalizationConfig.barWidgetRadius
+            valueLabel: root.sentinelLabel(PersonalizationConfig.barWidgetRadius)
             from: -1
             to: 32
             stepSize: 1
-            modified: root.axes.radius !== BarDefaults.DEFAULTS.radius
-            onMoved: value => PersonalizationConfig.setBarRadius(Math.round(value))
-            onResetRequested: PersonalizationConfig.setBarRadius(-1)
-        }
-
-        PreferenceToggle {
-            text: I18n.tr("Show background")
-            enabled: PersonalizationConfig.barCornerStyle === 0 || PersonalizationConfig.barCornerStyle === 1
-            checked: PersonalizationConfig.barShowBackground
-            modified: PersonalizationConfig.barShowBackground !== BarDefaults.DEFAULTS.showBackground
-            onToggled: PersonalizationConfig.setBarShowBackground(checked)
-            onResetRequested: PersonalizationConfig.setBarShowBackground(BarDefaults.DEFAULTS.showBackground)
+            modified: PersonalizationConfig.barWidgetRadius !== BarDefaults.DEFAULTS.widgetRadius
+            onMoved: value => PersonalizationConfig.setBarWidgetRadius(Math.round(value))
+            onResetRequested: PersonalizationConfig.setBarWidgetRadius(BarDefaults.DEFAULTS.widgetRadius)
         }
 
         PreferenceSelect {
@@ -348,36 +445,30 @@ ColumnLayout {
             onResetRequested: PersonalizationConfig.setBarGroupColor(BarDefaults.DEFAULTS.groupColor)
         }
 
-        PreferenceSlider {
-            visible: root.horizontalBar
-            label: I18n.tr("Bar thickness")
-            value: PersonalizationConfig.barThickness
-            valueLabel: Math.round(PersonalizationConfig.barThickness) + " px"
-            from: 28
-            to: 56
-            stepSize: 2
-            modified: PersonalizationConfig.barThickness !== BarDefaults.DEFAULTS.barThickness
-            onMoved: value => PersonalizationConfig.setBarThickness(Math.round(value))
-            onResetRequested: PersonalizationConfig.setBarThickness(BarDefaults.DEFAULTS.barThickness)
+        PreferenceToggle {
+            text: I18n.tr("Square corners")
+            checked: root.axes.squareCorners
+            modified: root.axes.squareCorners !== BarDefaults.DEFAULTS.squareCorners
+            onToggled: PersonalizationConfig.setBarSquareCorners(checked)
+            onResetRequested: PersonalizationConfig.setBarSquareCorners(BarDefaults.DEFAULTS.squareCorners)
         }
 
         PreferenceSlider {
-            visible: !root.horizontalBar
-            label: I18n.tr("Vertical bar thickness")
-            value: PersonalizationConfig.barVerticalThickness
-            valueLabel: Math.round(PersonalizationConfig.barVerticalThickness) + " px"
-            from: 28
-            to: 64
-            stepSize: 2
-            modified: PersonalizationConfig.barVerticalThickness !== BarDefaults.DEFAULTS.verticalThickness
-            onMoved: value => PersonalizationConfig.setBarVerticalThickness(Math.round(value))
-            onResetRequested: PersonalizationConfig.setBarVerticalThickness(BarDefaults.DEFAULTS.verticalThickness)
+            label: I18n.tr("Shell corner radius")
+            value: root.axes.radius
+            valueLabel: root.axes.radius < 0 ? I18n.tr("Auto") : Math.round(root.axes.radius) + " px"
+            from: -1
+            to: 32
+            stepSize: 1
+            modified: root.axes.radius !== BarDefaults.DEFAULTS.radius
+            onMoved: value => PersonalizationConfig.setBarRadius(Math.round(value))
+            onResetRequested: PersonalizationConfig.setBarRadius(-1)
         }
     }
 
-    // Effects (bar surface)
+    // 4. Material (bar surface & widget layer)
     PreferenceHeader {
-        text: I18n.tr("Effects")
+        text: I18n.tr("Surface")
     }
 
     PreferenceGroup {
@@ -449,7 +540,6 @@ ColumnLayout {
         }
     }
 
-    // Widget layer (group capsule chrome)
     PreferenceCollapsibleGroup {
         title: I18n.tr("Widget layer")
         subtitle: I18n.tr("Capsule opacity and outline")
@@ -514,7 +604,7 @@ ColumnLayout {
         }
     }
 
-    // Behavior (D4d)
+    // 5. Behavior (D4d)
     PreferenceHeader {
         text: I18n.tr("Behavior")
     }

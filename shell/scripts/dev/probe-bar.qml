@@ -17,6 +17,7 @@ import "commons/BarGeometry.js" as BarGeometry
 import "services/ConfigMigrations.js" as ConfigMigrations
 import "services/BarWidgetDefaults.js" as BarWidgetDefaults
 import "services/BarDefaults.js" as BarDefaults
+import "services/BarStylePresets.js" as BarStylePresets
 import "plugins/bar" as BarPlugin
 import "plugins/bar/SegmentRoles.js" as SegmentRoles
 import "plugins/bar/OverflowLayout.js" as OverflowLayout
@@ -50,7 +51,7 @@ ShellRoot {
             // types in this Quickshell runtime (loader-form.md). The real shell
             // also feeds PluginRegistry.fileUrl() to its slot Loaders.
             // Wait for the settings store before first load: BarContent reads
-            // PersonalizationConfig and a later cornerStyle flip would leave
+            // PersonalizationConfig and a later preset flip would leave
             // layout sizes stale in a windowless harness.
             active: !probeRoot.windowMode && PersonalizationConfig.ready && !probeRoot.reloading
             source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/" + (probeRoot.probeVertical ? "VerticalBarContent.qml" : "BarContent.qml") : ""
@@ -69,7 +70,7 @@ ShellRoot {
             width: 220
             height: 32
             property real pillHeight: 32
-            property bool isMaterial: PersonalizationConfig.barIsMaterial
+            property bool isMaterial: PersonalizationConfig.barTint
             property var widgetBar: null
             property var activePlayer: null
             property bool mediaTrackInfoVisible: false
@@ -411,8 +412,8 @@ ShellRoot {
         const centered = !barContent.effectiveMiddleLayout || barContent.effectiveMiddleLayout.length === 0 || (vertical ? Math.abs(geometry.centerY - (geometry.height - geometry.centerHeight) / 2) <= 1 : Math.abs(geometry.centerX - (geometry.width - geometry.centerWidth) / 2) <= 1);
         return JSON.stringify({
             "ready": barLoader.status === Loader.Ready,
-            "cornerStyle": PersonalizationConfig.barCornerStyle,
-            "borderless": PersonalizationConfig.barBorderless,
+            "preset": BarStylePresets.currentPreset(PersonalizationConfig.barAxes),
+            "widgetStyle": PersonalizationConfig.barWidgetStyle,
             "vertical": vertical,
             "edge": PersonalizationConfig.barPosition,
             "lanes": {
@@ -509,14 +510,14 @@ ShellRoot {
             return probeRoot.layout();
         }
 
-        function cornerStyle(value: int): string {
-            PersonalizationConfig.setBarCornerStyle(value);
-            return String(PersonalizationConfig.barCornerStyle);
+        function stylePreset(key: string): string {
+            PersonalizationConfig.applyBarStylePreset(key);
+            return BarStylePresets.currentPreset(PersonalizationConfig.barAxes);
         }
 
-        function borderless(value: string): string {
-            PersonalizationConfig.setBarBorderless(value);
-            return String(PersonalizationConfig.barBorderless);
+        function widgetStyle(value: string): string {
+            PersonalizationConfig.setBarWidgetStyle(value);
+            return String(PersonalizationConfig.barWidgetStyle);
         }
 
         // B9.4: switching the screen edge swaps the content component, so the
@@ -567,6 +568,7 @@ ShellRoot {
         // the 0/12/24 margin tiers (Bar.qml binds the same functions).
         function margins(): string {
             const cases = [];
+            const boost = PersonalizationConfig.barStyleBoostFor(PersonalizationConfig.barAxes);
             for (const edge of ["top", "bottom", "left", "right"]) {
                 const vertical = edge === "left" || edge === "right";
                 for (const tier of [0, 12, 24]) {
@@ -574,8 +576,8 @@ ShellRoot {
                         "edge": edge,
                         "vertical": vertical,
                         "tier": tier,
-                        "box": BarGeometry.margins(edge, vertical, tier, tier, 0, false, false),
-                        "exclusiveZone": BarGeometry.exclusiveZone(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, PersonalizationConfig.barCornerStyle, 5, tier)
+                        "box": BarGeometry.margins(edge, vertical, tier, tier, false, false),
+                        "exclusiveZone": BarGeometry.exclusiveZone(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, boost, tier)
                     });
                 }
             }
@@ -583,7 +585,7 @@ ShellRoot {
                 "baseBarHeight": Appearance.sizes.baseBarHeight,
                 "baseVerticalBarWidth": Appearance.sizes.baseVerticalBarWidth,
                 "verticalBarWidth": Appearance.sizes.verticalBarWidth,
-                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "styleBoost": boost,
                 "cases": cases
             });
         }
@@ -631,7 +633,7 @@ ShellRoot {
             const host = ActionGateway.islandHost ?? (islandGroup ? islandGroup.loadedWidget : null);
             return JSON.stringify({
                 "ready": true,
-                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "preset": BarStylePresets.currentPreset(PersonalizationConfig.barAxes),
                 "centerPill": {
                     "width": content.centerPillWidth,
                     "middleRowWidth": content.middleRowImplicitWidth
@@ -1135,8 +1137,8 @@ ShellRoot {
             }
             // D4c: the bar-frame keys are derived views now — only the
             // named axis setters can write them.
-            if (key === "barShowBackground")
-                PersonalizationConfig.setBarShowBackground(parsed === true);
+            if (key === "barBackplate")
+                PersonalizationConfig.setBarBackplate(parsed === true);
             else if (key === "barScreenList")
                 PersonalizationConfig.setBarScreenList(Array.isArray(parsed) ? parsed : []);
             else if (key === "barAutoHide")
@@ -1363,11 +1365,11 @@ ShellRoot {
                 "changed": first.changed,
                 "version": first.config.configVersion,
                 "positionFolded": entry.position === "bottom",
-                "cornerStyleFolded": entry.cornerStyle === 2,
-                "borderlessFolded": entry.borderless === "segmented",
+                "cornerStyleFolded": entry.backplate === false && entry.lanePill === undefined && entry.tint === undefined && entry.cornerStyle === undefined,
+                "borderlessFolded": entry.widgetStyle === undefined && entry.groupColor === "layer0" && entry.widgetOutlineEnabled === true && entry.borderless === undefined,
                 "thicknessFolded": entry.barThickness === 44,
                 "edgeMarginFolded": entry.edgeMargin === 12,
-                "defaultsSkipped": entry.sideMargin === undefined && entry.autoHide === undefined && entry.groupColor === undefined,
+                "defaultsSkipped": entry.sideMargin === undefined && entry.autoHide === undefined && entry.capsuleRadius === undefined,
                 "activeModeStyleFolded": workspaces.color === "primary" && workspaces.padding === 9,
                 "otherModeStyleDropped": JSON.stringify(first.config.bar.configs).indexOf("error") === -1,
                 "flatStripped": first.config.bar.position === undefined && first.config.bar.widgetStyles === undefined && first.config.bar.cornerStyle === undefined,
@@ -1742,6 +1744,86 @@ ShellRoot {
             });
         }
 
+        // D4f: atomic bar style axes, write-only starter presets, v7 migration,
+        // D-8 retired bonuses, capsule radius, and transparent group chrome.
+        function d4fStyle(): string {
+            const legacy = {
+                "configVersion": 6,
+                "bar": {
+                    "cornerStyle": 1,
+                    "configs": [{
+                        "id": "default",
+                        "position": "bottom",
+                        "cornerStyle": 3,
+                        "borderless": "transparent",
+                        "showBackground": false
+                    }]
+                }
+            };
+            const seed = {
+                "defaults": BarWidgetDefaults.DEFAULTS,
+                "barDefaults": BarDefaults.DEFAULTS
+            };
+            const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
+            const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), seed);
+            const migratedEntry = first.config.bar.configs[0];
+            const v7Migrated = first.changed === true
+                && first.config.configVersion === 7
+                && migratedEntry.backplate === false
+                && migratedEntry.lanePill === true
+                && migratedEntry.tint === true
+                && migratedEntry.edgeMargin === undefined
+                && migratedEntry.widgetStyle === undefined
+                && migratedEntry.groupColor === "transparent"
+                && migratedEntry.widgetOutlineEnabled === undefined
+                && migratedEntry.cornerStyle === undefined
+                && migratedEntry.borderless === undefined
+                && migratedEntry.showBackground === undefined
+                && migratedEntry.position === "bottom"
+                && first.config.bar.cornerStyle === undefined
+                && second.changed === false;
+
+            PersonalizationConfig.applyBarStylePreset("islands");
+            const islandsPreset = BarStylePresets.currentPreset(PersonalizationConfig.barAxes);
+            const islandsAxes = PersonalizationConfig.barAxes.backplate === false
+                && PersonalizationConfig.barAxes.lanePill === false
+                && PersonalizationConfig.barAxes.edgeMargin === 0;
+            PersonalizationConfig.setBarTint(true);
+            const customAfterTweak = BarStylePresets.currentPreset(PersonalizationConfig.barAxes) === "";
+            PersonalizationConfig.setBarCapsuleRadius("rounded");
+            PersonalizationConfig.setBarGroupColor("transparent");
+            const roundedAxis = PersonalizationConfig.barAxes.capsuleRadius === "rounded"
+                && PersonalizationConfig.barAxes.groupColor === "transparent";
+            PersonalizationConfig.applyBarStylePreset("floating");
+
+            const d8BonusesRetired = BarDefaults.styleBoost(BarDefaults.deriveStyle({
+                backplate: false, lanePill: true, tint: false, edgeMargin: 0
+            }, 5)) === 4
+                && BarDefaults.styleBoost(BarDefaults.deriveStyle({
+                    backplate: false, lanePill: false, tint: false, edgeMargin: 5
+                }, 5)) === 0
+                && BarDefaults.styleBoost(BarDefaults.deriveStyle({
+                    backplate: true, lanePill: false, tint: false, edgeMargin: 0, squareCorners: true
+                }, 5)) === 0
+                && BarGeometry.exclusiveZone(false, 40, 44, 0, 5) === 45;
+
+            const radiusVocabulary = BarDefaults.capsuleFullRadius({capsuleRadius: "pill"}, 26, 8, 12) === 13
+                && BarDefaults.capsuleFullRadius({capsuleRadius: "rounded"}, 26, 8, 12) === 8
+                && BarDefaults.capsuleFullRadius({capsuleRadius: "px"}, 26, 8, 12) === 12
+                && BarDefaults.GROUP_COLORS.indexOf("transparent") !== -1;
+
+            return JSON.stringify({
+                "v7Migrated": v7Migrated,
+                "presetCount": BarStylePresets.ORDER.length,
+                "islandsPreset": islandsPreset === "islands" && islandsAxes,
+                "customAfterTweak": customAfterTweak,
+                "roundedAndTransparent": roundedAxis,
+                "d8BonusesRetired": d8BonusesRetired,
+                "radiusVocabulary": radiusVocabulary,
+                "restoredFloating": BarStylePresets.currentPreset(PersonalizationConfig.barAxes) === "floating"
+            });
+        }
+
         // D4e e2 + e6: the window host topology and per-bar thickness/scales
         // (window mode). Scene "two" adds a second bottom bar with clock-only
         // lanes plus custom thickness (50), fontScale (1.1), iconScale (1.25).
@@ -1843,10 +1925,10 @@ ShellRoot {
             const buttonIcons = probeRoot.findNodes(content, node => node.iconText !== undefined, []);
             return JSON.stringify({
                 "ready": true,
-                "cornerStyle": PersonalizationConfig.barCornerStyle,
+                "preset": BarStylePresets.currentPreset(PersonalizationConfig.barAxes),
                 "colLayer0": layer0,
                 "bridge": {
-                    "showBackground": Config.options.bar.m3.showBackground,
+                    "backplate": PersonalizationConfig.barBackplate,
                     "autoHide": Config.options.bar.autoHide.enable,
                     "screenList": Array.from(Config.options.bar.screenList ?? []),
                     // D4b: the migrated per-widget axes read through the

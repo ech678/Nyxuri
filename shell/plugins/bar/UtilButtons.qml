@@ -8,6 +8,7 @@ import Quickshell.Services.UPower
 import qs.commons
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -17,7 +18,7 @@ Item {
     property color contentColor: Appearance.colors.colOnLayer2
     property bool contentColorOverridden: false
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     // D4b: the seven slots are entry axes (utilButtons == quickSettings
     // share this component and one axes table).
     readonly property string widgetId: root.widgetEntry && root.widgetEntry.widgetId === "quickSettings" ? "quickSettings" : "utilButtons"

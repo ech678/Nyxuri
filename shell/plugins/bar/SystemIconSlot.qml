@@ -19,6 +19,7 @@ import Quickshell
 import qs.commons
 import qs.ui
 import qs.services
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -40,7 +41,7 @@ Item {
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property var widgetBar: null
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
+    property bool isMaterial: BarStyle.isTinted(root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes)
     default property alias content: contentHost.data
 
     readonly property bool hovered: mouseArea.containsMouse || root.forceHovered

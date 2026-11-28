@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import qs.commons
 import qs.ui
 import qs.services
+import "BarStyle.js" as BarStyle
 
 LazyLoader {
     id: root
@@ -78,10 +79,9 @@ LazyLoader {
     // the settings-facing entry.
     readonly property string barEdge: root.widgetBar ? root.barAxes.position : (Config.options?.bar?.edge ?? "top")
     readonly property bool barVertical: root.barEdge === "left" || root.barEdge === "right"
-    readonly property real m3OuterGap: (root.widgetBar ? root.barAxes.cornerStyle : (Config.options?.bar?.m3?.cornerStyle ?? 0)) === 3 ? (Config.options?.bar?.m3?.gapsOut ?? 0) : 0
-    // B9.5: popups start after the outer edge margin the bar itself reserves.
-    readonly property real barEdgeMargin: root.widgetBar ? root.barAxes.edgeMargin : (Config.options?.bar?.edgeMargin ?? 0)
-    readonly property real barThickness: (root.barVertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : PersonalizationConfig.resolvedBarHeight(root.barAxes)) + root.barEdgeMargin + root.m3OuterGap
+    // B9.5/D4f: popups start after the outer edge margin the bar reserves.
+    readonly property real barEdgeMargin: root.widgetBar ? root.barAxes.edgeMargin : (Config.options?.bar?.edgeMargin ?? 5)
+    readonly property real barThickness: (root.barVertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : PersonalizationConfig.resolvedBarHeight(root.barAxes)) + root.barEdgeMargin
 
     PanelWindow {
         id: clickOutsideBackdrop

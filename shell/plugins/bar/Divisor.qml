@@ -9,6 +9,7 @@ import qs.commons
 import qs.services
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -19,7 +20,7 @@ Item {
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
     property real btnSize: 40
     property real btnSpacing: 2
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     // D4b: style/spacing are entry axes (separator), not flat [bar] keys.
     property var widgetEntry: null
     readonly property string style: BarWidgetDefaults.option("separator", root.widgetEntry, "style")

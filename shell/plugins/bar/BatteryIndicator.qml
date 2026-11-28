@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import qs.commons
 import qs.ui
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 MouseArea {
     id: root
@@ -13,7 +14,7 @@ MouseArea {
     property color contentColor: Appearance.colors.colOnSecondaryContainer
     property bool contentColorOverridden: false
     property bool vertical: false
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     readonly property bool showPercent: BarWidgetDefaults.option("battery", root.widgetEntry, "showPercent")
     readonly property bool showPower: BarWidgetDefaults.option("battery", root.widgetEntry, "showPower")
     readonly property var chargeState: Battery.chargeState

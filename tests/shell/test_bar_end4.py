@@ -73,8 +73,8 @@ class BarEnd4ContractTest(unittest.TestCase):
         # instead of the read-only Config bridge.
         self.assertIn("BarGroupStylePopup", content, "BarGroup must wire the right-click style editor")
         self.assertIn("PersonalizationConfig.setBarEntryStyle", content, "widget styles must persist via the entry (D4c uid protocol)")
-        # D4e: material treatment derives from the injected per-bar axes.
-        self.assertIn("root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4", content, "material treatment comes from the per-bar axes")
+        # D4f: style resolution flows through BarStyle.js from the injected per-bar axes.
+        self.assertIn("readonly property var styleContext: BarStyle.resolve(root.barAxes)", content)
         self.assertIn("resolvedGroupColor", content, "BarGroup must consume bar.groupColor")
         self.assertIn("paintBackground", content, "BarGroup must honour paintBackground")
         self.assertIn("isSegmented", content, "BarGroup must implement segmented borders")
@@ -101,16 +101,14 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("active: !root.isMaterial", content)
 
     def test_material_helper_is_the_single_source(self):
-        config = read_services_file("PersonalizationConfig.qml")
-        self.assertIn("readonly property bool barIsMaterial", config)
-        self.assertIn("readonly property bool barIsMaterialHug", config)
-        self.assertIn("readonly property bool barIsPanel", config)
-        # D4e e6: per-bar widgets derive material from their own bar's axes
-        # (root.barAxes.cornerStyle), never Config.options.bar.cornerStyle.
+        # D4f: BarStyle.js is the single pure style resolver for plugins/bar/;
+        # per-bar widgets consume BarStyle.isTinted(root.barAxes), never global enums.
+        style_js = read_bar_file("BarStyle.js")
+        self.assertIn("function isTinted(axes)", style_js)
         for name in ("Media.qml", "SysTray.qml", "UtilButtons.qml",
                      "Divisor.qml", "Visualizer.qml", "BatteryIndicator.qml"):
             content = read_bar_file(name)
-            self.assertIn("root.barAxes.cornerStyle", content, name)
+            self.assertIn("BarStyle.isTinted(root.barAxes)", content, name)
             self.assertNotIn("Config.options.bar.cornerStyle", content, f"{name} reads global cornerStyle")
 
     def test_system_icons_are_the_inir_fork(self):
@@ -241,8 +239,8 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("Math.max(1, Math.min(root.shownBudget, root.existingMaxIdx - root.group * root.shownBudget))", content)
         self.assertIn("(root.activeNumber - 1) % root.shownBudget", content)
         self.assertIn("fakeWorkspace", content)
-        # end4 metrics: material slots are wider (30), default 26.
-        self.assertIn("(root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4) ? 30 : 26", content)
+        # end4 metrics: tinted material slots are wider (30), default 26.
+        self.assertIn("BarStyle.isTinted(root.barAxes) ? 30 : 26", content)
         # Four styles through the verbatim WorkspacesAlt fork.
         self.assertIn("WorkspacesAlt", content)
         alt = read_bar_file("WorkspacesAlt.qml")
@@ -278,9 +276,9 @@ class BarEnd4ContractTest(unittest.TestCase):
         active = read_bar_file("ActiveWindow.qml")
         self.assertNotIn("desktop_windows", active)
         self.assertNotIn("anchors.rightMargin: 6", active)
-        # Island capsule: transparent on material / center-only like end4.
+        # Island capsule: transparent on lane pill / edge-flush center-only backplate.
         island = read_bar_file("DynamicIsland.qml")
-        self.assertIn('root.isMaterial || (GlobalStates.barCenterOnly && root.barAxes.cornerStyle === 0) ? "transparent"', island)
+        self.assertIn('root.styleContext.islandTransparent ? "transparent"', island)
         # Middle frame hugs the island (-4 / +8, full height).
         content = read_bar_file("BarContent.qml")
         self.assertIn("middleRow.implicitWidth - 4", content)
@@ -353,23 +351,22 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_dynamic_island_is_material_binding(self):
         content = read_bar_file("DynamicIsland.qml")
-        self.assertIn("root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4", content)
+        self.assertIn("readonly property bool isMaterial: root.styleContext.tint", content)
 
     def test_personalization_config_bar_keys(self):
         content = read_services_file("PersonalizationConfig.qml")
-        self.assertIn("barCornerStyles", content)
-        self.assertIn("barCornerStyle", content)
-        self.assertIn("barBorderlessModes", content)
-        self.assertIn("barBorderless", content)
+        self.assertIn("barWidgetStyleOptions", content)
+        self.assertIn("barWidgetStyle", content)
+        self.assertIn("barCapsuleRadiusOptions", content)
+        self.assertIn("barCapsuleRadius", content)
+        self.assertIn("barBackplate", content)
+        self.assertIn("barLanePill", content)
+        self.assertIn("barTint", content)
         self.assertIn("barGroupColorOptions", content)
-        self.assertIn("barWidgetStyles", content)
-        # D4a: the widget whitelist comes from BarWidgetDefaults.IDS
-        # (canonical separator id + legacy divisor alias live there).
         self.assertIn("BarWidgetDefaults.IDS", content)
-        self.assertIn("setBarCornerStyle", content)
-        self.assertIn("setBarBorderless", content)
-        # D4b: the divider style vocabulary moved to the separator options
-        # page; the store keeps no per-widget flat keys.
+        self.assertIn("setBarWidgetStyle", content)
+        self.assertIn("setBarCapsuleRadius", content)
+        self.assertIn("applyBarStylePreset", content)
         self.assertNotIn("barDividerStyles", content)
         self.assertNotIn("setBarDividerStyle", content)
         self.assertNotIn("setBarWorkspaceStyle", content)
@@ -389,12 +386,12 @@ class BarEnd4ContractTest(unittest.TestCase):
         content = read_bar_file("Bar.qml")
         self.assertIn("roundDecorators", content)
         self.assertIn("shownExclusiveZone", content)
-        # cornerStyle 4/5 reserve 4px in the window layer (end4 parity); the
-        # formula moved to the shared BarGeometry helper in B9.5.
+        # D4f / D-8: boost comes from geometric derivation (BarDefaults.styleBoost),
+        # never cornerStyle 4/5 enum branches.
         self.assertIn("materialHug", content)
         self.assertIn("panelStyle", content)
         self.assertIn("BarGeometry.exclusiveZone", content)
-        self.assertIn("? 4 : 0", read_commons_file("BarGeometry.js"))
+        self.assertIn("boostExtra || 0", read_commons_file("BarGeometry.js"))
 
     def test_bar_and_island_ipc_handlers(self):
         content = read_bar_file("Bar.qml")
@@ -605,7 +602,7 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
         for prop in (
             "readonly property bool barAutoHide",
             "readonly property var barScreenList",
-            "readonly property bool barShowBackground",
+            "readonly property bool barBackplate",
         ):
             self.assertIn(prop, config, f"settled key missing from the store: {prop}")
         # D4c: persistence rides the configs entry (sparseBarConfigs diff
@@ -627,11 +624,11 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
             self.assertIn(axis, defaults, f"settled axis missing from the defaults table: {axis}")
         self.assertIn("function normalizedScreenList", config,
                       "settled persistence token missing: function normalizedScreenList")
-        # D4c: the frame keys persist through the configs entry axes —
+        # D4c/D4f: the frame keys persist through the configs entry axes —
         # the explicit map lives in ConfigMigrations.
         migrations = read_services_file("ConfigMigrations.js")
         for token in ('var MIGRATED_BAR_GLOBALS', "autoHide: \"autoHide\"",
-                      "screenList: \"screenList\"", "showBackground: \"showBackground\""):
+                      "screenList: \"screenList\"", "var MIGRATED_STYLE_KEYS"):
             self.assertIn(token, migrations, f"settled persistence token missing: {token}")
 
     def test_config_bridge_reads_the_store(self):
@@ -654,9 +651,8 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
     def test_settings_page_rows_and_gates(self):
         appearance = read_bar_file("BarAppearanceSection.qml")
         modules = read_bar_file("BarModulesSection.qml")
-        # Style: end4's showBackground enable-gate (Hug/Float only) + autohide.
-        self.assertIn("enabled: PersonalizationConfig.barCornerStyle === 0 || PersonalizationConfig.barCornerStyle === 1", appearance)
-        self.assertIn('I18n.tr("Show background")', appearance)
+        # D4f: atomic backplate toggle + autohide.
+        self.assertIn('I18n.tr("Bar backplate")', appearance)
         self.assertIn('I18n.tr("Autohide")', appearance)
         # D4b: the divider rows and the Numbers style gate moved to the
         # per-instance options pages; the appearance tab keeps frame axes.

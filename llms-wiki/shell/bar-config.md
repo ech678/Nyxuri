@@ -404,5 +404,17 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   契约测试 `tests/shell/test_d4d_bar_config.py`（30 例）；weston 沙箱 probe 全绿。
   实机项归作者：溢出按钮手感、穿透空隙点击、strict 收起节奏、全屏进出 reveal、
   150ms 弹层体感。
+- **D4f**：样式原子化 + v7 迁移（2026-11-28）——
+  - `cornerStyle`（6 档）× `borderless`（5 档）× `showBackground` 退役为正交原子轴，存储在 `[[bar.configs]].axes`：
+    - 结构/材质：`backplate`（bool）、`lanePill`（bool）、`tint`（bool）
+    - 外边距：`edgeMargin`（int，`0` = 贴边，`>0` = 悬浮，默认 `5`）、`sideMargin`（int，哨兵 `-1` = `floating && backplate` 时解析为 `gapsOut`，否则 `0`）
+    - 部件外观：`widgetStyle`（`"fused"` / `"separate"` / `"flat"`）、`capsuleRadius`（`"pill"` / `"rounded"` / `"px"`）、`widgetRadius`（`0..32`，`capsuleRadius === "px"` 时生效）、`groupColor` 补齐 `"transparent"`
+  - 两层纯解析：`services/BarDefaults.js` 提供 `deriveStyle(axes, gapsOut)` / `styleBoost(style)` / `resolvedSideMargin(axes, style, gapsOut)` / `capsuleFullRadius` / `capsuleMidRadius`；`plugins/bar/BarStyle.js` 组合 `deriveStyle` 输出窗口/内容/分组/岛/弹层消费的展示上下文（满足插件与服务解耦边界）。
+  - 外形起点配方：`services/BarStylePresets.js` 定义六档只写轴不落盘配方（`hug` / `floating` / `islands` / `material` / `materialHug` / `panel`），`applyBarStylePreset(key)` 按键写入、`currentPreset(axes)` 匹配高亮（偏离任何样式键即失亮为自定义）。
+  - 单一外边距真值与 D-8 暗加成清账：`Bar.qml` `windowMargins` 统一承担外边距，废除 `layerGap` / `m3OuterGap` / `barBackground.anchors.margins` 叠套；`styleBoost` 仅保留 `isLaneHug`（`lanePill && !backplate && edgeMargin === 0`）的 `+4` 贴角装饰余量，退役 Islands `-6` exclusiveZone、Islands 8px 内角（统一 `6`）与 Panel `+4` 高度/exclusiveZone；`BarGeometry.margins` 与 `exclusiveZone` 不再接收 `cornerStyle`/`layerGap`。
+  - schema v7：`ConfigMigrations.CURRENT_VERSION = 7`（头标 `# nyxuri-config-schema: 7`，fast-path `2..7`），`version < 7` 通过显式映射表将历史 `cornerStyle`/`borderless`/`showBackground` 折叠为上述原子轴并剥离旧键与平铺遗留键。
+  - 设置面重排：`BarAppearanceSection.qml` 顺序收敛为 `Appearance`（6 枚 `PreferenceVisualPicker` 预设卡）→ `Layout`（可折叠 `Advanced` 数值微调）→ `Screens` → `Structure` → `Surface`（可折叠 `Widget layer`）→ `Behavior`。
+  - 机器证据：契约测试 `tests/shell/test_d4f_bar_style.py` + `tests/shell/` 回归绿；probe `d4f` 节（v7 迁移、预设写入/自定义失亮、D-8 退役校验、`capsuleRadius` + `groupColor: "transparent"`、`vertical` 仅 `materialHug` +4）与 Weston 运行态 probe 全绿；实机视觉过目（六档外观等价与设置页折叠体验）归作者。
+
 
 

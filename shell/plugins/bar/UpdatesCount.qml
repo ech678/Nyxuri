@@ -6,13 +6,14 @@ import Quickshell
 import Quickshell.Io
 import qs.commons
 import qs.ui
+import "BarStyle.js" as BarStyle
 
 MouseArea {
     id: root
     property var widgetBar: null
     readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
-    property bool isMaterial: root.barAxes.cornerStyle === 3
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     readonly property color statusContainer: Updates.updateStronglyAdvised
         ? M3Palette.error
         : Updates.updateAdvised ? M3Palette.tertiary : M3Palette.primary

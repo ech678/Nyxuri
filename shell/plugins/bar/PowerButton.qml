@@ -12,6 +12,7 @@ import qs.commons
 import qs.ui
 import M3Shapes
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "BarStyle.js" as BarStyle
 
 RippleButton {
     id: root
@@ -20,7 +21,7 @@ RippleButton {
     readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
     property real buttonPadding: 5
 

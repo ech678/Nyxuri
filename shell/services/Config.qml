@@ -48,11 +48,8 @@ Singleton {
             readonly property bool bottom: PersonalizationConfig.barPosition === "bottom"
             readonly property bool vertical: PersonalizationConfig.barPosition === "left" || PersonalizationConfig.barPosition === "right"
             // B9.5 outer margins.
-            readonly property real edgeMargin: PersonalizationConfig.barEdgeMargin ?? 0
-            readonly property real sideMargin: PersonalizationConfig.barSideMargin ?? 0
-            readonly property bool showBackground: PersonalizationConfig.barShowBackground
-            readonly property int cornerStyle: PersonalizationConfig.barCornerStyle ?? 3
-            readonly property string borderless: PersonalizationConfig.barBorderless ?? "separated"
+            readonly property real edgeMargin: PersonalizationConfig.barEdgeMargin ?? 5
+            readonly property real sideMargin: PersonalizationConfig.resolvedBarSideMargin()
             readonly property bool showScrollHints: true
             readonly property bool followFrameColor: false
             readonly property string frameColor: ""
@@ -76,9 +73,6 @@ Singleton {
 
             readonly property QtObject m3: QtObject {
                 id: m3Options
-                readonly property bool showBackground: PersonalizationConfig.barShowBackground
-                readonly property int cornerStyle: PersonalizationConfig.barCornerStyle ?? 3
-                readonly property string borderless: PersonalizationConfig.barBorderless ?? "separated"
                 readonly property real gapsOut: 5
 
                 readonly property QtObject layouts: QtObject {

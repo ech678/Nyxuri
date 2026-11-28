@@ -9,6 +9,7 @@ import Quickshell.Wayland
 import Quickshell.Widgets
 import qs.commons
 import qs.ui
+import "BarStyle.js" as BarStyle
 
 Item {
     id: root
@@ -37,7 +38,7 @@ Item {
     property real btnSpacing: Math.max(0, Config.options?.bar?.m3?.dockToPanel?.buttonSpacing ?? 2)
     property real buttonPadding: Math.max(3, Math.round(root.btnSize * 0.1))
     property bool vertical:    root.barAxes.position === "left" || root.barAxes.position === "right"
-    property bool isMaterial:  root.barAxes.cornerStyle === 3
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     property var pinnedApps: Config.options?.dock.pinnedApps ?? []
     property var activeUnpinned: TaskbarApps.apps.filter(
         a => !a.pinned && a.appId !== "SEPARATOR" && a.toplevels.length > 0

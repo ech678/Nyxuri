@@ -155,7 +155,7 @@ PopupWindow {
                             color: Appearance.m3colors.m3onSurface
                         }
                         StyledText {
-                            text: Translation.tr("Style for %1 mode").arg(root.group.borderlessMode)
+                            text: Translation.tr("Style (%1)").arg(root.group.widgetStyleMode)
                             font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
                             color: Appearance.colors.colSubtext
                         }

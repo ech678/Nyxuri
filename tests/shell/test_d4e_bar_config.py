@@ -176,7 +176,7 @@ class ProbeCoverageTest(unittest.TestCase):
         self.assertIn("d4e_migration_v6_state", self.sh)
         self.assertIn("d4e_migration_v6_ok", self.sh)
         self.assertIn("d4e_ok = d4e_store_ok and d4e_signature_ok", self.sh)
-        self.assertIn("and d4d_ok and d4e_ok)", self.sh)
+        self.assertIn("and d4d_ok and d4e_ok", self.sh)
 
 
 class SettingsSurfaceE4Test(unittest.TestCase):
@@ -244,7 +244,7 @@ class IslandFoldingE5Test(unittest.TestCase):
         for key in ("satellite", "showAvatar", "showMediaControls", "visualizerStyle", "hideDate"):
             self.assertIn(f"{key}:", self.defaults)
             self.assertIn(f'{key}: "{key}"', self.migrations)
-        self.assertIn("var CURRENT_VERSION = 6", self.migrations)
+        self.assertIn("var CURRENT_VERSION = 7", self.migrations)
         self.assertIn("function migrateIslandGlobals(config, seed)", self.migrations)
         self.assertIn("if (version < 6)", self.migrations)
 

@@ -6,13 +6,14 @@ import qs.commons
 import qs.services
 import QtQuick
 import QtQuick.Layouts
+import "BarStyle.js" as BarStyle
 
 MouseArea {
     id: root
     property var widgetBar: null
     readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
-    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool isMaterial: BarStyle.isTinted(root.barAxes)
     property real horizontalExtraPadding: 12
 
     property Component colDefault

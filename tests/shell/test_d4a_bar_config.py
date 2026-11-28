@@ -245,9 +245,9 @@ class VersionChainTest(unittest.TestCase):
         cls.config_service = read(os.path.join(SERVICES_DIR, "ConfigService.qml"))
 
     def test_version_constants(self):
-        # D4e e5 bumped the chain to 6 (island axes on the lane entry);
+        # D4f bumped the chain to 7 (atomic bar style axes);
         # the LEGACY floor stays 2.
-        self.assertIn("var CURRENT_VERSION = 6", self.migrations)
+        self.assertIn("var CURRENT_VERSION = 7", self.migrations)
         self.assertIn("var LEGACY_VERSION = 2", self.migrations)
 
     def test_explicit_legacy_layout_keys(self):
@@ -266,13 +266,14 @@ class VersionChainTest(unittest.TestCase):
                         pc.index("const source = configSection(migration.config)"))
 
     def test_stamp_bumped_and_fast_path_keeps_v2(self):
-        # D4e e5 writes stamp 6; the fast path accepts 2..6.
-        self.assertIn("# nyxuri-config-schema: 6\\n", self.config_service)
+        # D4f writes stamp 7; the fast path accepts 2..7.
+        self.assertIn("# nyxuri-config-schema: 7\\n", self.config_service)
         self.assertIn('"# nyxuri-config-schema: 2"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 3"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 4"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 5"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 6"', self.config_service)
+        self.assertIn('"# nyxuri-config-schema: 7"', self.config_service)
 
 
 class CatalogConsumersTest(unittest.TestCase):

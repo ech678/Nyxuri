@@ -189,42 +189,42 @@ for _ in $(seq 1 150); do
 done
 # D4a boot evidence: the store state the first layout sweep sees.
 ipc d4aBootState >&2 2>/dev/null || true
-for style in 0 1 2 3 4 5; do
-    if ! ipc cornerStyle "${style}" >/dev/null; then
-        printf 'error: could not set cornerStyle %s\n' "${style}" >&2
+for style in hug floating islands material materialHug panel; do
+    if ! ipc stylePreset "${style}" >/dev/null; then
+        printf 'error: could not set stylePreset %s\n' "${style}" >&2
         exit 3
     fi
     if ! ipc reload >/dev/null; then
-        printf 'error: could not reload the bar for cornerStyle %s\n' "${style}" >&2
+        printf 'error: could not reload the bar for stylePreset %s\n' "${style}" >&2
         exit 3
     fi
     sleep 0.6
     if ! ipc layout >>"${layouts}"; then
-        printf 'error: layout probe failed for cornerStyle %s\n' "${style}" >&2
+        printf 'error: layout probe failed for stylePreset %s\n' "${style}" >&2
         exit 3
     fi
     printf '\n' >>"${layouts}"
 done
 
-# Borderless modes share the group chrome. Exercise them on a non-material
-# style so the segmented 1px border and transparent branch actually render.
-ipc cornerStyle 1 >/dev/null || true
-for border_mode in pills separated segmented transparent; do
-    if ! ipc borderless "${border_mode}" >/dev/null; then
-        printf 'error: could not set borderless %s\n' "${border_mode}" >&2
+# Widget appearance modes share the group chrome. Exercise them on a non-tint
+# backplate preset so the segmented outline and flat branch actually render.
+ipc stylePreset floating >/dev/null || true
+for border_mode in fused separate flat; do
+    if ! ipc widgetStyle "${border_mode}" >/dev/null; then
+        printf 'error: could not set widgetStyle %s\n' "${border_mode}" >&2
         exit 3
     fi
     ipc reload >/dev/null || true
     sleep 0.5
     printf '%s\t%s\n' "${border_mode}" "$(ipc layout)" >>"${borderless}"
 done
-ipc borderless pills >/dev/null || true
+ipc widgetStyle fused >/dev/null || true
 
 # Self-hiding widget contract: a lane whose only widget reports
-# barWidgetVisible=false must collapse to zero in both the plain and material
-# capsule paths (commit 14a56e1).
-for style in 1 3; do
-    ipc cornerStyle "${style}" >/dev/null || true
+# barWidgetVisible=false must collapse to zero in both the plain and lanePill
+# paths (commit 14a56e1).
+for style in floating material; do
+    ipc stylePreset "${style}" >/dev/null || true
     if ! ipc scene mediaOnly >/dev/null; then
         printf 'error: could not switch to the media-only layout\n' >&2
         exit 3
@@ -233,7 +233,7 @@ for style in 1 3; do
     sleep 0.6
     printf '%s\t%s\n' "${style}" "$(ipc layout)" >>"${media_hidden}"
 done
-ipc cornerStyle 1 >/dev/null || true
+ipc stylePreset floating >/dev/null || true
 ipc scene default >/dev/null || true
 ipc reload >/dev/null || true
 sleep 0.5
@@ -342,7 +342,7 @@ b96_override=""
 b96_reset=""
 b96_hug_float=""
 b96_hug_plain=""
-if ipc cornerStyle 1 >/dev/null 2>&1; then
+if ipc stylePreset floating >/dev/null 2>&1; then
     sleep 0.3
     ipc scene default >/dev/null 2>&1 || true
     sleep 0.5
@@ -356,10 +356,10 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
     if ipc scene centerIsland >/dev/null 2>&1; then
         sleep 0.8
         b96_hug_float=$(ipc b96Dump 2>/dev/null || true)
-        ipc cornerStyle 0 >/dev/null 2>&1 || true
+        ipc stylePreset hug >/dev/null 2>&1 || true
         sleep 0.5
         b96_hug_plain=$(ipc b96Dump 2>/dev/null || true)
-        ipc cornerStyle 1 >/dev/null 2>&1 || true
+        ipc stylePreset floating >/dev/null 2>&1 || true
     fi
     ipc scene default >/dev/null 2>&1 || true
 fi
@@ -378,16 +378,16 @@ b97_roman=""
 b97_screen_named=""
 b97_screen_empty=""
 b97_persisted=false
-if ipc cornerStyle 1 >/dev/null 2>&1; then
+if ipc stylePreset floating >/dev/null 2>&1; then
     ipc scene default >/dev/null 2>&1 || true
     ipc reload >/dev/null 2>&1 || true
     sleep 0.5
     b97_baseline=$(ipc b97Dump 2>/dev/null || true)
-    # Show background: Float + non-material paints colLayer0; off -> transparent.
-    if ipc b97Set barShowBackground false >/dev/null 2>&1; then
+    # Backplate toggle: floating + backplate paints colLayer0; off -> transparent.
+    if ipc b97Set barBackplate false >/dev/null 2>&1; then
         sleep 0.4
         b97_bg_off=$(ipc b97Dump 2>/dev/null || true)
-        ipc b97Set barShowBackground true >/dev/null 2>&1 || true
+        ipc b97Set barBackplate true >/dev/null 2>&1 || true
         sleep 0.3
     fi
     # Divider: the space style reads the settled width (end4 spinbox). D4b:
@@ -403,9 +403,9 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
         ipc scene default >/dev/null 2>&1 || true
         sleep 0.4
     fi
-    # Util buttons: material path exposes tooltips; the keyboard slot must
+    # Util buttons: tint path exposes tooltips; the keyboard slot must
     # disappear with its settled toggle.
-    if ipc cornerStyle 3 >/dev/null 2>&1; then
+    if ipc stylePreset material >/dev/null 2>&1; then
         ipc scene utilOnly >/dev/null 2>&1 || true
         ipc reload >/dev/null 2>&1 || true
         sleep 0.8
@@ -417,7 +417,7 @@ if ipc cornerStyle 1 >/dev/null 2>&1; then
         b97_util_off=$(ipc b97Dump 2>/dev/null || true)
         ipc d4bSet utilButtons keyboardToggle false >/dev/null 2>&1 || true
         ipc scene default >/dev/null 2>&1 || true
-        ipc cornerStyle 1 >/dev/null 2>&1 || true
+        ipc stylePreset floating >/dev/null 2>&1 || true
         ipc reload >/dev/null 2>&1 || true
         sleep 0.6
     fi
@@ -533,6 +533,12 @@ if ipc d4eMigrationV6 >/dev/null 2>&1; then
     d4e_migration_v6_state=$(ipc d4eMigrationV6 2>/dev/null || true)
 fi
 
+# D4f: atomic style axes, write-only presets, v7 migration, D-8 retired bonuses.
+d4f_style_state=""
+if ipc d4fStyle >/dev/null 2>&1; then
+    d4f_style_state=$(ipc d4fStyle 2>/dev/null || true)
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -597,22 +603,22 @@ for edge in left right; do
         printf 'error: could not switch the bar to the %s edge\n' "${edge}" >&2
         exit 3
     fi
-    for style in 1 3; do
-        ipc cornerStyle "${style}" >/dev/null || true
+    for style in floating materialHug; do
+        ipc stylePreset "${style}" >/dev/null || true
         ipc scene default >/dev/null || true
         ipc reload >/dev/null || true
         sleep 0.7
         printf '%s\t%s\tdefault\t%s\n' "${edge}" "${style}" "$(ipc layout)" >>"${vertical_file}"
     done
-    ipc cornerStyle 1 >/dev/null || true
+    ipc stylePreset floating >/dev/null || true
     ipc scene centerOnly >/dev/null || true
     ipc reload >/dev/null || true
     sleep 1.4
-    printf '%s\t%s\tcenterOnly\t%s\n' "${edge}" "1" "$(ipc layout)" >>"${vertical_file}"
+    printf '%s\t%s\tcenterOnly\t%s\n' "${edge}" "floating" "$(ipc layout)" >>"${vertical_file}"
 done
 # B9.5 margins ride the same pure geometry the window binds.
 if ipc edge top >/dev/null 2>&1; then
-    ipc cornerStyle 1 >/dev/null 2>&1 || true
+    ipc stylePreset floating >/dev/null 2>&1 || true
     ipc scene default >/dev/null 2>&1 || true
     ipc reload >/dev/null 2>&1 || true
     sleep 0.6
@@ -739,16 +745,16 @@ d1_date_reset=$(ipc dateFormatProbe "" 2>/dev/null || true)
 # pins the hidden-collapse and wiring; the visible-path overflow proof rides
 # the real-machine screenshot pass).
 ipc scene mediaOnly >/dev/null 2>&1 || true
-ipc cornerStyle 3 >/dev/null 2>&1 || true
+ipc stylePreset material >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 sleep 0.8
 d1_media_geom=$(ipc mediaGeometry 2>/dev/null || true)
 # Restore the shipped layout so the persisted config stays canonical.
-ipc cornerStyle 1 >/dev/null 2>&1 || true
+ipc stylePreset floating >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" <<'PY'
 import json
 import re
 import sys
@@ -770,7 +776,8 @@ import sys
  d4c_sentinels_state, d4c_roles_state, d4d_behavior_state,
  d4d_overflow_resolve_state, d4d_overflow_cramped_state,
  d4d_overflow_reset_state, d4e_store_state, d4e_signature_state, d4e_migration_v6_state,
- d4e_windows_two_state, d4e_windows_off_state, d4e_windows_clean_state) = sys.argv[1:74]
+ d4e_windows_two_state, d4e_windows_off_state, d4e_windows_clean_state,
+ d4f_style_state) = sys.argv[1:75]
 
 
 def load_tsv(path):
@@ -874,7 +881,7 @@ for style, entry in media_hidden:
                and isinstance(center_width, (int, float)) and abs(center_width) <= 0.5
                and entry.get("island") is None)
     media_cases.append({
-        "cornerStyle": style,
+        "preset": style,
         "leftWidth": left_width,
         "centerWidth": center_width,
         "ok": lane_ok,
@@ -928,7 +935,7 @@ for key, entry in vertical_rows:
         row_ok = row_ok and lanes.get("middle") == ["clock"] and geometry.get("centerHeight", 0) > 0
     vertical_cases.append({
         "edge": edge,
-        "cornerStyle": style,
+        "preset": style,
         "scene": scene_name,
         "width": geometry.get("width"),
         "height": geometry.get("height"),
@@ -942,14 +949,14 @@ for key, entry in vertical_rows:
         "ok": row_ok,
     })
     vertical_ok = vertical_ok and row_ok
-# The style boost must reach the vertical axis too (Float adds 5x2).
-float_width = widths.get(("left", "1"))
-material_width = widths.get(("left", "3"))
+# D-8: Only laneHug (edge-hugging lanePill) adds +4 style boost; floating is 0.
+float_width = widths.get(("left", "floating"))
+lane_hug_width = widths.get(("left", "materialHug"))
 boost_ok = bool(
-    isinstance(float_width, (int, float)) and isinstance(material_width, (int, float))
-    and abs(float_width - material_width - 10) <= 0.01
-    and widths.get(("right", "1")) == float_width
-    and widths.get(("right", "3")) == material_width
+    isinstance(float_width, (int, float)) and isinstance(lane_hug_width, (int, float))
+    and abs(lane_hug_width - float_width - 4) <= 0.01
+    and widths.get(("right", "floating")) == float_width
+    and widths.get(("right", "materialHug")) == lane_hug_width
 )
 vertical_ok = vertical_ok and boost_ok
 
@@ -958,8 +965,7 @@ margins_report = json.loads(margins_state) if margins_state.strip() else {}
 margin_cases = margins_report.get("cases", [])
 base_bar_height = margins_report.get("baseBarHeight")
 base_vertical_width = margins_report.get("baseVerticalBarWidth")
-margin_style = margins_report.get("cornerStyle", 0)
-style_extra = 5 if margin_style == 1 else (-6 if margin_style == 2 else (4 if margin_style in (4, 5) else 0))
+style_extra = margins_report.get("styleBoost", 0)
 margin_by_key = {(case.get("edge"), case.get("tier")): case for case in margin_cases}
 
 
@@ -978,8 +984,8 @@ margin_ok = bool(
 )
 
 borderless_modes = [key for key, _ in borderless]
-borderless_ok = (borderless_modes == ["pills", "separated", "segmented", "transparent"]
-                 and all(entry.get("ok") and entry.get("borderless") == key
+borderless_ok = (borderless_modes == ["fused", "separate", "flat"]
+                 and all(entry.get("ok") and entry.get("widgetStyle") == key
                          for key, entry in borderless))
 
 tray_initial_state = json.loads(tray_initial) if tray_initial.strip() else {}
@@ -1209,7 +1215,7 @@ hug_float_ok = bool(
     and (hug_float.get("islandCapsule") or {}).get("transparent") is False
 )
 hug_plain_ok = bool(
-    hug_plain.get("cornerStyle") == 0
+    hug_plain.get("preset") == "hug"
     and hug_plain_pill.get("middleRowWidth", 0) > 0
     and abs(hug_plain_pill.get("width", 0) - (hug_plain_pill.get("middleRowWidth", 0) - 4)) <= 0.01
     and (hug_plain.get("islandCapsule") or {}).get("transparent") is True
@@ -1256,10 +1262,10 @@ def _rgb(hex_color):
 
 baseline_layer0 = _rgb(b97_baseline.get("colLayer0"))
 background_ok = bool(
-    b97_baseline_bridge.get("showBackground") is True
+    b97_baseline_bridge.get("backplate") is True
     and baseline_layer0
     and _rgb((b97_baseline.get("background") or {}).get("color")) == baseline_layer0
-    and b97_bg_bridge.get("showBackground") is False
+    and b97_bg_bridge.get("backplate") is False
     and _rgb((b97_bg_off.get("background") or {}).get("color")) == "000000"
 )
 
@@ -1449,7 +1455,7 @@ d4a_entries_ok = bool(
 )
 d4a_migration_ok = bool(
     d4a_migration.get("changed") is True
-    and d4a_migration.get("version") == 6
+    and d4a_migration.get("version") == 7
     and d4a_migration.get("aliasResolved") is True
     and d4a_migration.get("islandSeeded") is True
     and d4a_migration.get("legacyStripped") is True
@@ -1460,7 +1466,7 @@ d4a_persistence_ok = bool(
     and d4a_persistence.get("singleKey") is True
     and d4a_persistence.get("restoredEmpty") is True
     and d4a_persistence.get("enabledViewDropsDisabled") is True
-    and d4a_persistence.get("configVersion") == 6
+    and d4a_persistence.get("configVersion") == 7
     and isinstance(d4a_persistence.get("disabledSparse"), list)
 )
 d4a_ok = d4a_entries_ok and d4a_migration_ok and d4a_persistence_ok
@@ -1471,7 +1477,7 @@ d4b_instances = json.loads(d4b_instances_state) if d4b_instances_state.strip() e
 d4b_click = json.loads(d4b_click_vocabulary) if d4b_click_vocabulary.strip() else {}
 d4b_migration_ok = bool(
     d4b_migration.get("changed") is True
-    and d4b_migration.get("version") == 6
+    and d4b_migration.get("version") == 7
     and d4b_migration.get("workspacesFolded") is True
     and d4b_migration.get("workspacesDefaultsSkipped") is True
     and d4b_migration.get("separatorFolded") is True
@@ -1502,7 +1508,7 @@ d4c_sentinels = json.loads(d4c_sentinels_state) if d4c_sentinels_state.strip() e
 d4c_roles = json.loads(d4c_roles_state) if d4c_roles_state.strip() else {}
 d4c_migration_ok = bool(
     d4c_migration.get("changed") is True
-    and d4c_migration.get("version") == 6
+    and d4c_migration.get("version") == 7
     and d4c_migration.get("positionFolded") is True
     and d4c_migration.get("cornerStyleFolded") is True
     and d4c_migration.get("borderlessFolded") is True
@@ -1579,7 +1585,7 @@ d4e_signature = json.loads(d4e_signature_state) if d4e_signature_state.strip() e
 d4e_migration_v6 = json.loads(d4e_migration_v6_state) if d4e_migration_v6_state.strip() else {}
 d4e_migration_v6_ok = bool(
     d4e_migration_v6.get("changed") is True
-    and d4e_migration_v6.get("version") == 6
+    and d4e_migration_v6.get("version") == 7
     and d4e_migration_v6.get("foldedOnEntry") is True
     and d4e_migration_v6.get("defaultsSkipped") is True
     and d4e_migration_v6.get("clockKept") is True
@@ -1652,12 +1658,24 @@ d4e_windows_clean_ok = bool(
 )
 d4e_ok = d4e_store_ok and d4e_signature_ok and d4e_migration_v6_ok and d4e_windows_two_ok and d4e_windows_off_ok and d4e_windows_clean_ok
 
+d4f_style = json.loads(d4f_style_state) if d4f_style_state.strip() else {}
+d4f_ok = bool(
+    d4f_style.get("v7Migrated") is True
+    and d4f_style.get("presetCount") == 6
+    and d4f_style.get("islandsPreset") is True
+    and d4f_style.get("customAfterTweak") is True
+    and d4f_style.get("roundedAndTransparent") is True
+    and d4f_style.get("d8BonusesRetired") is True
+    and d4f_style.get("radiusVocabulary") is True
+    and d4f_style.get("restoredFloating") is True
+)
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -1721,7 +1739,7 @@ report = {
         "ok": margin_ok,
         "baseBarHeight": base_bar_height,
         "baseVerticalBarWidth": base_vertical_width,
-        "cornerStyle": margin_style,
+        "styleBoost": style_extra,
         "cases": margin_cases,
     },
     "tray": tray_report,
@@ -1923,6 +1941,10 @@ report = {
                 "hosts": d4e_windows_clean.get("hosts"),
             },
         },
+    },
+    "d4f": {
+        "ok": d4f_ok,
+        "style": d4f_style,
     },
     "b96": {
         "ok": b96_ok,

@@ -1,11 +1,11 @@
-// Shared pure geometry for the bar window (B9.4/B9.5).
+// Shared pure geometry for the bar window (B9.4/B9.5/D4f).
 //
 // Bar.qml binds these values; the runtime probe evaluates the same functions,
 // so the outer-margin and exclusive-zone contract has evidence without a
 // compositor round-trip and without a second copy of the math.
 
-function margins(edge, vertical, edgeMargin, sideMargin, layerGap, autoHide, deadPixel) {
-    const normal = edgeMargin + (autoHide ? 0 : layerGap);
+function margins(edge, vertical, edgeMargin, sideMargin, autoHide, deadPixel) {
+    const normal = edgeMargin;
     const anchoredBottom = edge === "bottom" || vertical;
     const anchoredRight = edge === "right" || !vertical;
     return {
@@ -16,6 +16,8 @@ function margins(edge, vertical, edgeMargin, sideMargin, layerGap, autoHide, dea
     };
 }
 
-function exclusiveZone(vertical, baseBarHeight, baseVerticalBarWidth, cornerStyle, gapsOut, edgeMargin) {
-    return (vertical ? baseVerticalBarWidth : baseBarHeight) + (cornerStyle === 1 ? gapsOut : 0) + (cornerStyle === 2 ? -6 : 0) + ((cornerStyle === 4 || cornerStyle === 5) ? 4 : 0) + edgeMargin;
+// D4f / D-8: boostExtra comes from geometric derivation (BarDefaults.styleBoost),
+// never from cornerStyle enum branches (Islands -6 and Panel +4 retired).
+function exclusiveZone(vertical, baseBarHeight, baseVerticalBarWidth, boostExtra, edgeMargin) {
+    return (vertical ? baseVerticalBarWidth : baseBarHeight) + (boostExtra || 0) + edgeMargin;
 }
