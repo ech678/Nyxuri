@@ -185,6 +185,8 @@ Scope {
                                         centerOnly: barRoot.centerOnly
                                     })
                                     readonly property bool showBarBackground: barRoot.styleContext.backplate
+                                    readonly property color resolvedSurfaceColor: PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, barRoot.axes)
+                                    readonly property real barVisualOpacity: Math.max(0, Math.min(1, Number(barRoot.axes.barOpacity ?? 1)))
 
                                     // D4c bar shell radius axis (see BarContent.shellRadius);
                                     // every screen-corner decorator below reads this alias.
@@ -460,7 +462,7 @@ Scope {
 
                                     exclusionMode: ExclusionMode.Ignore
                                     exclusiveZone: !autoHideEnabled ? shownExclusiveZone : (pushWindowsWhenShown && reservationActive ? shownExclusiveZone : 0)
-                                    WlrLayershell.namespace: "quickshell:bar"
+                                    WlrLayershell.namespace: "nyxuri-shell-bar"
                                     // Upstream raised the bar to Overlay only while a Hyprland
                                     // special workspace sat over a fullscreen window. Niri has no
                                     // special workspace, so the bar stays on Top and fullscreen
@@ -669,7 +671,7 @@ Scope {
                                         Item {
                                             id: hoverMaskRegion
                                             anchors {
-                                                fill: contentLoader
+                                                fill: barRoot.barContent?.barBackgroundItem ?? contentLoader
                                                 topMargin: barRoot.vertical ? 0 : -Config.options.bar.autoHide.hoverRegionWidth
                                                 bottomMargin: barRoot.vertical ? 0 : -Config.options.bar.autoHide.hoverRegionWidth
                                                 leftMargin: barRoot.vertical ? -Config.options.bar.autoHide.hoverRegionWidth : 0
@@ -680,9 +682,10 @@ Scope {
                                         RoundCorner {
                                             id: leftPillCorner
                                             visible: !barRoot.vertical && barRoot.styleContext.showCenterPillCorners
+                                            opacity: barRoot.barVisualOpacity
                                             x: barRoot.centerPillX - implicitSize
                                             implicitSize: barRoot.shellRadius
-                                            color: Appearance.colors.colLayer0
+                                            color: barRoot.resolvedSurfaceColor
                                             corner: RoundCorner.CornerEnum.TopRight
 
                                             states: State {
@@ -724,6 +727,7 @@ Scope {
                                             y: barRoot.vertical ? 0 : ((barRoot.edge === "bottom" ? parent.height - height + slideOffset : slideOffset) + (barRoot.edge === "bottom" && barRoot.deadPixel ? -1 : 0))
                                             width: barRoot.vertical ? barRoot.thickness : parent.width
                                             height: barRoot.vertical ? parent.height : barRoot.thickness
+                                            opacity: barRoot.barVisualOpacity
                                             Behavior on x {
                                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                                             }
@@ -743,9 +747,10 @@ Scope {
                                         RoundCorner {
                                             id: rightPillCorner
                                             visible: !barRoot.vertical && barRoot.styleContext.showCenterPillCorners
+                                            opacity: barRoot.barVisualOpacity
                                             x: barRoot.centerPillX + barRoot.centerPillWidth
                                             implicitSize: barRoot.shellRadius
-                                            color: Appearance.colors.colLayer0
+                                            color: barRoot.resolvedSurfaceColor
                                             corner: RoundCorner.CornerEnum.TopLeft
 
                                             states: State {
@@ -773,20 +778,22 @@ Scope {
                                         RoundCorner {
                                             id: topPillCorner
                                             visible: barRoot.vertical && barRoot.styleContext.showCenterPillCorners
+                                            opacity: barRoot.barVisualOpacity
                                             y: barRoot.centerPillY - implicitSize
                                             x: contentLoader.x + (barRoot.edge === "right" ? -implicitSize : contentLoader.width)
                                             implicitSize: barRoot.shellRadius
-                                            color: Appearance.colors.colLayer0
+                                            color: barRoot.resolvedSurfaceColor
                                             corner: barRoot.edge === "right" ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.BottomLeft
                                         }
 
                                         RoundCorner {
                                             id: bottomPillCorner
                                             visible: barRoot.vertical && barRoot.styleContext.showCenterPillCorners
+                                            opacity: barRoot.barVisualOpacity
                                             y: barRoot.centerPillY + (barRoot.barContent?.centerPillHeight ?? 0)
                                             x: contentLoader.x + (barRoot.edge === "right" ? -implicitSize : contentLoader.width)
                                             implicitSize: barRoot.shellRadius
-                                            color: Appearance.colors.colLayer0
+                                            color: barRoot.resolvedSurfaceColor
                                             corner: barRoot.edge === "right" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.TopLeft
                                         }
 
@@ -799,12 +806,13 @@ Scope {
                                             y: barRoot.vertical ? contentLoader.y : (barRoot.edge === "bottom" ? contentLoader.y - height : contentLoader.y + contentLoader.height)
                                             width: barRoot.vertical ? barRoot.shellRadius : contentLoader.width
                                             height: barRoot.vertical ? contentLoader.height : barRoot.shellRadius
+                                            opacity: barRoot.barVisualOpacity
                                             active: barRoot.styleContext.showScreenDecorators
 
                                             sourceComponent: Item {
                                                 implicitWidth: barRoot.shellRadius
                                                 implicitHeight: barRoot.shellRadius
-                                                readonly property color decoratorColor: barRoot.styleContext.decoratorUsesBackplate ? Appearance.colors.colLayer0 : "transparent"
+                                                readonly property color decoratorColor: barRoot.styleContext.decoratorUsesBackplate ? barRoot.resolvedSurfaceColor : "transparent"
 
                                                 RoundCorner {
                                                     id: startCorner
@@ -832,6 +840,13 @@ Scope {
                                                 }
                                             }
                                         }
+                                    }
+                                    CompositorBlurRegion {
+                                        targetWindow: barRoot
+                                        backgroundItem: barRoot.barContent?.blurPrimaryItem ?? null
+                                        additionalBackgroundItems: barRoot.barContent?.blurAdditionalItems ?? []
+                                        blurEnabled: (barRoot.axes.blurEnabled !== false) && (barRoot.barVisualOpacity > 0) && (barRoot.styleContext.showBackplateFill || barRoot.styleContext.showCenterPill || barRoot.styleContext.lanePill)
+                                        radius: barRoot.styleContext.isFloating ? PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.windowRounding, barRoot.axes) : 0
                                     }
                                 }
                             }

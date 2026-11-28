@@ -26,6 +26,9 @@ Item {
     readonly property real mediaMinWidth: BarWidgetDefaults.option("media", root.widgetEntry, "minWidth")
     readonly property real mediaMaxWidth: BarWidgetDefaults.option("media", root.widgetEntry, "maxWidth")
     readonly property bool showTitle: BarWidgetDefaults.option("media", root.widgetEntry, "showTitle")
+    readonly property bool showArtist: BarWidgetDefaults.option("media", root.widgetEntry, "showArtist")
+    readonly property bool showAlbumArt: BarWidgetDefaults.option("media", root.widgetEntry, "showAlbumArt")
+    readonly property bool alwaysVisible: BarWidgetDefaults.option("media", root.widgetEntry, "alwaysVisible")
     readonly property string scrollAction: BarWidgetDefaults.option("media", root.widgetEntry, "scrollAction")
     readonly property MprisPlayer activePlayer: {
         const preferred = Config.options.bar.m3.media.preferredPlayer.trim().toLowerCase();
@@ -49,7 +52,7 @@ Item {
     readonly property string artworkTransitionKey: `${activePlayer?.dbusName ?? ""}\u001f${activePlayer?.uniqueId ?? 0}\u001f${root.artUrl}`
     property bool isPlaying: activePlayer?.isPlaying ?? false
     property bool hasTrack: trackTitle.length > 0
-    readonly property bool shouldShow: (Config.options?.bar?.m3?.media?.alwaysVisible ?? false) || root.hasTrack
+    readonly property bool shouldShow: root.alwaysVisible || (Config.options?.bar?.m3?.media?.alwaysVisible ?? false) || root.hasTrack
     // BarGroup's group chrome keys off this, not Item.visible: `visible` is
     // effective visibility, so a collapsed group would mask the widget forever.
     readonly property bool barWidgetVisible: root.shouldShow
@@ -328,7 +331,7 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 elide: Text.ElideRight
                 color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
-                text: Config.options.bar.m3.media.onlyTitle ? root.cleanedTitle : `${root.cleanedTitle}${MprisController.artistOf(root.activePlayer) ? ' • ' + MprisController.artistOf(root.activePlayer) : ''}`
+                text: (!root.showArtist || (Config.options?.bar?.m3?.media?.onlyTitle ?? false)) ? root.cleanedTitle : `${root.cleanedTitle}${MprisController.artistOf(root.activePlayer) ? ' • ' + MprisController.artistOf(root.activePlayer) : ''}`
             }
         }
     }
@@ -439,6 +442,7 @@ Item {
                     // Art
                     Rectangle {
                         id: artRect
+                        visible: root.showAlbumArt
                         implicitWidth: 26
                         implicitHeight: 26
                         radius: Appearance.rounding.full
@@ -477,7 +481,7 @@ Item {
 
                         StyledText {
                             id: artistText
-                            visible: !(Config.options?.bar?.m3?.media?.onlyTitle ?? false) && root.trackArtist.length > 0
+                            visible: root.showArtist && !(Config.options?.bar?.m3?.media?.onlyTitle ?? false) && root.trackArtist.length > 0
                             text: root.trackArtist
                             font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                             color: root.mediaInk
@@ -488,8 +492,8 @@ Item {
                         }
                         StyledText {
                             id: titleText
-                            readonly property bool titleOnly: Config.options?.bar?.m3?.media?.onlyTitle ?? false
-                            Layout.topMargin: (root.trackArtist.length === 0) ? -13 : 0
+                            readonly property bool titleOnly: !root.showArtist || (Config.options?.bar?.m3?.media?.onlyTitle ?? false)
+                            Layout.topMargin: (titleOnly || root.trackArtist.length === 0) ? -13 : 0
                             text: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
                             font.pixelSize: titleOnly ? NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar) : NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                             font.weight: titleOnly ? Font.Medium : Font.Normal

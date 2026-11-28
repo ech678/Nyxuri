@@ -193,6 +193,21 @@ PopupWindow {
                 ConfigSlider {
                     Layout.leftMargin: 0
                     Layout.rightMargin: 0
+                    buttonIcon: "opacity"
+                    text: Translation.tr("Opacity")
+                    textWidth: 90
+                    usePercentTooltip: true
+                    from: 0
+                    to: 100
+                    stepSize: 5
+                    value: Math.round((root.group.style.opacity ?? root.barAxes.widgetTransparency ?? 1) * 100)
+                    onMoved: root.group.previewStyle("opacity", Math.round(value) / 100)
+                    onPressedChanged: if (!pressed)
+                        root.group.commitPreview()
+                }
+                ConfigSlider {
+                    Layout.leftMargin: 0
+                    Layout.rightMargin: 0
                     buttonIcon: "rounded_corner"
                     text: Translation.tr("Radius")
                     textWidth: 90

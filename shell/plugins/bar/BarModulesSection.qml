@@ -141,17 +141,6 @@ Item {
             }
         }
 
-        StyledText {
-            Layout.fillWidth: true
-            Layout.leftMargin: NexusStyle.padding.extraSmall
-            Layout.rightMargin: NexusStyle.padding.extraSmall
-            visible: !root.horizontalBar
-            text: I18n.tr("The island stays hidden on a vertical bar for now")
-            color: Appearance.m3colors.m3onSurfaceVariant
-            font.pixelSize: NexusStyle.font.bodySmall
-            wrapMode: Text.Wrap
-        }
-
         BarLaneSection {
             id: leftLane
 

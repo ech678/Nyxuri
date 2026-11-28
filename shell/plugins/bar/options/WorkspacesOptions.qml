@@ -96,9 +96,28 @@ ColumnLayout {
     }
 
     PreferenceToggle {
+        text: I18n.tr("Monochrome app icons")
+        visible: root.page.value("showAppIcons")
+        checked: root.page.value("monochromeIcons")
+        onToggled: checked => root.page.set("monochromeIcons", checked || undefined)
+    }
+
+    PreferenceToggle {
         text: I18n.tr("Always show numbers")
         checked: root.page.value("alwaysShowNumbers")
         onToggled: checked => root.page.set("alwaysShowNumbers", checked === true ? undefined : checked)
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Hide empty workspaces")
+        checked: root.page.value("hideEmpty")
+        onToggled: checked => root.page.set("hideEmpty", checked || undefined)
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Invert scroll direction")
+        checked: root.page.value("invertScroll")
+        onToggled: checked => root.page.set("invertScroll", checked || undefined)
     }
 
     PreferenceSelect {

@@ -423,6 +423,22 @@ Singleton {
             "label": I18n.tr("Tertiary container")
         },
         {
+            "value": "surfaceContainerLow",
+            "label": I18n.tr("Surface container low")
+        },
+        {
+            "value": "surfaceContainer",
+            "label": I18n.tr("Surface container")
+        },
+        {
+            "value": "surfaceContainerHigh",
+            "label": I18n.tr("Surface container high")
+        },
+        {
+            "value": "surfaceContainerHighest",
+            "label": I18n.tr("Surface container highest")
+        },
+        {
             "value": "layer1",
             "label": I18n.tr("Surface layer")
         },
@@ -587,19 +603,46 @@ Singleton {
         return color;
     }
 
-    // The bar surface background (BarContent
-    // barBackground): the style's colLayer0 with the surfaceColor override
-    // and surfaceTransparency applied (sentinels keep the theme pipeline,
-    // which already bakes the global [effects] opacity into the palette).
+    // The bar surface background (BarContent barBackground, material pills,
+    // screen corner decorators, island): when surfaceTransparency < 0 (-1),
+    // follows the global theme opacity (Appearance.backgroundOpacity); when
+    // >= 0, uses an explicit independent alpha over the opaque base color.
     function resolvedBarSurfaceColor(baseColor, axes) {
         const a = axes || root.barAxes;
-        return root.resolvedBarAxisColor(a.surfaceColor, baseColor, a.surfaceTransparency);
+        const opacity = Number(a.surfaceTransparency);
+        if (isFinite(opacity) && opacity >= 0) {
+            const opaqueBase = Appearance.colors.colLayer0Base;
+            let color = opaqueBase;
+            if (typeof a.surfaceColor === "string" && BarDefaults.isCustomColor(a.surfaceColor))
+                color = a.surfaceColor;
+            else if (typeof a.surfaceColor === "string" && a.surfaceColor !== "" && a.surfaceColor !== "default")
+                color = Appearance.colors[`col${a.surfaceColor.charAt(0).toUpperCase()}${a.surfaceColor.slice(1)}`] ?? opaqueBase;
+            return Appearance.applyAlpha(color, opacity);
+        }
+        if (typeof a.surfaceColor === "string" && a.surfaceColor !== "" && a.surfaceColor !== "default")
+            return root.resolvedBarAxisColor(a.surfaceColor, baseColor, Appearance.backgroundOpacity);
+        return baseColor;
     }
 
-    // The group-capsule layer: widgetTransparency < 1 transparentizes the
-    // resolved capsule color (1.0 = untouched).
-    function resolvedBarWidgetColor(color, axes) {
-        return root.resolvedBarAxisColor("default", color, (axes || root.barAxes).widgetTransparency);
+    // The group-capsule layer: widgetTransparency (0..1) or per-entry opacity
+    // scales the resolved capsule color cleanly down to 0% transparent.
+    function resolvedBarWidgetColor(color, axes, entryOpacity) {
+        if (color === "transparent" || String(color) === "#00000000")
+            return "transparent";
+        const a = axes || root.barAxes;
+        const opacity = (typeof entryOpacity === "number" && isFinite(entryOpacity) && entryOpacity >= 0) ? entryOpacity : a.widgetTransparency;
+        return root.resolvedBarAxisColor("default", color, opacity);
+    }
+
+    // Bar-level foreground text/icon override ("default" = widget own color).
+    function resolvedBarWidgetTextColor(axes) {
+        const a = axes || root.barAxes;
+        const name = a.widgetTextColor;
+        if (!name || name === "default")
+            return undefined;
+        if (BarDefaults.isCustomColor(name))
+            return name;
+        return Appearance.colors[`col${name.charAt(0).toUpperCase()}${name.slice(1)}`] ?? undefined;
     }
 
     // Group-capsule outline (D4c widgetOutline*): the segmented mode's
@@ -860,9 +903,24 @@ Singleton {
     readonly property string numericFontFamily: FontService.configuredNumeric || FontService.defaultNumeric
     readonly property string expressiveFontFamily: FontService.configuredExpressive || Fonts.bundledFamilyName
     property real shellBackgroundOpacity: 1
+    property real shellContentTransparency: 0.9
+    property real shellCornerRadiusScale: 1.0
+    property bool shellGlobalBorderEnabled: false
+    property real shellGlobalBorderOpacity: 0.35
     property bool shellBlurEnabled: false
     property bool shellBlurXray: true
     property bool keepSidebarsLoaded: true
+    property int sidebarWidth: 420
+    property real sidebarOpacity: -1
+    property bool sidebarBlurEnabled: true
+    property string notificationPosition: "top-right"
+    property int notificationWidth: 380
+    property real notificationOpacity: -1
+    property int notificationTimeoutMs: 5000
+    property real spotlightOpacity: -1
+    property bool spotlightBlurEnabled: true
+    property int spotlightGridColumns: 5
+    property int spotlightIconSize: 56
     property var sidebarPositions: ({
             dashboard: "left",
             quickSettings: "right"
@@ -1470,12 +1528,76 @@ Singleton {
         setValue("shellBackgroundOpacity", normalizedBoundedReal(value, 1, 0, 1));
     }
 
+    function setShellContentTransparency(value) {
+        setValue("shellContentTransparency", normalizedBoundedReal(value, 0.9, 0, 0.95));
+    }
+
+    function setShellCornerRadiusScale(value) {
+        setValue("shellCornerRadiusScale", normalizedBoundedReal(value, 1.0, 0.0, 2.0));
+    }
+
+    function setShellGlobalBorderEnabled(value) {
+        setValue("shellGlobalBorderEnabled", !!value);
+    }
+
+    function setShellGlobalBorderOpacity(value) {
+        setValue("shellGlobalBorderOpacity", normalizedBoundedReal(value, 0.35, 0, 1));
+    }
+
     function setShellBlurEnabled(value) {
         setValue("shellBlurEnabled", !!value);
     }
 
     function setShellBlurXray(value) {
         setValue("shellBlurXray", !!value);
+    }
+
+    function setSidebarWidth(value) {
+        setValue("sidebarWidth", normalizedBoundedInt(value, 420, 320, 640));
+    }
+
+    function setSidebarOpacity(value) {
+        const num = Number(value);
+        setValue("sidebarOpacity", !isFinite(num) || num < 0 ? -1 : normalizedBoundedReal(num, 1, 0, 1));
+    }
+
+    function setSidebarBlurEnabled(value) {
+        setValue("sidebarBlurEnabled", value !== false);
+    }
+
+    function setNotificationPosition(value) {
+        const valid = ["top-right", "top-left", "top-center", "bottom-right", "bottom-left", "bottom-center"];
+        setValue("notificationPosition", valid.indexOf(String(value)) !== -1 ? String(value) : "top-right");
+    }
+
+    function setNotificationWidth(value) {
+        setValue("notificationWidth", normalizedBoundedInt(value, 380, 280, 560));
+    }
+
+    function setNotificationOpacity(value) {
+        const num = Number(value);
+        setValue("notificationOpacity", !isFinite(num) || num < 0 ? -1 : normalizedBoundedReal(num, 1, 0, 1));
+    }
+
+    function setNotificationTimeoutMs(value) {
+        setValue("notificationTimeoutMs", normalizedBoundedInt(value, 5000, 1000, 30000));
+    }
+
+    function setSpotlightOpacity(value) {
+        const num = Number(value);
+        setValue("spotlightOpacity", !isFinite(num) || num < 0 ? -1 : normalizedBoundedReal(num, 1, 0, 1));
+    }
+
+    function setSpotlightBlurEnabled(value) {
+        setValue("spotlightBlurEnabled", value !== false);
+    }
+
+    function setSpotlightGridColumns(value) {
+        setValue("spotlightGridColumns", normalizedBoundedInt(value, 5, 3, 8));
+    }
+
+    function setSpotlightIconSize(value) {
+        setValue("spotlightIconSize", normalizedBoundedInt(value, 56, 36, 96));
     }
 
     function setDashboardSidebarSide(value) {
@@ -1606,7 +1728,8 @@ Singleton {
     }
 
     function setBarGroupColor(value) {
-        setBarAxis("groupColor", normalizedOption(root.barGroupColorOptions, value, "layer1"));
+        const str = String(value || "");
+        setBarAxis("groupColor", BarDefaults.isCustomColor(str) ? str : normalizedOption(root.barGroupColorOptions, str, "layer1"));
     }
 
     function setBarAutoHide(value) {
@@ -1713,13 +1836,22 @@ Singleton {
         });
     }
 
+    function setBarOpacity(value) {
+        const numeric = Number(value);
+        setBarAxis("barOpacity", isFinite(numeric) ? Math.max(0, Math.min(1, Math.round(numeric * 100) / 100)) : 1);
+    }
+
+    function setBarBlurEnabled(value) {
+        setBarAxis("blurEnabled", value !== false);
+    }
+
     function setBarSurfaceColor(value) {
         setBarAxis("surfaceColor", typeof value === "string" && value.length > 0 && value.length <= 32 ? value : "default");
     }
 
     function setBarSurfaceTransparency(value) {
         const numeric = Number(value);
-        setBarAxis("surfaceTransparency", !isFinite(numeric) || numeric >= 1 ? -1 : Math.max(0.3, Math.min(1, numeric)));
+        setBarAxis("surfaceTransparency", !isFinite(numeric) || numeric < 0 ? -1 : Math.max(0, Math.min(1, Math.round(numeric * 100) / 100)));
     }
 
     function setBarBorderEnabled(value) {
@@ -1741,7 +1873,32 @@ Singleton {
 
     function setBarWidgetTransparency(value) {
         const numeric = Number(value);
-        setBarAxis("widgetTransparency", !isFinite(numeric) || numeric >= 1 ? 1 : Math.max(0.3, Math.min(1, numeric)));
+        setBarAxis("widgetTransparency", !isFinite(numeric) || numeric >= 1 ? 1 : Math.max(0, Math.min(1, Math.round(numeric * 100) / 100)));
+    }
+
+    function setBarCapsuleVerticalInset(value) {
+        setBarAxis("capsuleVerticalInset", root.clampedBarInt(value, 0, 12, BarDefaults.DEFAULTS.capsuleVerticalInset));
+    }
+
+    function setBarWidgetTextColor(value) {
+        const str = typeof value === "string" ? value.trim() : "";
+        setBarAxis("widgetTextColor", str.length > 0 && str.length <= 32 ? str : "default");
+    }
+
+    function setBarLengthMode(value) {
+        setBarAxis("lengthMode", BarDefaults.LENGTH_MODES.indexOf(String(value)) !== -1 ? String(value) : "full");
+    }
+
+    function setBarLeftScrollAction(value) {
+        setBarAxis("leftScrollAction", BarDefaults.SCROLL_ACTIONS.indexOf(String(value)) !== -1 ? String(value) : "brightness");
+    }
+
+    function setBarRightScrollAction(value) {
+        setBarAxis("rightScrollAction", BarDefaults.SCROLL_ACTIONS.indexOf(String(value)) !== -1 ? String(value) : "volume");
+    }
+
+    function setBarShowScrollHints(value) {
+        setBarAxis("showScrollHints", value !== false);
     }
 
     function setBarWidgetOutlineEnabled(value) {
@@ -2019,12 +2176,13 @@ Singleton {
             widgetStyle: BarDefaults.WIDGET_STYLES.indexOf(raw.widgetStyle) !== -1 ? raw.widgetStyle : d.widgetStyle,
             capsuleRadius: BarDefaults.CAPSULE_RADII.indexOf(raw.capsuleRadius) !== -1 ? raw.capsuleRadius : d.capsuleRadius,
             widgetRadius: root.clampedBarSentinelInt(raw.widgetRadius, d.widgetRadius, 0, 32),
-            groupColor: normalizedOption(root.barGroupColorOptions, raw.groupColor, d.groupColor),
+            groupColor: BarDefaults.isCustomColor(String(raw.groupColor || "")) ? String(raw.groupColor) : normalizedOption(root.barGroupColorOptions, raw.groupColor, d.groupColor),
             barThickness: root.clampedBarInt(raw.barThickness, 28, 64, d.barThickness),
             verticalThickness: root.clampedBarInt(raw.verticalThickness, 28, 64, d.verticalThickness),
             edgeMargin: root.normalizedBoundedInt(raw.edgeMargin, d.edgeMargin, 0, 48),
             sideMargin: root.clampedBarSentinelInt(raw.sideMargin, -1, 0, 96),
             sideMarginPercent: root.normalizedBoundedInt(raw.sideMarginPercent, 0, 0, 49),
+            lengthMode: BarDefaults.LENGTH_MODES.indexOf(raw.lengthMode) !== -1 ? raw.lengthMode : d.lengthMode,
             spacing: root.clampedBarSentinelInt(raw.spacing, -1, 0, 64),
             innerPadding: root.clampedBarSentinelInt(raw.innerPadding, -1, 0, 64),
             widgetPadding: root.clampedBarSentinelInt(raw.widgetPadding, -1, 0, 32),
@@ -2032,6 +2190,8 @@ Singleton {
             radius: root.clampedBarSentinelInt(raw.radius, -1, 0, 32),
             fontScale: scaled(raw.fontScale, 1),
             iconScale: scaled(raw.iconScale, 1),
+            barOpacity: fraction(raw.barOpacity, 1),
+            blurEnabled: raw.blurEnabled !== false,
             surfaceColor: typeof raw.surfaceColor === "string" && raw.surfaceColor.length <= 32 ? raw.surfaceColor : "default",
             surfaceTransparency: raw.surfaceTransparency === -1 ? -1 : fraction(raw.surfaceTransparency, -1),
             borderEnabled: raw.borderEnabled === true,
@@ -2039,10 +2199,15 @@ Singleton {
             borderOpacity: fraction(raw.borderOpacity, 1),
             borderThickness: root.clampedBarInt(raw.borderThickness, 0, 4, 1),
             widgetTransparency: fraction(raw.widgetTransparency, 1),
+            capsuleVerticalInset: root.clampedBarInt(raw.capsuleVerticalInset, 0, 12, d.capsuleVerticalInset),
+            widgetTextColor: typeof raw.widgetTextColor === "string" && raw.widgetTextColor.length > 0 && raw.widgetTextColor.length <= 32 ? raw.widgetTextColor : d.widgetTextColor,
             widgetOutlineEnabled: raw.widgetOutlineEnabled === true,
             widgetOutlineColor: typeof raw.widgetOutlineColor === "string" && raw.widgetOutlineColor !== "" ? raw.widgetOutlineColor : "outline",
             widgetOutlineOpacity: fraction(raw.widgetOutlineOpacity, 1),
             widgetOutlineThickness: root.clampedBarInt(raw.widgetOutlineThickness, 0, 4, 1),
+            leftScrollAction: BarDefaults.SCROLL_ACTIONS.indexOf(raw.leftScrollAction) !== -1 ? raw.leftScrollAction : d.leftScrollAction,
+            rightScrollAction: BarDefaults.SCROLL_ACTIONS.indexOf(raw.rightScrollAction) !== -1 ? raw.rightScrollAction : d.rightScrollAction,
+            showScrollHints: raw.showScrollHints !== false,
             // D4d behavior axes: every clamp accepts the default through the
             // same door (load or setter), and the hover-popout default is
             // opt-OUT (`!== false`) because the pre-D4d behavior was
@@ -3093,6 +3258,10 @@ Singleton {
             },
             "effects": {
                 "shellBackgroundOpacity": root.shellBackgroundOpacity,
+                "shellContentTransparency": root.shellContentTransparency,
+                "shellCornerRadiusScale": root.shellCornerRadiusScale,
+                "shellGlobalBorderEnabled": root.shellGlobalBorderEnabled,
+                "shellGlobalBorderOpacity": root.shellGlobalBorderOpacity,
                 "shellBlurEnabled": root.shellBlurEnabled,
                 "shellBlurXray": root.shellBlurXray
             },
@@ -3121,7 +3290,22 @@ Singleton {
             "sidebar": {
                 "keepLoaded": root.keepSidebarsLoaded,
                 "dashboardSide": root.dashboardSidebarSide,
-                "quickSettingsSide": root.quickSettingsSidebarSide
+                "quickSettingsSide": root.quickSettingsSidebarSide,
+                "width": root.sidebarWidth,
+                "opacity": root.sidebarOpacity,
+                "blurEnabled": root.sidebarBlurEnabled
+            },
+            "notifications": {
+                "position": root.notificationPosition,
+                "width": root.notificationWidth,
+                "opacity": root.notificationOpacity,
+                "timeoutMs": root.notificationTimeoutMs
+            },
+            "spotlight": {
+                "opacity": root.spotlightOpacity,
+                "blurEnabled": root.spotlightBlurEnabled,
+                "gridColumns": root.spotlightGridColumns,
+                "iconSize": root.spotlightIconSize
             },
             "hotCorners": root.normalizedHotCornerActions(root.hotCornerActions),
             "desktopCards": {
@@ -3342,8 +3526,26 @@ Singleton {
         root.iconTheme = typeof theme.iconTheme === "string" ? theme.iconTheme : "";
         FontService.setConfiguredFamilies(fonts.ui, fonts.mono, fonts.numeric, fonts.expressive);
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
+        root.shellContentTransparency = normalizedBoundedReal(effects.shellContentTransparency, 0.9, 0, 0.95);
+        root.shellCornerRadiusScale = normalizedBoundedReal(effects.shellCornerRadiusScale, 1.0, 0.0, 2.0);
+        root.shellGlobalBorderEnabled = effects.shellGlobalBorderEnabled === true;
+        root.shellGlobalBorderOpacity = normalizedBoundedReal(effects.shellGlobalBorderOpacity, 0.35, 0, 1);
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
+        root.sidebarWidth = root.normalizedBoundedInt(sidebar.width, 420, 320, 640);
+        root.sidebarOpacity = (sidebar.opacity === undefined || Number(sidebar.opacity) < 0) ? -1 : normalizedBoundedReal(sidebar.opacity, 1, 0, 1);
+        root.sidebarBlurEnabled = sidebar.blurEnabled !== false;
+        const notif = root.asObject(data.notifications);
+        const validNotifPos = ["top-right", "top-left", "top-center", "bottom-right", "bottom-left", "bottom-center"];
+        root.notificationPosition = validNotifPos.indexOf(String(notif.position || "")) !== -1 ? String(notif.position) : "top-right";
+        root.notificationWidth = root.normalizedBoundedInt(notif.width, 380, 280, 560);
+        root.notificationOpacity = (notif.opacity === undefined || Number(notif.opacity) < 0) ? -1 : normalizedBoundedReal(notif.opacity, 1, 0, 1);
+        root.notificationTimeoutMs = root.normalizedBoundedInt(notif.timeoutMs, 5000, 1000, 30000);
+        const spot = root.asObject(data.spotlight);
+        root.spotlightOpacity = (spot.opacity === undefined || Number(spot.opacity) < 0) ? -1 : normalizedBoundedReal(spot.opacity, 1, 0, 1);
+        root.spotlightBlurEnabled = spot.blurEnabled !== false;
+        root.spotlightGridColumns = root.normalizedBoundedInt(spot.gridColumns, 5, 3, 8);
+        root.spotlightIconSize = root.normalizedBoundedInt(spot.iconSize, 56, 36, 96);
         // D4e e5: island appearance axes live on the singleton "island" lane
         // entry (migrated from [island] in v6) and project reactively off
         // barConfigs below.

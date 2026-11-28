@@ -3,18 +3,13 @@ import qs.commons
 import qs.services
 
 QtObject {
-    readonly property color surfaceColor: BlurService.backgroundColor(
-                                              Appearance.m3colors.m3surfaceContainerHigh)
-    readonly property color panelColor: BlurService.backgroundColor(Appearance.m3colors.m3surfaceContainer)
-    readonly property color selectedColor: Appearance.applyAlpha(Appearance.m3colors.m3primaryContainer,
-                                                                 Math.max(0.46,
-                                                                          PersonalizationConfig.shellBackgroundOpacity))
+    readonly property real effectiveOpacity: PersonalizationConfig.spotlightOpacity >= 0 ? PersonalizationConfig.spotlightOpacity : PersonalizationConfig.shellBackgroundOpacity
+    readonly property color surfaceColor: Appearance.applyAlpha(Appearance.m3colors.m3surfaceContainerHigh, effectiveOpacity)
+    readonly property color panelColor: Appearance.applyAlpha(Appearance.m3colors.m3surfaceContainer, effectiveOpacity)
+    readonly property color selectedColor: Appearance.applyAlpha(Appearance.m3colors.m3primaryContainer, Math.max(0.46, PersonalizationConfig.shellBackgroundOpacity))
     readonly property color selectedContentColor: Appearance.m3colors.m3onPrimaryContainer
-    readonly property color hoverColor: Appearance.applyAlpha(Appearance.m3colors.m3surfaceContainerHighest,
-                                                              Math.max(0.30,
-                                                                       PersonalizationConfig.shellBackgroundOpacity))
-    readonly property color shadowColor: Appearance.applyAlpha(Appearance.m3colors.m3shadow,
-                                                               Appearance.m3colors.darkmode ? 0.34 : 0.20)
+    readonly property color hoverColor: Appearance.applyAlpha(Appearance.m3colors.m3surfaceContainerHighest, Math.max(0.30, PersonalizationConfig.shellBackgroundOpacity))
+    readonly property color shadowColor: Appearance.applyAlpha(Appearance.m3colors.m3shadow, Appearance.m3colors.darkmode ? 0.34 : 0.20)
 
     readonly property int canvasWidth: 1100
     readonly property int searchWidth: 760
@@ -49,7 +44,7 @@ QtObject {
     readonly property int appGridCellWidth: 148
     readonly property int appGridCellHeight: 134
     readonly property int appGridGap: 8
-    readonly property int appGridIconSize: 56
+    readonly property int appGridIconSize: PersonalizationConfig.spotlightIconSize
     readonly property int appGridLabelHeight: 40
     readonly property int appGridLabelFontSize: 14
     readonly property real appGridHoverScale: 1.24

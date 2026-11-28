@@ -14,14 +14,11 @@ PanelWindow {
 
     property string lastOpenedSidebar: "dashboard"
     property string openingScreenName: ""
-    readonly property bool sameEdge: PersonalizationConfig.sidebarPositions.dashboard
-                                     === PersonalizationConfig.sidebarPositions.quickSettings
+    readonly property bool sameEdge: PersonalizationConfig.sidebarPositions.dashboard === PersonalizationConfig.sidebarPositions.quickSettings
 
     function reconcileSidebars() {
         const positions = PersonalizationConfig.sidebarPositions;
-        const state = SidebarPolicy.resolveOpenState(WidgetState.dashboardSidebarOpen,
-                                                     WidgetState.quickSettingsOpen, lastOpenedSidebar,
-                                                     positions.dashboard, positions.quickSettings);
+        const state = SidebarPolicy.resolveOpenState(WidgetState.dashboardSidebarOpen, WidgetState.quickSettingsOpen, lastOpenedSidebar, positions.dashboard, positions.quickSettings);
         if (WidgetState.dashboardSidebarOpen && !state.dashboard && SystemCardDragSession.active)
             SystemCardDragSession.requestCancel();
         WidgetState.dashboardSidebarOpen = state.dashboard;
@@ -29,8 +26,7 @@ PanelWindow {
     }
 
     function sidebarOpen(target) {
-        return SidebarPolicy.targetOpen(target, WidgetState.dashboardSidebarOpen,
-                                        WidgetState.quickSettingsOpen, WidgetState.dashboardSidebarView);
+        return SidebarPolicy.targetOpen(target, WidgetState.dashboardSidebarOpen, WidgetState.quickSettingsOpen, WidgetState.dashboardSidebarView);
     }
 
     function toggleSidebar(target) {
@@ -57,20 +53,14 @@ PanelWindow {
     function opened(role) {
         lastOpenedSidebar = role;
         reconcileSidebars();
-        const requested = BrightnessService.getScreenByName(openingScreenName || (role === "quicksettings"
-                                                                                  ? WidgetState.quickSettingsScreenName :
-                                                                                    ""));
+        const requested = BrightnessService.getScreenByName(openingScreenName || (role === "quicksettings" ? WidgetState.quickSettingsScreenName : ""));
         const nextScreen = requested || BrightnessService.activeScreen;
         if (nextScreen)
             retainedScreenName = nextScreen.name;
     }
 
     function openOnScreen(role, view, screenName) {
-        const views = role === "dashboard" ? ["info", "weather"] : role === "quicksettings" ? ["settings", "network",
-                                                                                               "bluetooth",
-                                                                                               "audio", "microphone",
-                                                                                               "idle", "night"] :
-                                                                                              [];
+        const views = role === "dashboard" ? ["info", "weather"] : role === "quicksettings" ? ["settings", "network", "bluetooth", "audio", "microphone", "idle", "night"] : [];
         if (views.indexOf(view) < 0)
             return "INVALID_VIEW";
         const requestedScreen = BrightnessService.getScreenByName(screenName);
@@ -91,17 +81,14 @@ PanelWindow {
     }
 
     readonly property bool anySidebarOpen: WidgetState.dashboardSidebarOpen || WidgetState.quickSettingsOpen
-    readonly property var fallbackScreen: BrightnessService.activeScreen || (Quickshell.screens.length > 0
-                                                                             ? Quickshell.screens[0] : null)
+    readonly property var fallbackScreen: BrightnessService.activeScreen || (Quickshell.screens.length > 0 ? Quickshell.screens[0] : null)
     // DPMS cycles can replace the Screen instance while preserving its name.
     property string retainedScreenName: ""
     readonly property var retainedScreen: BrightnessService.getScreenByName(retainedScreenName)
 
     screen: retainedScreen || fallbackScreen
     onScreenChanged: WidgetState.sidebarScreenName = screen ? screen.name : ""
-    visible: (retainedScreen !== null || fallbackScreen !== null) && (root.anySidebarOpen
-                                                                      || dashboardSidebar.panelPresented
-                                                                      || quickSettingsSidebar.panelPresented)
+    visible: (retainedScreen !== null || fallbackScreen !== null) && (root.anySidebarOpen || dashboardSidebar.panelPresented || quickSettingsSidebar.panelPresented)
     color: "transparent"
 
     anchors {
@@ -234,6 +221,7 @@ PanelWindow {
         targetWindow: root
         backgroundItem: dashboardSidebar.blurBackgroundItem
         additionalBackgroundItems: [quickSettingsSidebar.blurBackgroundItem]
+        blurEnabled: PersonalizationConfig.sidebarBlurEnabled
     }
 
     Shortcut {

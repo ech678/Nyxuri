@@ -315,7 +315,7 @@ class ConsumptionTest(unittest.TestCase):
     def test_widget_layer_axes_reach_the_capsule(self):
         # D4e: the capsule resolves through the injected per-bar axes.
         self.assertIn("property var barAxes: PersonalizationConfig.activeBarConfig().axes", self.group)
-        self.assertIn("PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor, root.barAxes)", self.group)
+        self.assertIn("PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor, root.barAxes, root.style.opacity)", self.group)
         self.assertIn("PersonalizationConfig.resolvedBarWidgetPadding(root.paintMaterialPill, root.barAxes)", self.group)
         self.assertIn("PersonalizationConfig.barWidgetOutlineWidth(", self.group)
         self.assertIn("PersonalizationConfig.barWidgetOutlineColor(", self.group)

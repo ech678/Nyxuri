@@ -31,6 +31,10 @@ Item {
     property var widgetBar: null
     readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     readonly property real maxWidth: BarWidgetDefaults.option("activeWindow", root.widgetEntry, "maxWidth")
+    readonly property bool showIcon: BarWidgetDefaults.option("activeWindow", root.widgetEntry, "showIcon")
+    readonly property bool compactMode: BarWidgetDefaults.option("activeWindow", root.widgetEntry, "compactMode")
+    readonly property bool hideWhenEmpty: BarWidgetDefaults.option("activeWindow", root.widgetEntry, "hideWhenEmpty")
+    readonly property bool barWidgetVisible: !root.hideWhenEmpty || root.activeTitle !== ""
 
     readonly property string outputName: root.QsWindow.window?.screen?.name ?? ""
     readonly property var workspace: CompositorDriver.activeWorkspaceForOutput(root.outputName)
@@ -45,8 +49,9 @@ Item {
 
     readonly property color subtextColor: root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.7) : Appearance.colors.colSubtext
 
-    implicitWidth: root.vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : Math.min(colLayout.implicitWidth + 12, root.maxWidth)
-    implicitHeight: root.vertical ? 22 : PersonalizationConfig.resolvedBarHeight(root.barAxes)
+    visible: root.barWidgetVisible
+    implicitWidth: !root.barWidgetVisible ? 0 : root.vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : Math.min(rowWrap.implicitWidth + 12, root.maxWidth)
+    implicitHeight: !root.barWidgetVisible ? 0 : root.vertical ? 22 : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     // D4b click axes: transparent to the lane unless an action consumed
     // the click ("none" default swallows nothing, the handler is inert).
@@ -76,31 +81,48 @@ Item {
         }
     }
 
-    // Horizontal (end4: app class on top, window title below)
-    ColumnLayout {
-        id: colLayout
+    // Horizontal (end4: app class on top, window title below, with optional icon & compact single-line mode)
+    RowLayout {
+        id: rowWrap
 
         visible: !root.vertical
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.leftMargin: 6
-        spacing: -4
+        anchors.rightMargin: 4
+        spacing: 6
 
-        StyledText {
-            Layout.fillWidth: true
-            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
-            color: root.subtextColor
-            elide: Text.ElideRight
-            text: root.activeAppClass !== "" ? root.activeAppClass : Translation.tr("Desktop")
+        IconImage {
+            Layout.alignment: Qt.AlignVCenter
+            visible: root.showIcon && root.activeIcon !== ""
+            source: root.activeIcon
+            implicitSize: Math.round(16 * BarScale.iconFor(root.widgetBar))
         }
 
-        StyledText {
+        ColumnLayout {
+            id: colLayout
+
             Layout.fillWidth: true
-            font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
-            color: root.contentColor
-            elide: Text.ElideRight
-            text: root.activeTitle !== "" ? root.activeTitle : root.workspaceFallbackTitle
+            Layout.alignment: Qt.AlignVCenter
+            spacing: -4
+
+            StyledText {
+                visible: !root.compactMode
+                Layout.fillWidth: true
+                font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
+                color: root.subtextColor
+                elide: Text.ElideRight
+                text: root.activeAppClass !== "" ? root.activeAppClass : Translation.tr("Desktop")
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
+                color: root.contentColor
+                elide: Text.ElideRight
+                text: root.activeTitle !== "" ? root.activeTitle : root.workspaceFallbackTitle
+            }
         }
     }
 }

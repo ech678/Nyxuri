@@ -29,7 +29,7 @@ PLUGINS_DIR = ROOT / "plugins"
 # contract (Caelestia fidelity) — a reshuffle must be a deliberate decision.
 NAV_ORDER = [
     "account", "theme", "wallpaper",
-    "bar", "dock", "sidebar",
+    "bar", "dock", "notifications", "sidebar",
     "network", "connected-devices",
     "spotlight",
     "language-region", "plugins", "shell",

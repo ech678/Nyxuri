@@ -8,3 +8,20 @@ order = 60
 
 [entryPoints]
 "popup:notification" = "NotificationPopupHost.qml"
+
+[[settings]]
+id = "notifications"
+source = "NotificationsPage.qml"
+title = "Notifications"
+description = "Popup position, size, timeout, and opacity"
+context = "ControlCenterWindow"
+icon = "notifications"
+group = "surfaces"
+order = 60
+
+[[settings]]
+id = "notifications.section.popups"
+route = "notifications"
+title = "Popups"
+context = "NotificationsPage"
+icon = "notifications"

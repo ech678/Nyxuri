@@ -81,16 +81,20 @@ Item {
     // changes while the group was hidden); the single widget host is
     // authoritative, so never collapse below its implicit width.
     readonly property real contentWidth: Math.max(gridLayout.implicitWidth, root.loadedWidget ? root.loadedWidget.implicitWidth : 0)
-    readonly property bool hasContentOverride: !root.isMaterial && root.style.color !== undefined && root.style.color !== "transparent"
+    readonly property var barTextColorOverride: PersonalizationConfig.resolvedBarWidgetTextColor(root.barAxes)
+    readonly property bool hasContentOverride: !root.isMaterial && ((root.style.color !== undefined && root.style.color !== "transparent") || root.barTextColorOverride !== undefined)
     readonly property color contentColor: {
         const name = root.style.color ?? "";
-        const special = {
-            surfaceContainer: "onSurface",
-            onError: "error",
-            onLayer0: "layer0"
-        };
-        const onName = special[name] ?? `on${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-        return root.resolveColorName(onName) ?? Appearance.colors.colOnLayer1;
+        if (name !== "" && name !== "transparent") {
+            const special = {
+                surfaceContainer: "onSurface",
+                onError: "error",
+                onLayer0: "layer0"
+            };
+            const onName = special[name] ?? `on${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+            return root.resolveColorName(onName) ?? Appearance.colors.colOnLayer1;
+        }
+        return root.barTextColorOverride ?? Appearance.colors.colOnLayer1;
     }
 
     onWidgetEntryChanged: {
@@ -134,6 +138,8 @@ Item {
             return undefined;
         if (name === "transparent")
             return "transparent";
+        if (BarDefaults.isCustomColor(String(name)))
+            return String(name);
         return Appearance.colors[`col${name.charAt(0).toUpperCase()}${name.slice(1)}`] ?? undefined;
     }
 
@@ -149,6 +155,8 @@ Item {
         const name = root.barAxes.groupColor;
         if (name === "transparent")
             return "transparent";
+        if (BarDefaults.isCustomColor(String(name)))
+            return String(name);
         const key = `col${name.charAt(0).toUpperCase()}${name.slice(1)}`;
         return Appearance.colors[key] ?? Appearance.colors.colLayer1;
     }
@@ -248,7 +256,7 @@ Item {
     }
 
     implicitWidth: !root.hasContent ? 0 : vertical && root.isMaterial ? (root.barAxes.verticalThickness - 6) : (root.contentWidth + padding * 2)
-    implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : root.barAxes.barThickness
+    implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     default property alias items: gridLayout.children
 
@@ -273,16 +281,18 @@ Item {
         return root.resolvedGroupColor;
     }
 
+    readonly property real verticalInset: root.barAxes.capsuleVerticalInset ?? 4
+
     Rectangle {
         id: background
         anchors {
             fill: parent
-            topMargin: root.vertical ? 0 : 4
-            bottomMargin: root.vertical ? 0 : 4
-            leftMargin: root.vertical ? 4 : 0
-            rightMargin: root.vertical ? 4 : 0
+            topMargin: root.vertical ? 0 : root.verticalInset
+            bottomMargin: root.vertical ? 0 : root.verticalInset
+            leftMargin: root.vertical ? root.verticalInset : 0
+            rightMargin: root.vertical ? root.verticalInset : 0
         }
-        color: PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor, root.barAxes)
+        color: PersonalizationConfig.resolvedBarWidgetColor(root.baseBackgroundColor, root.barAxes, root.style.opacity)
 
         // Priority: per-instance style override (popup) > bar-level
         // widgetOutline axes > segmented baseline.

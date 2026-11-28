@@ -78,7 +78,10 @@ Item {
     // are the baseline under the innerPadding axis (sentinel -1 = these).
     readonly property real laneMargin: PersonalizationConfig.resolvedBarInnerPadding(root.axes)
 
-    readonly property color materialPillBgColor: Appearance.colors.colLayer0
+    readonly property color materialPillBgColor: PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.axes)
+    readonly property Item barBackgroundItem: barBackground
+    readonly property Item blurPrimaryItem: root.styleContext.showCenterPill ? centerPill : (root.styleContext.showBackplateFill ? barBackground : null)
+    readonly property var blurAdditionalItems: root.styleContext.lanePill ? [leftMaterialPill, centerMaterialPill, rightMaterialPill] : []
     // D4c bar shell radius axis: -1 keeps the theme's screen rounding,
     // squareCorners flattens, an explicit value overrides — one alias per
     // host keeps every corner expression on a single source.
@@ -357,8 +360,9 @@ Item {
     // along the track (zone 即真相 — the start half keeps the start action,
     // the end half the end action; D-9, the same axis pair serves both
     // orientations). Dead under click-through, as registered in D4d.
-    readonly property string leftAction: Config.options?.bar?.leftScrollAction ?? "brightness"
-    readonly property string rightAction: Config.options?.bar?.rightScrollAction ?? "volume"
+    readonly property string leftAction: root.axes.leftScrollAction ?? "brightness"
+    readonly property string rightAction: root.axes.rightScrollAction ?? "volume"
+    readonly property bool scrollHintsEnabled: root.axes.showScrollHints !== false
 
     function performScrollAction(action: string, isUp: bool): void {
         if (action === "brightness") {
@@ -406,13 +410,26 @@ Item {
 
     property var screen: root.QsWindow.window?.screen
 
+    readonly property bool isFitLength: root.axes.lengthMode === "fit" && !root.centerOnly
+    readonly property real fitContentSpan: {
+        const startSize = root.vertical ? leftLane.height : leftLane.width;
+        const midSize = root.vertical ? absoluteCenter.height : absoluteCenter.width;
+        const endSize = root.vertical ? rightLane.height : rightLane.width;
+        const gapCount = (leftLane.hasContent && absoluteCenter.hasContent ? 1 : 0) + (rightLane.hasContent && absoluteCenter.hasContent ? 1 : 0) + (leftLane.hasContent && rightLane.hasContent && !absoluteCenter.hasContent ? 1 : 0);
+        const raw = startSize + midSize + endSize + root.laneMargin * 2 + gapCount * Math.max(4, root.laneLayoutSpacing);
+        const maxSpan = root.vertical ? root.height : root.width;
+        return Math.min(maxSpan, Math.max(midSize + root.laneMargin * 2, raw));
+    }
+
     Rectangle {
         id: barBackground
         objectName: "barBackground"
-        anchors.fill: parent
+        anchors.centerIn: parent
+        width: root.isFitLength && !root.vertical ? root.fitContentSpan : parent.width
+        height: root.isFitLength && root.vertical ? root.fitContentSpan : parent.height
         color: root.styleContext.showBackplateFill ? PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.axes) : "transparent"
         radius: root.styleContext.isFloating ? PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.windowRounding, root.axes) : 0
-        border.width: PersonalizationConfig.barSurfaceBorderWidth(root.styleContext.defaultSurfaceBorderWidth, root.axes)
+        border.width: (!root.styleContext.backplate && root.styleContext.lanePill) ? 0 : PersonalizationConfig.barSurfaceBorderWidth(root.styleContext.defaultSurfaceBorderWidth, root.axes)
         border.color: PersonalizationConfig.barSurfaceBorderColor(root.styleContext.surfaceBorderTransparent ? "transparent" : ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8), root.axes)
     }
 
@@ -476,7 +493,7 @@ Item {
             onMovedAway: root.closeOSD(root.leftAction)
 
             ScrollHint {
-                reveal: barLeftScrollArea.hovered && (Config.options?.bar?.showScrollHints ?? true) && root.leftAction !== "none"
+                reveal: barLeftScrollArea.hovered && root.scrollHintsEnabled && root.leftAction !== "none"
                 icon: root.getScrollIcon(root.leftAction)
                 tooltipText: root.getScrollTooltip(root.leftAction)
                 side: root.vertical ? "top" : "left"
@@ -504,7 +521,7 @@ Item {
             onMovedAway: root.closeOSD(root.rightAction)
 
             ScrollHint {
-                reveal: barRightScrollArea.hovered && (Config.options?.bar?.showScrollHints ?? true) && root.rightAction !== "none"
+                reveal: barRightScrollArea.hovered && root.scrollHintsEnabled && root.rightAction !== "none"
                 icon: root.getScrollIcon(root.rightAction)
                 tooltipText: root.getScrollTooltip(root.rightAction)
                 side: root.vertical ? "bottom" : "right"
@@ -547,6 +564,8 @@ Item {
                 height: root.vertical ? (leftLane.hasContent ? leftMaterialRow.implicitHeight + (root.isMaterialHug ? 16 : 10) : 0) : (root.isMaterialHug ? parent.height : leftMaterialRow.implicitHeight)
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
+                border.width: (!root.styleContext.backplate && root.styleContext.lanePill) ? PersonalizationConfig.barSurfaceBorderWidth(0, root.axes) : 0
+                border.color: PersonalizationConfig.barSurfaceBorderColor(ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8), root.axes)
 
                 // Hug fusion corners (end4 verbatim per orientation): the
                 // corner(s) facing the screen edge take the shell radius.
@@ -707,6 +726,8 @@ Item {
                 height: root.vertical ? (absoluteCenter.hasContent ? centerMaterialRow.implicitHeight + (root.isMaterialHug ? 16 : 10) : 0) : (root.isMaterialHug ? parent.height : centerMaterialRow.implicitHeight)
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
+                border.width: (!root.styleContext.backplate && root.styleContext.lanePill) ? PersonalizationConfig.barSurfaceBorderWidth(0, root.axes) : 0
+                border.color: PersonalizationConfig.barSurfaceBorderColor(ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8), root.axes)
 
                 // Hug fusion corners: the flow-facing pair mirrors on the
                 // bar's screen edge (row: top/bottom, rail: left/right).
@@ -870,6 +891,8 @@ Item {
                 height: root.vertical ? (rightLane.hasContent ? rightMaterialRow.implicitHeight + (root.isMaterialHug ? 16 : 10) : 0) : (root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight)
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
+                border.width: (!root.styleContext.backplate && root.styleContext.lanePill) ? PersonalizationConfig.barSurfaceBorderWidth(0, root.axes) : 0
+                border.color: PersonalizationConfig.barSurfaceBorderColor(ColorUtils.transparentize(Appearance.colors.colLayer0Border, 0.8), root.axes)
 
                 // Hug fusion corners (end4 verbatim per orientation).
                 readonly property bool shellTL: root.axis.isHorizontal ? root.axes.position === "bottom" : root.onRight

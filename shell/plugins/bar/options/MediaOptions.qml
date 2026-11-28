@@ -32,9 +32,28 @@ ColumnLayout {
 
     PreferenceToggle {
         first: true
+        text: I18n.tr("Always visible")
+        subtext: I18n.tr("Keep the media pill visible even when nothing is playing")
+        checked: root.page.value("alwaysVisible")
+        onToggled: checked => root.page.set("alwaysVisible", checked || undefined)
+    }
+
+    PreferenceToggle {
         text: I18n.tr("Show title")
         checked: root.page.value("showTitle")
         onToggled: checked => root.page.set("showTitle", checked === true ? undefined : checked)
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Show artist")
+        checked: root.page.value("showArtist")
+        onToggled: checked => root.page.set("showArtist", checked === true ? undefined : checked)
+    }
+
+    PreferenceToggle {
+        text: I18n.tr("Show album art")
+        checked: root.page.value("showAlbumArt")
+        onToggled: checked => root.page.set("showAlbumArt", checked === true ? undefined : checked)
     }
 
     PreferenceSlider {

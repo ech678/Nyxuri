@@ -91,10 +91,16 @@ var DEFAULTS = {
         minWidth: 160,
         maxWidth: 300,
         showTitle: true,
+        showArtist: true,
+        showAlbumArt: true,
+        alwaysVisible: false,
         scrollAction: "none"
     },
     activeWindow: {
         maxWidth: 280,
+        showIcon: false,
+        compactMode: false,
+        hideWhenEmpty: false,
         clickAction: "none",
         middleClickAction: "none",
         rightClickAction: "none",
@@ -122,6 +128,9 @@ var DEFAULTS = {
     workspaces: {
         showAppIcons: false,
         alwaysShowNumbers: true,
+        hideEmpty: false,
+        invertScroll: false,
+        monochromeIcons: false,
         indicatorStyle: "dot",
         style: "default",
         numberStyle: "normal",

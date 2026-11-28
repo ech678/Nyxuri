@@ -13,6 +13,10 @@ Singleton {
     property real backgroundOpacity: 1
     property real backgroundTransparency: 0
     property real contentTransparency: 0.9
+    property real cornerRadiusScale: 1.0
+    property real uiFontScale: 1.0
+    property bool globalBorderEnabled: false
+    property real globalBorderOpacity: 0.35
     // Compositor blur capability, injected by services/BlurService. The
     // shared layer cannot read config or probe the compositor itself.
     property bool compositorBlurEnabled: true
@@ -128,7 +132,7 @@ Singleton {
         property color colSubtext: root.m3colors.m3outline
 
         property color colLayer0Base: root.mix(root.m3colors.m3background, root.m3colors.m3primary, 0.99)
-        property color colLayer0: root.transparentize(colLayer0Base, root.backgroundTransparency)
+        property color colLayer0: root.transparentize(colLayer0Base, 1 - root.backgroundOpacity * (1 - root.backgroundTransparency))
         property color colOnLayer0: root.m3colors.m3onBackground
         property color colLayer0Hover: root.transparentize(root.mix(colLayer0, colOnLayer0, 0.9), root.contentTransparency)
 
@@ -203,7 +207,7 @@ Singleton {
         property color colOnTertiaryFixed: root.m3colors.m3onTertiaryFixed
         property color colOnTertiaryFixedVariant: root.m3colors.m3onTertiaryFixedVariant
 
-        property color colBackgroundSurfaceContainer: root.transparentize(root.m3colors.m3surfaceContainer, root.backgroundTransparency)
+        property color colBackgroundSurfaceContainer: root.transparentize(root.m3colors.m3surfaceContainer, 1 - root.backgroundOpacity * (1 - root.backgroundTransparency))
         property color colSurfaceContainerLow: root.solveOverlayColor(root.m3colors.m3background, root.m3colors.m3surfaceContainerLow, 1 - root.contentTransparency)
         property color colSurfaceContainer: root.solveOverlayColor(root.m3colors.m3surfaceContainerLow, root.m3colors.m3surfaceContainer, 1 - root.contentTransparency)
         property color colSurfaceContainerHigh: root.solveOverlayColor(root.m3colors.m3surfaceContainer, root.m3colors.m3surfaceContainerHigh, 1 - root.contentTransparency)
@@ -255,19 +259,19 @@ Singleton {
     }
 
     rounding: QtObject {
-        property int unsharpen: 2
-        property int extraSmall: 4
-        property int unsharpenmore: 6
-        property int small: 12
-        property int medium: 16
-        property int normal: 17
-        property int large: 23
-        property int extraLarge: 28
-        property int veryLarge: 30
-        property int extraLargeIncreased: 32
+        property int unsharpen: Math.round(2 * root.cornerRadiusScale)
+        property int extraSmall: Math.round(4 * root.cornerRadiusScale)
+        property int unsharpenmore: Math.round(6 * root.cornerRadiusScale)
+        property int small: Math.round(12 * root.cornerRadiusScale)
+        property int medium: Math.round(16 * root.cornerRadiusScale)
+        property int normal: Math.round(17 * root.cornerRadiusScale)
+        property int large: Math.round(23 * root.cornerRadiusScale)
+        property int extraLarge: Math.round(28 * root.cornerRadiusScale)
+        property int veryLarge: Math.round(30 * root.cornerRadiusScale)
+        property int extraLargeIncreased: Math.round(32 * root.cornerRadiusScale)
         property int full: 9999
-        property int windowRounding: 18
-        property int screenRounding: 23
+        property int windowRounding: Math.round(18 * root.cornerRadiusScale)
+        property int screenRounding: Math.round(23 * root.cornerRadiusScale)
     }
 
     spacing: QtObject {

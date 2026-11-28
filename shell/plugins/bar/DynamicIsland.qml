@@ -420,7 +420,7 @@ Item {
         // paintBackground: false and the blacklist keeps the group tint off).
         // end4: material and center-only bars leave the island transparent so
         // the frame color shows through.
-        color: root.styleContext.islandTransparent ? "transparent" : Appearance.colors.colLayer0
+        color: root.styleContext.islandTransparent ? "transparent" : PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.barAxes)
         radius: Math.min(root.width, root.height) / 2
         clip: true
 

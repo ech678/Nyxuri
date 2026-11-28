@@ -5,6 +5,8 @@ import qs.services
 import qs.ui
 import qs.commons.i18n
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "../../services/BarDefaults.js" as BarDefaults
+import "BarStyle.js" as BarStyle
 
 // Per-instance widget editor (D4b, dux BarWidgetTab pattern): resolves one
 // lane entry by uid, exposes the value()/set() facade every options page
@@ -176,6 +178,152 @@ Item {
                         modified: !!(root.entry && root.entry.overrides && root.entry.overrides.overflowPriority !== undefined)
                         onMoved: value => root.set("overflowPriority", Math.round(value) === 0 ? undefined : Math.round(value))
                         onResetRequested: root.set("overflowPriority", undefined)
+                    }
+                }
+
+                // Per-widget capsule style overrides (shared with BarGroupStylePopup).
+                PreferenceCollapsibleGroup {
+                    visible: root.entryAlive && root.widgetId !== "island" && root.widgetId !== "spacer" && root.widgetId !== "separator"
+                    title: I18n.tr("Appearance")
+                    subtitle: I18n.tr("Per-widget color, opacity, corner radius, and padding")
+                    icon: "palette"
+                    expanded: !!(root.entry && root.entry.overrides && (root.entry.overrides.color !== undefined || root.entry.overrides.opacity !== undefined || root.entry.overrides.radius !== undefined || root.entry.overrides.padding !== undefined || root.entry.overrides.borderWidth !== undefined))
+
+                    readonly property bool tintedBar: BarStyle.isTinted(PersonalizationConfig.barAxes)
+                    readonly property var styleColors: [
+                        {
+                            value: "",
+                            label: I18n.tr("Bar default")
+                        },
+                        {
+                            value: "transparent",
+                            label: I18n.tr("Transparent")
+                        },
+                        {
+                            value: "layer0",
+                            label: I18n.tr("Background")
+                        },
+                        {
+                            value: "layer1",
+                            label: I18n.tr("Surface layer")
+                        },
+                        {
+                            value: "surfaceContainer",
+                            label: I18n.tr("Surface container")
+                        },
+                        {
+                            value: "primaryContainer",
+                            label: I18n.tr("Primary container")
+                        },
+                        {
+                            value: "secondaryContainer",
+                            label: I18n.tr("Secondary container")
+                        },
+                        {
+                            value: "tertiaryContainer",
+                            label: I18n.tr("Tertiary container")
+                        },
+                        {
+                            value: "primary",
+                            label: I18n.tr("Primary")
+                        },
+                        {
+                            value: "custom",
+                            label: I18n.tr("Custom")
+                        }
+                    ]
+
+                    PreferenceControlledBy {
+                        visible: parent.tintedBar
+                        icon: "palette"
+                        title: I18n.tr("Controlled by Material tint")
+                        reason: I18n.tr("Material tint overrides per-widget colors")
+                        actionLabel: I18n.tr("Disable tint")
+                        onActionClicked: PersonalizationConfig.setBarTint(false)
+                    }
+
+                    PreferenceSelect {
+                        visible: !parent.tintedBar
+                        label: I18n.tr("Background color")
+                        model: parent.styleColors
+                        currentValue: {
+                            const c = root.entry?.overrides?.color ?? "";
+                            return BarDefaults.isCustomColor(String(c)) ? "custom" : String(c);
+                        }
+                        inputRegionService: PopupInputRegionService
+                        modified: !!(root.entry?.overrides?.color !== undefined)
+                        onSelected: value => {
+                            const v = String(value);
+                            if (v === "")
+                                root.set("color", undefined);
+                            else if (v === "custom")
+                                root.set("color", BarDefaults.isCustomColor(String(root.entry?.overrides?.color ?? "")) ? root.entry.overrides.color : "#252b2d");
+                            else
+                                root.set("color", v);
+                        }
+                        onResetRequested: root.set("color", undefined)
+                    }
+
+                    PreferenceInput {
+                        visible: !parent.tintedBar && BarDefaults.isCustomColor(String(root.entry?.overrides?.color ?? ""))
+                        label: I18n.tr("Custom background color")
+                        placeholderText: "#252b2d"
+                        value: String(root.entry?.overrides?.color ?? "")
+                        validate: /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/
+                        errorText: I18n.tr("Hex color, e.g. #252b2d")
+                        onEditingFinished: value => root.set("color", String(value || "").trim() || undefined)
+                    }
+
+                    PreferenceSlider {
+                        visible: !parent.tintedBar
+                        label: I18n.tr("Background opacity")
+                        value: Math.round((root.entry?.overrides?.opacity ?? PersonalizationConfig.barAxes.widgetTransparency ?? 1) * 100)
+                        valueLabel: root.entry?.overrides?.opacity === undefined ? I18n.tr("Auto") : Math.round(root.entry.overrides.opacity * 100) + " %"
+                        from: 0
+                        to: 100
+                        stepSize: 5
+                        modified: root.entry?.overrides?.opacity !== undefined
+                        onMoved: value => root.set("opacity", Math.round(value) / 100)
+                        onResetRequested: root.set("opacity", undefined)
+                    }
+
+                    PreferenceSlider {
+                        visible: !parent.tintedBar
+                        label: I18n.tr("Corner radius")
+                        value: root.entry?.overrides?.radius ?? -1
+                        valueLabel: (root.entry?.overrides?.radius ?? -1) < 0 ? I18n.tr("Auto") : Math.round(root.entry.overrides.radius) + " px"
+                        from: -1
+                        to: 30
+                        stepSize: 1
+                        modified: root.entry?.overrides?.radius !== undefined
+                        onMoved: value => root.set("radius", Math.round(value) < 0 ? undefined : Math.round(value))
+                        onResetRequested: root.set("radius", undefined)
+                    }
+
+                    PreferenceSlider {
+                        visible: !parent.tintedBar
+                        label: I18n.tr("Padding")
+                        value: root.entry?.overrides?.padding ?? -1
+                        valueLabel: (root.entry?.overrides?.padding ?? -1) < 0 ? I18n.tr("Auto") : Math.round(root.entry.overrides.padding) + " px"
+                        from: -1
+                        to: 15
+                        stepSize: 1
+                        modified: root.entry?.overrides?.padding !== undefined
+                        onMoved: value => root.set("padding", Math.round(value) < 0 ? undefined : Math.round(value))
+                        onResetRequested: root.set("padding", undefined)
+                    }
+
+                    PreferenceSlider {
+                        visible: !parent.tintedBar
+                        label: I18n.tr("Border width")
+                        value: root.entry?.overrides?.borderWidth ?? -1
+                        valueLabel: (root.entry?.overrides?.borderWidth ?? -1) < 0 ? I18n.tr("Auto") : Math.round(root.entry.overrides.borderWidth) + " px"
+                        from: -1
+                        to: 4
+                        stepSize: 1
+                        modified: root.entry?.overrides?.borderWidth !== undefined
+                        onMoved: value => root.set("borderWidth", Math.round(value) < 0 ? undefined : Math.round(value))
+                        onResetRequested: root.set("borderWidth", undefined)
                     }
                 }
 

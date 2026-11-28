@@ -17,7 +17,7 @@ Item {
     readonly property real railInset: ScreenBarLayout.reservation(panelScreen, root.onLeft ? "left" : "right")
     readonly property real topInset: ScreenBarLayout.reservation(panelScreen, "top")
     readonly property real bottomInset: ScreenBarLayout.reservation(panelScreen, "bottom")
-    property real sidebarWidth: Math.min(Metrics.sidebarWidthComfortable, Math.max(0, width))
+    property real sidebarWidth: Math.min(PersonalizationConfig.sidebarWidth, Math.max(0, width))
     readonly property alias blurBackgroundItem: revealSurface.blurBackgroundItem
     readonly property bool requestedOpen: WidgetState.dashboardSidebarOpen
     property bool presentationAllowed: true
@@ -26,17 +26,13 @@ Item {
     property bool presentationOpen: false
     property bool keepLoaded: PersonalizationConfig.keepSidebarsLoaded
     property var weatherSourceOverride: null
-    readonly property bool contentReady: sidebarContentLoader.status === Loader.Ready
-                                         && sidebarContentLoader.item !== null
-                                         && sidebarContentLoader.item.readyForPresentation
+    readonly property bool contentReady: sidebarContentLoader.status === Loader.Ready && sidebarContentLoader.item !== null && sidebarContentLoader.item.readyForPresentation
     // A presented surface is only created after contentReady. It remains
     // operational until the closing reveal has fully covered its contents.
     readonly property bool contentOperational: panelPresented
     readonly property string activeView: WidgetState.dashboardSidebarView
-    readonly property int instantiatedViewCount: sidebarContentLoader.item
-                                                 ? sidebarContentLoader.item.instantiatedViewCount : 0
-    readonly property var weatherView: sidebarContentLoader.item ? sidebarContentLoader.item.weatherView :
-                                                                   null
+    readonly property int instantiatedViewCount: sidebarContentLoader.item ? sidebarContentLoader.item.instantiatedViewCount : 0
+    readonly property var weatherView: sidebarContentLoader.item ? sidebarContentLoader.item.weatherView : null
     function preparePresentation() {
         contentRetained = true;
         startPresentation();
@@ -118,7 +114,7 @@ Item {
         height: Math.max(0, root.height - root.topInset - root.bottomInset)
         open: root.presentationOpen
         onLeft: root.onLeft
-        backgroundColor: BlurService.backgroundColor(Appearance.colors.colLayer0)
+        backgroundColor: Appearance.applyAlpha(Appearance.colors.colLayer0Base, PersonalizationConfig.sidebarOpacity >= 0 ? PersonalizationConfig.sidebarOpacity : PersonalizationConfig.shellBackgroundOpacity)
         onClosed: root.finishClosing()
 
         Loader {
@@ -138,8 +134,7 @@ Item {
 
         property bool forAvatar: true
 
-        dialogTitle: forAvatar ? I18n.tr("Choose avatar", "AccountPage") : I18n.tr("Choose banner image",
-                                                                                   "AccountProfileHeader")
+        dialogTitle: forAvatar ? I18n.tr("Choose avatar", "AccountPage") : I18n.tr("Choose banner image", "AccountProfileHeader")
         description: forAvatar ? I18n.tr("Choose an image for your user avatar", "FilePickerWindow") : ""
         selectionPrompt: forAvatar ? I18n.tr("Choose an image", "FilePickerWindow") : dialogTitle
         windowIconName: forAvatar ? "add_photo_alternate" : "wallpaper"

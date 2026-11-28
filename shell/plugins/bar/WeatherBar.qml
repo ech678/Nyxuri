@@ -19,6 +19,8 @@ import "BarStyle.js" as BarStyle
 MouseArea {
     id: root
     property bool hovered: false
+    property color contentColor: Appearance.colors.colOnLayer1
+    property bool contentColorOverridden: false
     property var widgetEntry: null
     property var widgetBar: null
     readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
@@ -79,14 +81,14 @@ MouseArea {
                 fill: 0
                 text: root.iconName
                 iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColor
                 Layout.alignment: Qt.AlignVCenter
             }
 
             StyledText {
                 visible: !root.isMaterial
                 font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColor
                 text: root.tempText
                 Layout.alignment: Qt.AlignVCenter
             }
@@ -128,14 +130,14 @@ MouseArea {
                 fill: 0
                 text: root.iconName
                 iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColor
                 Layout.alignment: Qt.AlignHCenter
             }
 
             StyledText {
                 visible: !root.isMaterial
                 font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
-                color: Appearance.colors.colOnLayer1
+                color: root.contentColor
                 text: root.tempText.replace(/[CF]$/, "")
                 Layout.alignment: Qt.AlignHCenter
             }

@@ -13,7 +13,9 @@
 
 var WIDGET_STYLES = ["fused", "separate", "flat"];
 var CAPSULE_RADII = ["pill", "rounded", "px"];
-var GROUP_COLORS = ["primaryContainer", "secondaryContainer", "tertiaryContainer", "layer1", "layer0", "transparent"];
+var GROUP_COLORS = ["primaryContainer", "secondaryContainer", "tertiaryContainer", "surfaceContainerLowest", "surfaceContainerLow", "surfaceContainer", "surfaceContainerHigh", "surfaceContainerHighest", "layer1", "layer0", "transparent"];
+var LENGTH_MODES = ["full", "fit"];
+var SCROLL_ACTIONS = ["brightness", "volume", "workspace", "none"];
 
 // Defaults table. Types are the storage truth: -1/"default" sentinels mean
 // "follow the derived baseline", 1.0 scales are multipliers, colors are role
@@ -44,13 +46,16 @@ var DEFAULTS = {
     // Percent length: 0 keeps the full-width/sideMargin bar; a nonzero value
     // is the EACH-SIDE margin in percent of the screen (centered bar).
     sideMarginPercent: 0,
+    lengthMode: "full",
     // Shape axes.
     squareCorners: false,
     radius: -1,
     // Content scaling (multiplier over the NexusStyle type scale / icon baseline).
     fontScale: 1.0,
     iconScale: 1.0,
-    // Bar surface (the bar's own background shell).
+    // Bar overall opacity, blur, and surface (the bar's own background shell).
+    barOpacity: 1.0,
+    blurEnabled: true,
     surfaceColor: "default",
     surfaceTransparency: -1,
     // Bar surface border.
@@ -58,12 +63,18 @@ var DEFAULTS = {
     borderColor: "outlineVariant",
     borderOpacity: 1.0,
     borderThickness: 1,
-    // Widget layer (the group capsule chrome).
+    // Widget layer (the group capsule chrome & foreground text).
     widgetTransparency: 1.0,
+    capsuleVerticalInset: 4,
+    widgetTextColor: "default",
     widgetOutlineEnabled: false,
     widgetOutlineColor: "outline",
     widgetOutlineOpacity: 1.0,
     widgetOutlineThickness: 1,
+    // Edge scroll actions & hints.
+    leftScrollAction: "brightness",
+    rightScrollAction: "volume",
+    showScrollHints: true,
     // D4d behavior axes (bar-config.md D4d).
     autoHideDelay: 0,
     autoHideStrict: false,

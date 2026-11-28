@@ -116,14 +116,97 @@ ColumnLayout {
             "label": I18n.tr("Surface container")
         },
         {
+            "value": "surfaceContainerHigh",
+            "label": I18n.tr("Surface container high")
+        },
+        {
             "value": "primaryContainer",
             "label": I18n.tr("Primary container")
         },
         {
             "value": "secondaryContainer",
             "label": I18n.tr("Secondary container")
+        },
+        {
+            "value": "custom",
+            "label": I18n.tr("Custom")
         }
     ]
+
+    readonly property var widgetTextColorOptions: [
+        {
+            "value": "default",
+            "label": I18n.tr("Default")
+        },
+        {
+            "value": "onSurface",
+            "label": I18n.tr("On surface")
+        },
+        {
+            "value": "onLayer0",
+            "label": I18n.tr("On background")
+        },
+        {
+            "value": "primary",
+            "label": I18n.tr("Primary")
+        },
+        {
+            "value": "secondary",
+            "label": I18n.tr("Secondary")
+        },
+        {
+            "value": "onImage",
+            "label": I18n.tr("Light")
+        },
+        {
+            "value": "custom",
+            "label": I18n.tr("Custom")
+        }
+    ]
+
+    readonly property var scrollActionOptions: [
+        {
+            "value": "brightness",
+            "label": I18n.tr("Brightness")
+        },
+        {
+            "value": "volume",
+            "label": I18n.tr("Volume")
+        },
+        {
+            "value": "workspace",
+            "label": I18n.tr("Switch workspace")
+        },
+        {
+            "value": "none",
+            "label": I18n.tr("None")
+        }
+    ]
+
+    readonly property var lengthModeOptions: [
+        {
+            "value": "full",
+            "label": I18n.tr("Full")
+        },
+        {
+            "value": "fit",
+            "label": I18n.tr("Fit contents")
+        }
+    ]
+
+    readonly property var groupColorPickerOptions: PersonalizationConfig.barGroupColorOptions.concat([
+        {
+            "value": "custom",
+            "label": I18n.tr("Custom")
+        }
+    ])
+
+    readonly property bool hasBarSurface: PersonalizationConfig.barBackplate || PersonalizationConfig.barLanePill
+    readonly property bool followThemeSurfaceOpacity: (root.axes.surfaceTransparency ?? -1) < 0
+
+    function selectColorValue(raw): string {
+        return BarDefaults.isCustomColor(String(raw || "")) ? "custom" : String(raw || "default");
+    }
 
     function sentinelLabel(value): string {
         return value < 0 ? I18n.tr("Auto") : Math.round(value) + " px";
@@ -237,12 +320,22 @@ ColumnLayout {
         }
 
         PreferenceControlledBy {
-            visible: root.densityLevel === "compact" || root.densityLevel === "spacious"
+            visible: root.densityLevel === "compact" || root.densityLevel === "spacious" || root.densityLevel === "dense"
             icon: "density_medium"
-            title: root.densityLevel === "compact" ? I18n.tr("Compact density active") : I18n.tr("Spacious density active")
-            reason: I18n.tr("Drives bar thickness, margins, font scale, and icon scale")
+            title: root.densityLevel === "compact" ? I18n.tr("Compact density active") : root.densityLevel === "dense" ? I18n.tr("Dense density active") : I18n.tr("Spacious density active")
+            reason: I18n.tr("Drives bar thickness, spacing, padding, and icon scale")
             actionLabel: I18n.tr("Reset")
             onActionClicked: PersonalizationConfig.applyBarDensityPreset("comfortable")
+        }
+
+        PreferenceSelect {
+            label: I18n.tr("Bar length")
+            model: root.lengthModeOptions
+            currentValue: root.axes.lengthMode ?? "full"
+            inputRegionService: PopupInputRegionService
+            modified: (root.axes.lengthMode ?? "full") !== BarDefaults.DEFAULTS.lengthMode
+            onSelected: value => PersonalizationConfig.setBarLengthMode(String(value))
+            onResetRequested: PersonalizationConfig.setBarLengthMode(BarDefaults.DEFAULTS.lengthMode)
         }
     }
 
@@ -255,6 +348,7 @@ ColumnLayout {
         expanded: root.layoutAdvancedModified
 
         PreferenceSlider {
+            visible: (root.axes.lengthMode ?? "full") !== "fit"
             label: I18n.tr("Bar end margin")
             value: root.axes.sideMargin
             valueLabel: root.sentinelLabel(root.axes.sideMargin)
@@ -267,6 +361,7 @@ ColumnLayout {
         }
 
         PreferenceSlider {
+            visible: (root.axes.lengthMode ?? "full") !== "fit"
             label: I18n.tr("Bar end margin (%)")
             value: root.axes.sideMarginPercent
             valueLabel: root.axes.sideMarginPercent <= 0 ? I18n.tr("Off") : root.axes.sideMarginPercent + " %"
@@ -421,7 +516,7 @@ ColumnLayout {
         }
 
         PreferenceSlider {
-            visible: PersonalizationConfig.barCapsuleRadius === "px" || (PersonalizationConfig.barCapsuleRadius === "pill" && PersonalizationConfig.barWidgetStyle === "fused")
+            visible: PersonalizationConfig.barCapsuleRadius === "px" || (PersonalizationConfig.barCapsuleRadius === "pill" && PersonalizationConfig.barWidgetStyle === "fused" && !root.axes.widgetOutlineEnabled)
             label: PersonalizationConfig.barCapsuleRadius === "px" ? I18n.tr("Custom capsule radius") : I18n.tr("Joined inner radius")
             value: PersonalizationConfig.barWidgetRadius
             valueLabel: root.sentinelLabel(PersonalizationConfig.barWidgetRadius)
@@ -434,13 +529,33 @@ ColumnLayout {
         }
 
         PreferenceSelect {
+            visible: !PersonalizationConfig.barTint
             label: I18n.tr("Group color")
-            model: PersonalizationConfig.barGroupColorOptions
-            currentValue: PersonalizationConfig.barGroupColor
+            model: root.groupColorPickerOptions
+            currentValue: root.selectColorValue(PersonalizationConfig.barGroupColor)
             inputRegionService: PopupInputRegionService
             modified: PersonalizationConfig.barGroupColor !== BarDefaults.DEFAULTS.groupColor
-            onSelected: value => PersonalizationConfig.setBarGroupColor(String(value))
+            onSelected: value => PersonalizationConfig.setBarGroupColor(String(value) === "custom" ? (BarDefaults.isCustomColor(PersonalizationConfig.barGroupColor) ? PersonalizationConfig.barGroupColor : "#252b2d") : String(value))
             onResetRequested: PersonalizationConfig.setBarGroupColor(BarDefaults.DEFAULTS.groupColor)
+        }
+
+        PreferenceInput {
+            visible: !PersonalizationConfig.barTint && BarDefaults.isCustomColor(PersonalizationConfig.barGroupColor)
+            label: I18n.tr("Custom group color")
+            placeholderText: "#252b2d"
+            value: BarDefaults.isCustomColor(PersonalizationConfig.barGroupColor) ? PersonalizationConfig.barGroupColor : ""
+            validate: /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/
+            errorText: I18n.tr("Hex color, e.g. #252b2d")
+            onEditingFinished: value => PersonalizationConfig.setBarGroupColor(String(value || "").trim())
+        }
+
+        PreferenceControlledBy {
+            visible: PersonalizationConfig.barTint
+            icon: "palette"
+            title: I18n.tr("Group color managed by Material tint")
+            reason: I18n.tr("Turn off Material tint to pick a uniform capsule color")
+            actionLabel: I18n.tr("Disable tint")
+            onActionClicked: PersonalizationConfig.setBarTint(false)
         }
 
         PreferenceToggle {
@@ -452,7 +567,7 @@ ColumnLayout {
         }
 
         PreferenceSlider {
-            label: I18n.tr("Shell corner radius")
+            label: PersonalizationConfig.barEdgeMargin > 0 ? I18n.tr("Bar corner radius") : I18n.tr("Screen corner radius")
             value: root.axes.radius
             valueLabel: root.axes.radius < 0 ? I18n.tr("Auto") : Math.round(root.axes.radius) + " px"
             from: -1
@@ -464,35 +579,97 @@ ColumnLayout {
         }
     }
 
-    // 4. Material (bar surface & widget layer)
+    // 4. Material (bar overall opacity, blur, surface & widget layer)
     PreferenceHeader {
         text: I18n.tr("Surface")
     }
 
     PreferenceGroup {
+        PreferenceSlider {
+            label: I18n.tr("Bar overall opacity")
+            value: Math.round((root.axes.barOpacity ?? 1) * 100)
+            valueLabel: Math.round((root.axes.barOpacity ?? 1) * 100) + " %"
+            from: 0
+            to: 100
+            stepSize: 5
+            modified: Math.abs((root.axes.barOpacity ?? 1) - BarDefaults.DEFAULTS.barOpacity) > 0.001
+            onMoved: value => PersonalizationConfig.setBarOpacity(Math.round(value) / 100)
+            onResetRequested: PersonalizationConfig.setBarOpacity(BarDefaults.DEFAULTS.barOpacity)
+        }
+
+        PreferenceToggle {
+            text: I18n.tr("Background blur")
+            enabled: BlurService.enabled
+            checked: root.axes.blurEnabled !== false
+            modified: (root.axes.blurEnabled !== false) !== BarDefaults.DEFAULTS.blurEnabled
+            onToggled: PersonalizationConfig.setBarBlurEnabled(checked)
+            onResetRequested: PersonalizationConfig.setBarBlurEnabled(BarDefaults.DEFAULTS.blurEnabled)
+        }
+
+        PreferenceControlledBy {
+            visible: BlurService.available && !BlurService.enabled
+            icon: "blur_on"
+            title: I18n.tr("Global background blur is off")
+            reason: I18n.tr("Enable Background blur in Theme settings to blur translucent bars")
+            actionLabel: I18n.tr("Enable")
+            onActionClicked: PersonalizationConfig.setShellBlurEnabled(true)
+        }
+
+        PreferenceControlledBy {
+            visible: !root.hasBarSurface
+            icon: "layers_clear"
+            title: I18n.tr("No bar surface active")
+            reason: I18n.tr("Backplate and lane pills are off; customize capsules in Widget layer below")
+            actionLabel: I18n.tr("Enable backplate")
+            onActionClicked: PersonalizationConfig.setBarBackplate(true)
+        }
+
         PreferenceSelect {
+            visible: root.hasBarSurface
             label: I18n.tr("Surface color")
             model: root.surfaceColorOptions
-            currentValue: root.axes.surfaceColor
+            currentValue: root.selectColorValue(root.axes.surfaceColor)
             inputRegionService: PopupInputRegionService
             modified: root.axes.surfaceColor !== BarDefaults.DEFAULTS.surfaceColor
-            onSelected: value => PersonalizationConfig.setBarSurfaceColor(String(value))
+            onSelected: value => PersonalizationConfig.setBarSurfaceColor(String(value) === "custom" ? (BarDefaults.isCustomColor(root.axes.surfaceColor) ? root.axes.surfaceColor : "#1b2023") : String(value))
             onResetRequested: PersonalizationConfig.setBarSurfaceColor(BarDefaults.DEFAULTS.surfaceColor)
         }
 
+        PreferenceInput {
+            visible: root.hasBarSurface && BarDefaults.isCustomColor(root.axes.surfaceColor)
+            label: I18n.tr("Custom surface color")
+            placeholderText: "#1b2023"
+            value: BarDefaults.isCustomColor(root.axes.surfaceColor) ? root.axes.surfaceColor : ""
+            validate: /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/
+            errorText: I18n.tr("Hex color, e.g. #1b2023")
+            onEditingFinished: value => PersonalizationConfig.setBarSurfaceColor(String(value || "").trim())
+        }
+
+        PreferenceToggle {
+            visible: root.hasBarSurface
+            text: I18n.tr("Follow theme opacity")
+            subtext: I18n.tr("Turn off to set an independent background opacity for this bar")
+            checked: root.followThemeSurfaceOpacity
+            modified: !root.followThemeSurfaceOpacity
+            onToggled: checked => PersonalizationConfig.setBarSurfaceTransparency(checked ? -1 : PersonalizationConfig.shellBackgroundOpacity)
+            onResetRequested: PersonalizationConfig.setBarSurfaceTransparency(-1)
+        }
+
         PreferenceSlider {
+            visible: root.hasBarSurface && !root.followThemeSurfaceOpacity
             label: I18n.tr("Surface opacity")
-            value: root.axes.surfaceTransparency < 0 ? 1 : root.axes.surfaceTransparency
-            valueLabel: root.axes.surfaceTransparency < 0 ? I18n.tr("Auto") : Math.round(root.axes.surfaceTransparency * 100) + " %"
-            from: 0.3
-            to: 1
-            stepSize: 0.05
-            modified: root.axes.surfaceTransparency !== BarDefaults.DEFAULTS.surfaceTransparency
-            onMoved: value => PersonalizationConfig.setBarSurfaceTransparency(value)
+            value: Math.round(Math.max(0, root.axes.surfaceTransparency) * 100)
+            valueLabel: Math.round(Math.max(0, root.axes.surfaceTransparency) * 100) + " %"
+            from: 0
+            to: 100
+            stepSize: 1
+            modified: !root.followThemeSurfaceOpacity
+            onMoved: value => PersonalizationConfig.setBarSurfaceTransparency(Math.round(value) / 100)
             onResetRequested: PersonalizationConfig.setBarSurfaceTransparency(-1)
         }
 
         PreferenceToggle {
+            visible: root.hasBarSurface
             text: I18n.tr("Surface border")
             checked: root.axes.borderEnabled
             modified: root.axes.borderEnabled !== BarDefaults.DEFAULTS.borderEnabled
@@ -501,18 +678,28 @@ ColumnLayout {
         }
 
         PreferenceSelect {
-            visible: root.axes.borderEnabled
+            visible: root.hasBarSurface && root.axes.borderEnabled
             label: I18n.tr("Border color")
             model: root.surfaceColorOptions
-            currentValue: root.axes.borderColor
+            currentValue: root.selectColorValue(root.axes.borderColor)
             inputRegionService: PopupInputRegionService
             modified: root.axes.borderColor !== BarDefaults.DEFAULTS.borderColor
-            onSelected: value => PersonalizationConfig.setBarBorderColor(String(value))
+            onSelected: value => PersonalizationConfig.setBarBorderColor(String(value) === "custom" ? (BarDefaults.isCustomColor(root.axes.borderColor) ? root.axes.borderColor : "#40484c") : String(value))
             onResetRequested: PersonalizationConfig.setBarBorderColor(BarDefaults.DEFAULTS.borderColor)
         }
 
+        PreferenceInput {
+            visible: root.hasBarSurface && root.axes.borderEnabled && BarDefaults.isCustomColor(root.axes.borderColor)
+            label: I18n.tr("Custom border color")
+            placeholderText: "#40484c"
+            value: BarDefaults.isCustomColor(root.axes.borderColor) ? root.axes.borderColor : ""
+            validate: /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/
+            errorText: I18n.tr("Hex color, e.g. #40484c")
+            onEditingFinished: value => PersonalizationConfig.setBarBorderColor(String(value || "").trim())
+        }
+
         PreferenceSlider {
-            visible: root.axes.borderEnabled
+            visible: root.hasBarSurface && root.axes.borderEnabled
             label: I18n.tr("Border opacity")
             value: root.axes.borderOpacity
             valueLabel: Math.round(root.axes.borderOpacity * 100) + " %"
@@ -525,7 +712,7 @@ ColumnLayout {
         }
 
         PreferenceSlider {
-            visible: root.axes.borderEnabled
+            visible: root.hasBarSurface && root.axes.borderEnabled
             label: I18n.tr("Border width")
             value: root.axes.borderThickness
             valueLabel: Math.round(root.axes.borderThickness) + " px"
@@ -540,20 +727,53 @@ ColumnLayout {
 
     PreferenceCollapsibleGroup {
         title: I18n.tr("Widget layer")
-        subtitle: I18n.tr("Capsule opacity and outline")
+        subtitle: I18n.tr("Capsule opacity, inset, text color, and outline")
         icon: "layers"
-        expanded: root.axes.widgetOutlineEnabled || Math.abs(root.axes.widgetTransparency - BarDefaults.DEFAULTS.widgetTransparency) > 0.001
+        expanded: root.axes.widgetOutlineEnabled || Math.abs(root.axes.widgetTransparency - BarDefaults.DEFAULTS.widgetTransparency) > 0.001 || (root.axes.capsuleVerticalInset ?? 4) !== BarDefaults.DEFAULTS.capsuleVerticalInset || (root.axes.widgetTextColor ?? "default") !== BarDefaults.DEFAULTS.widgetTextColor
 
         PreferenceSlider {
             label: I18n.tr("Widget opacity")
-            value: root.axes.widgetTransparency
+            value: Math.round(root.axes.widgetTransparency * 100)
             valueLabel: Math.round(root.axes.widgetTransparency * 100) + " %"
-            from: 0.3
-            to: 1
-            stepSize: 0.05
+            from: 0
+            to: 100
+            stepSize: 5
             modified: Math.abs(root.axes.widgetTransparency - BarDefaults.DEFAULTS.widgetTransparency) > 0.001
-            onMoved: value => PersonalizationConfig.setBarWidgetTransparency(value)
+            onMoved: value => PersonalizationConfig.setBarWidgetTransparency(Math.round(value) / 100)
             onResetRequested: PersonalizationConfig.setBarWidgetTransparency(BarDefaults.DEFAULTS.widgetTransparency)
+        }
+
+        PreferenceSlider {
+            label: I18n.tr("Capsule vertical inset")
+            value: root.axes.capsuleVerticalInset ?? 4
+            valueLabel: Math.round(root.axes.capsuleVerticalInset ?? 4) + " px"
+            from: 0
+            to: 12
+            stepSize: 1
+            modified: (root.axes.capsuleVerticalInset ?? 4) !== BarDefaults.DEFAULTS.capsuleVerticalInset
+            onMoved: value => PersonalizationConfig.setBarCapsuleVerticalInset(Math.round(value))
+            onResetRequested: PersonalizationConfig.setBarCapsuleVerticalInset(BarDefaults.DEFAULTS.capsuleVerticalInset)
+        }
+
+        PreferenceSelect {
+            visible: !PersonalizationConfig.barTint
+            label: I18n.tr("Widget text color")
+            model: root.widgetTextColorOptions
+            currentValue: root.selectColorValue(root.axes.widgetTextColor ?? "default")
+            inputRegionService: PopupInputRegionService
+            modified: (root.axes.widgetTextColor ?? "default") !== BarDefaults.DEFAULTS.widgetTextColor
+            onSelected: value => PersonalizationConfig.setBarWidgetTextColor(String(value) === "custom" ? (BarDefaults.isCustomColor(root.axes.widgetTextColor) ? root.axes.widgetTextColor : "#ffffff") : String(value))
+            onResetRequested: PersonalizationConfig.setBarWidgetTextColor(BarDefaults.DEFAULTS.widgetTextColor)
+        }
+
+        PreferenceInput {
+            visible: !PersonalizationConfig.barTint && BarDefaults.isCustomColor(root.axes.widgetTextColor)
+            label: I18n.tr("Custom text color")
+            placeholderText: "#ffffff"
+            value: BarDefaults.isCustomColor(root.axes.widgetTextColor) ? root.axes.widgetTextColor : ""
+            validate: /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/
+            errorText: I18n.tr("Hex color, e.g. #ffffff")
+            onEditingFinished: value => PersonalizationConfig.setBarWidgetTextColor(String(value || "").trim())
         }
 
         PreferenceToggle {
@@ -568,11 +788,21 @@ ColumnLayout {
             visible: root.axes.widgetOutlineEnabled
             label: I18n.tr("Outline color")
             model: root.surfaceColorOptions
-            currentValue: root.axes.widgetOutlineColor
+            currentValue: root.selectColorValue(root.axes.widgetOutlineColor)
             inputRegionService: PopupInputRegionService
             modified: root.axes.widgetOutlineColor !== BarDefaults.DEFAULTS.widgetOutlineColor
-            onSelected: value => PersonalizationConfig.setBarWidgetOutlineColor(String(value))
+            onSelected: value => PersonalizationConfig.setBarWidgetOutlineColor(String(value) === "custom" ? (BarDefaults.isCustomColor(root.axes.widgetOutlineColor) ? root.axes.widgetOutlineColor : "#8a9296") : String(value))
             onResetRequested: PersonalizationConfig.setBarWidgetOutlineColor(BarDefaults.DEFAULTS.widgetOutlineColor)
+        }
+
+        PreferenceInput {
+            visible: root.axes.widgetOutlineEnabled && BarDefaults.isCustomColor(root.axes.widgetOutlineColor)
+            label: I18n.tr("Custom outline color")
+            placeholderText: "#8a9296"
+            value: BarDefaults.isCustomColor(root.axes.widgetOutlineColor) ? root.axes.widgetOutlineColor : ""
+            validate: /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/
+            errorText: I18n.tr("Hex color, e.g. #8a9296")
+            onEditingFinished: value => PersonalizationConfig.setBarWidgetOutlineColor(String(value || "").trim())
         }
 
         PreferenceSlider {
@@ -726,6 +956,34 @@ ColumnLayout {
             modified: root.axes.hoverPopoutDelay !== BarDefaults.DEFAULTS.hoverPopoutDelay
             onMoved: value => PersonalizationConfig.setBarHoverPopoutDelay(Math.round(value))
             onResetRequested: PersonalizationConfig.setBarHoverPopoutDelay(BarDefaults.DEFAULTS.hoverPopoutDelay)
+        }
+
+        PreferenceSelect {
+            label: root.horizontalBar ? I18n.tr("Left scroll action") : I18n.tr("Top scroll action")
+            model: root.scrollActionOptions
+            currentValue: root.axes.leftScrollAction ?? "brightness"
+            inputRegionService: PopupInputRegionService
+            modified: (root.axes.leftScrollAction ?? "brightness") !== BarDefaults.DEFAULTS.leftScrollAction
+            onSelected: value => PersonalizationConfig.setBarLeftScrollAction(String(value))
+            onResetRequested: PersonalizationConfig.setBarLeftScrollAction(BarDefaults.DEFAULTS.leftScrollAction)
+        }
+
+        PreferenceSelect {
+            label: root.horizontalBar ? I18n.tr("Right scroll action") : I18n.tr("Bottom scroll action")
+            model: root.scrollActionOptions
+            currentValue: root.axes.rightScrollAction ?? "volume"
+            inputRegionService: PopupInputRegionService
+            modified: (root.axes.rightScrollAction ?? "volume") !== BarDefaults.DEFAULTS.rightScrollAction
+            onSelected: value => PersonalizationConfig.setBarRightScrollAction(String(value))
+            onResetRequested: PersonalizationConfig.setBarRightScrollAction(BarDefaults.DEFAULTS.rightScrollAction)
+        }
+
+        PreferenceToggle {
+            text: I18n.tr("Show scroll hints")
+            checked: root.axes.showScrollHints !== false
+            modified: (root.axes.showScrollHints !== false) !== BarDefaults.DEFAULTS.showScrollHints
+            onToggled: PersonalizationConfig.setBarShowScrollHints(checked)
+            onResetRequested: PersonalizationConfig.setBarShowScrollHints(BarDefaults.DEFAULTS.showScrollHints)
         }
     }
 }

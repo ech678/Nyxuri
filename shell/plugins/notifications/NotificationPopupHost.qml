@@ -22,10 +22,15 @@ Scope {
             // autoHide bars reserve nothing. D4g 批四b: the selected-bar
             // bridge read retired (it could not see a rail on another entry).
             readonly property real topReserve: ScreenBarLayout.reservation(modelData, "top")
+            readonly property real bottomReserve: ScreenBarLayout.reservation(modelData, "bottom")
+            readonly property real leftReserve: ScreenBarLayout.reservation(modelData, "left")
             readonly property real rightReserve: ScreenBarLayout.reservation(modelData, "right")
-            // The 12px breathing rides on any reserving band; bare corners
-            // keep the 16px base. B-legacy: the buffer trims the shadow box.
-            readonly property int notifWidth: 380
+            readonly property string notifPos: PersonalizationConfig.notificationPosition
+            readonly property bool isBottom: notifPos.indexOf("bottom") === 0
+            readonly property bool isLeft: notifPos.endsWith("left")
+            readonly property bool isCenter: notifPos.endsWith("center")
+            readonly property int notifWidth: PersonalizationConfig.notificationWidth
+            readonly property real notifOpacity: PersonalizationConfig.notificationOpacity >= 0 ? PersonalizationConfig.notificationOpacity : Appearance.backgroundOpacity
             readonly property int notifContentHeight: NotificationService.popupList.reduce((h, notif) => {
                 return h + (NotificationService.normalActions(notif).length > 0 ? 104 : 64);
             }, 0) + Math.max(0, NotificationService.popupList.length - 1) * 10
@@ -43,13 +48,17 @@ Scope {
             visible: NotificationService.popupList.length > 0 && !NotificationService.popupInhibited
 
             anchors {
-                top: true
-                right: true
+                top: !popupWindow.isBottom
+                bottom: popupWindow.isBottom
+                left: popupWindow.isLeft
+                right: !popupWindow.isLeft && !popupWindow.isCenter
             }
 
             margins {
-                top: (popupWindow.topReserve > 0 ? popupWindow.topReserve + 12 : 16) - popupWindow.shadowBuffer
-                right: (popupWindow.rightReserve > 0 ? popupWindow.rightReserve + 12 : 16) - popupWindow.shadowBuffer
+                top: (!popupWindow.isBottom ? (popupWindow.topReserve > 0 ? popupWindow.topReserve + 12 : 16) : 0) - popupWindow.shadowBuffer
+                bottom: (popupWindow.isBottom ? (popupWindow.bottomReserve > 0 ? popupWindow.bottomReserve + 12 : 16) : 0) - popupWindow.shadowBuffer
+                left: (popupWindow.isLeft ? (popupWindow.leftReserve > 0 ? popupWindow.leftReserve + 12 : 16) : 0) - popupWindow.shadowBuffer
+                right: (!popupWindow.isLeft && !popupWindow.isCenter ? (popupWindow.rightReserve > 0 ? popupWindow.rightReserve + 12 : 16) : 0) - popupWindow.shadowBuffer
             }
 
             implicitWidth: notifWidth + shadowBuffer * 2
@@ -70,7 +79,7 @@ Scope {
                     width: popupWindow.notifWidth
                     height: popupWindow.cardHeight
                     radius: Appearance.rounding.large
-                    color: Appearance.applyAlpha(Appearance.colors.colLayer0, Appearance.backgroundOpacity)
+                    color: Appearance.applyAlpha(Appearance.colors.colLayer0Base, popupWindow.notifOpacity)
                     border.width: 1
                     border.color: Appearance.colors.colLayer0Border
                     clip: true

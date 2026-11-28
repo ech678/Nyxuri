@@ -42,6 +42,9 @@ ButtonMouseArea {
     property var widgetEntry: null
     readonly property bool showAppIcons: BarWidgetDefaults.option("workspaces", root.widgetEntry, "showAppIcons")
     readonly property bool alwaysShowNumbers: BarWidgetDefaults.option("workspaces", root.widgetEntry, "alwaysShowNumbers")
+    readonly property bool hideEmpty: BarWidgetDefaults.option("workspaces", root.widgetEntry, "hideEmpty")
+    readonly property bool invertScroll: BarWidgetDefaults.option("workspaces", root.widgetEntry, "invertScroll")
+    readonly property bool monochromeIcons: BarWidgetDefaults.option("workspaces", root.widgetEntry, "monochromeIcons")
     readonly property string indicatorStyle: BarWidgetDefaults.option("workspaces", root.widgetEntry, "indicatorStyle")
     readonly property var numberMap: BarWidgetDefaults.workspaceNumberMap(BarWidgetDefaults.option("workspaces", root.widgetEntry, "numberStyle"))
     // State colors (default skin): active = the trailing pill, occupied =
@@ -93,7 +96,29 @@ ButtonMouseArea {
 
     readonly property int group: Math.floor((root.activeNumber - 1) / root.shownBudget)
 
+    readonly property var visibleWorkspaceIds: {
+        if (!root.hideEmpty)
+            return [];
+        const winList = CompositorDriver.windows ?? [];
+        const out = [];
+        const list = (CompositorDriver.workspaceList ?? []).filter(w => w.output === root.monitorName).sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0));
+        for (let i = 0; i < list.length; i += 1) {
+            const ws = list[i];
+            const idx = ws.idx ?? 0;
+            if (idx <= 0)
+                continue;
+            const hasWins = winList.some(w => w.workspaceId === ws.id);
+            if (ws.isActive || idx === root.activeNumber || hasWins)
+                out.push(idx);
+            if (out.length >= root.shownBudget)
+                break;
+        }
+        return out.length > 0 ? out : [root.activeNumber];
+    }
+
     function getWorkspaceIdAt(index) {
+        if (root.hideEmpty)
+            return root.visibleWorkspaceIds[index] ?? root.activeNumber;
         return root.group * root.shownBudget + index + 1;
     }
 
@@ -104,7 +129,7 @@ ButtonMouseArea {
     // you move between workspaces. end4's fixed grid was Hyprland's
     // pre-created address space and grew seven fictional slots live; the
     // budget only caps the page (and drives paging) instead.
-    readonly property int shownCount: Math.max(1, Math.min(root.shownBudget, root.existingMaxIdx - root.group * root.shownBudget))
+    readonly property int shownCount: root.hideEmpty ? Math.max(1, root.visibleWorkspaceIds.length) : Math.max(1, Math.min(root.shownBudget, root.existingMaxIdx - root.group * root.shownBudget))
 
     function workspaceForNumber(number): var {
         return (CompositorDriver.workspaceList ?? []).find(w => w.output === root.monitorName && w.idx === number) ?? null;
@@ -150,7 +175,7 @@ ButtonMouseArea {
     property real workspaceIconSizeShrinked: workspaceButtonWidth * 0.55
     property real workspaceIconOpacityShrinked: 1
     property real workspaceIconMarginShrinked: -4
-    property int workspaceIndexInGroup: (root.activeNumber - 1) % root.shownBudget
+    property int workspaceIndexInGroup: root.hideEmpty ? Math.max(0, root.visibleWorkspaceIds.indexOf(root.activeNumber)) : ((root.activeNumber - 1) % root.shownBudget)
     readonly property string style: BarWidgetDefaults.option("workspaces", root.widgetEntry, "style")
     readonly property bool altStyle: root.style !== "default"
     readonly property real slotLength: root.style === "gnome" ? 16 : root.style === "dots" ? 24 : root.style === "ticks" ? 16 : root.workspaceButtonWidth
@@ -199,10 +224,9 @@ ButtonMouseArea {
             root.styleEditorRequested();
     }
     onWheel: event => {
-        if (event.angleDelta.y < 0)
-            switchWorkspaceRelative("next");
-        else if (event.angleDelta.y > 0)
-            switchWorkspaceRelative("prev");
+        const up = event.angleDelta.y > 0;
+        const goNext = root.invertScroll ? up : !up;
+        switchWorkspaceRelative(goNext ? "next" : "prev");
     }
 
     Loader {
@@ -388,7 +412,7 @@ ButtonMouseArea {
                             implicitWidth: appIcon.implicitWidth
                             implicitHeight: appIcon.implicitHeight
                             colorizationColor: Appearance.m3colors.darkmode ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnPrimary
-                            colorization: Config.options?.bar?.m3?.workspaces?.monochromeIcons ? 0.8 : 0.5
+                            colorization: (root.monochromeIcons || (Config.options?.bar?.m3?.workspaces?.monochromeIcons ?? false)) ? 0.8 : 0.5
                             brightness: 0
                             source: appIcon
 

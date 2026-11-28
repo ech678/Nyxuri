@@ -68,9 +68,9 @@ NexusPageBase {
         }
     ]
     readonly property var engineOptions: UiPreferences.searchEngines.map(engine => ({
-        "label": engine.label,
-        "value": engine.id
-    }))
+                "label": engine.label,
+                "value": engine.id
+            }))
 
     ColumnLayout {
         anchors.horizontalCenter: parent.horizontalCenter
@@ -105,13 +105,56 @@ NexusPageBase {
         PreferenceSelect {
             id: appOrderPicker
 
-            last: true
             icon: "sort"
             label: I18n.tr("Application order")
             model: root.applicationOrderOptions
             currentValue: UiPreferences.spotlightAppOrder
             inputRegionService: PopupInputRegionService
             onSelected: value => UiPreferences.setSpotlightAppOrder(value)
+        }
+
+        PreferenceSlider {
+            visible: UiPreferences.spotlightAppStyle === "grid"
+            label: I18n.tr("Grid icon size")
+            valueLabel: Math.round(PersonalizationConfig.spotlightIconSize) + " px"
+            value: PersonalizationConfig.spotlightIconSize
+            from: 36
+            to: 96
+            stepSize: 4
+            modified: PersonalizationConfig.spotlightIconSize !== 56
+            onMoved: value => PersonalizationConfig.setSpotlightIconSize(Math.round(value))
+            onResetRequested: PersonalizationConfig.setSpotlightIconSize(56)
+        }
+
+        PreferenceToggle {
+            text: I18n.tr("Follow theme opacity")
+            checked: PersonalizationConfig.spotlightOpacity < 0
+            modified: PersonalizationConfig.spotlightOpacity >= 0
+            onToggled: checked => PersonalizationConfig.setSpotlightOpacity(checked ? -1 : PersonalizationConfig.shellBackgroundOpacity)
+            onResetRequested: PersonalizationConfig.setSpotlightOpacity(-1)
+        }
+
+        PreferenceSlider {
+            visible: PersonalizationConfig.spotlightOpacity >= 0
+            label: I18n.tr("Launcher opacity")
+            valueLabel: Math.round(Math.max(0, PersonalizationConfig.spotlightOpacity) * 100) + " %"
+            value: Math.round(Math.max(0, PersonalizationConfig.spotlightOpacity) * 100)
+            from: 0
+            to: 100
+            stepSize: 5
+            modified: PersonalizationConfig.spotlightOpacity >= 0
+            onMoved: value => PersonalizationConfig.setSpotlightOpacity(Math.round(value) / 100)
+            onResetRequested: PersonalizationConfig.setSpotlightOpacity(-1)
+        }
+
+        PreferenceToggle {
+            last: true
+            text: I18n.tr("Background blur")
+            enabled: BlurService.enabled
+            checked: PersonalizationConfig.spotlightBlurEnabled
+            modified: !PersonalizationConfig.spotlightBlurEnabled
+            onToggled: PersonalizationConfig.setSpotlightBlurEnabled(checked)
+            onResetRequested: PersonalizationConfig.setSpotlightBlurEnabled(true)
         }
 
         // Web search

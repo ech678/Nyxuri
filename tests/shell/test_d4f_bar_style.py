@@ -168,5 +168,37 @@ class AppearanceUiStructureTest(unittest.TestCase):
         self.assertIn('PersonalizationConfig.setBarLanePill(', self.appearance)
 
 
+class BarOpacityAndBlurTest(unittest.TestCase):
+    """Dedicated 3-tier bar opacity, blur wiring, and surface color consistency."""
+
+    def test_appearance_col_layer0_consumes_background_opacity(self):
+        appearance = read(os.path.join(COMMONS_DIR, "Appearance.qml"))
+        self.assertIn("root.backgroundOpacity", appearance)
+        self.assertRegex(appearance, r"property color colLayer0:\s*root\.transparentize\(colLayer0Base,\s*1 - root\.backgroundOpacity")
+
+    def test_bar_opacity_and_blur_axes_and_unclamped_range(self):
+        defaults = read(os.path.join(SERVICES_DIR, "BarDefaults.js"))
+        pc = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
+        for axis in ("barOpacity: 1.0,", "blurEnabled: true,", "capsuleVerticalInset: 4,",
+                     'widgetTextColor: "default",', 'lengthMode: "full",',
+                     'leftScrollAction: "brightness",', 'rightScrollAction: "volume",',
+                     "showScrollHints: true,"):
+            self.assertIn(axis, defaults)
+        # Ensure 0.3 opacity floor is removed for both surface and widget transparency.
+        self.assertNotIn("Math.max(0.3,", pc)
+        self.assertIn("Math.max(0, Math.min(1,", pc)
+
+    def test_bar_chrome_and_island_consume_resolved_surface_color_and_blur(self):
+        bar = read(os.path.join(BAR_DIR, "Bar.qml"))
+        content = read(os.path.join(BAR_DIR, "BarContent.qml"))
+        island = read(os.path.join(BAR_DIR, "DynamicIsland.qml"))
+        self.assertIn('WlrLayershell.namespace: "nyxuri-shell-bar"', bar)
+        self.assertIn("CompositorBlurRegion {", bar)
+        self.assertIn("color: barRoot.resolvedSurfaceColor", bar)
+        self.assertIn("opacity: barRoot.barVisualOpacity", bar)
+        self.assertIn("materialPillBgColor: PersonalizationConfig.resolvedBarSurfaceColor(", content)
+        self.assertIn("PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.barAxes)", island)
+
+
 if __name__ == "__main__":
     unittest.main()
