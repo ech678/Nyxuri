@@ -135,11 +135,13 @@ ButtonMouseArea {
         return wins.find(w => w.isFocused) ?? wins[0];
     }
 
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     // ---- end4 visual skeleton ----
-    property bool vertical: Config.options.bar.vertical
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
     property bool superPressAndHeld: false // Relevant modifications at bottom of file
 
-    property real workspaceButtonWidth: PersonalizationConfig.barIsMaterial ? 30 : 26
+    property real workspaceButtonWidth: (root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4) ? 30 : 26
     property real activeWorkspaceMargin: 2
     property real activeWorkspaceSize: workspaceButtonWidth - activeWorkspaceMargin * 2
     property real workspaceIconSize: workspaceButtonWidth * 0.69
@@ -154,7 +156,7 @@ ButtonMouseArea {
     Layout.alignment: vertical ? Qt.AlignHCenter : Qt.AlignVCenter
     Layout.fillWidth: vertical
     Layout.fillHeight: !vertical
-    readonly property real barThickness: vertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight
+    readonly property real barThickness: vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : PersonalizationConfig.resolvedBarHeight(root.barAxes)
     implicitWidth: vertical ? root.barThickness : (altStyle ? (altLoader.item?.implicitWidth ?? 0) : occupiedIndicators.implicitWidth)
     implicitHeight: vertical ? (altStyle ? (altLoader.item?.implicitHeight ?? 0) : occupiedIndicators.implicitHeight) : root.barThickness
 
@@ -530,7 +532,7 @@ ButtonMouseArea {
             anchors.centerIn: parent
             StyledText {
                 anchors.centerIn: parent
-                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font - ((text.length - 1) * (text !== "10") * 2)
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar) - ((text.length - 1) * (text !== "10") * 2)
                 color: wsNum.contentColor
                 text: root.numberMap[wsNum.wsId - 1] || wsNum.wsId
             }

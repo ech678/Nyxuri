@@ -245,9 +245,9 @@ class VersionChainTest(unittest.TestCase):
         cls.config_service = read(os.path.join(SERVICES_DIR, "ConfigService.qml"))
 
     def test_version_constants(self):
-        # D4c bumped the chain to 5 (bar-level axes on the configs entry);
+        # D4e e5 bumped the chain to 6 (island axes on the lane entry);
         # the LEGACY floor stays 2.
-        self.assertIn("var CURRENT_VERSION = 5", self.migrations)
+        self.assertIn("var CURRENT_VERSION = 6", self.migrations)
         self.assertIn("var LEGACY_VERSION = 2", self.migrations)
 
     def test_explicit_legacy_layout_keys(self):
@@ -266,36 +266,36 @@ class VersionChainTest(unittest.TestCase):
                         pc.index("const source = configSection(migration.config)"))
 
     def test_stamp_bumped_and_fast_path_keeps_v2(self):
-        # D4c writes stamp 5; the fast path accepts 2..5.
-        self.assertIn("# nyxuri-config-schema: 5\\n", self.config_service)
+        # D4e e5 writes stamp 6; the fast path accepts 2..6.
+        self.assertIn("# nyxuri-config-schema: 6\\n", self.config_service)
         self.assertIn('"# nyxuri-config-schema: 2"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 3"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 4"', self.config_service)
         self.assertIn('"# nyxuri-config-schema: 5"', self.config_service)
+        self.assertIn('"# nyxuri-config-schema: 6"', self.config_service)
 
 
 class CatalogConsumersTest(unittest.TestCase):
-    """The settings surfaces consume the unified catalog."""
+    """The settings surfaces consume the unified catalog (D4e e4 list editor)."""
 
     def test_card_uses_catalog_and_entries(self):
-        card = read(os.path.join(BAR_DIR, "BarComponentsCard.qml"))
-        self.assertIn("BarWidgetCatalog {", card)
-        self.assertIn("options: widgetCatalog.options()", card)
-        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", card)
-        self.assertIn("allowDuplicates: true", card)
-        self.assertNotIn("PersonalizationConfig.barComponentOptions", card)
+        modules = read(os.path.join(BAR_DIR, "BarModulesSection.qml"))
+        self.assertIn("BarWidgetCatalog {", modules)
+        self.assertIn("PersonalizationConfig.barLayoutEntriesLeft", modules)
+        self.assertNotIn("PersonalizationConfig.barComponentOptions", modules)
+        picker = read(os.path.join(BAR_DIR, "BarWidgetPickerPopup.qml"))
+        self.assertIn("widgetCatalog.options()", picker)
 
     def test_field_supports_entries_and_enabled_toggle(self):
-        field = read(os.path.join(BAR_DIR, "SortableMultiSelectField.qml"))
-        self.assertIn("signal enabledToggled(string entryKey)", field)
-        self.assertIn("property bool allowDuplicates: false", field)
-        self.assertIn("function valueKey(value)", field)
-        self.assertIn('"visibility_off"', field)
+        section = read(os.path.join(BAR_DIR, "BarLaneSection.qml"))
+        self.assertIn("signal configureRequested(string entryUid)", section)
+        self.assertIn("PersonalizationConfig.setBarEntryEnabled(", section)
+        self.assertIn("PersonalizationConfig.removeBarEntry(", section)
 
     def test_coordinator_drags_by_uid(self):
-        coordinator = read(os.path.join(BAR_DIR, "LayoutDragCoordinator.qml"))
-        self.assertIn("property string componentUid", coordinator)
-        self.assertIn("signal dropped(string componentUid, string componentId, string targetZone, int targetIndex)", coordinator)
+        modules = read(os.path.join(BAR_DIR, "BarModulesSection.qml"))
+        self.assertIn("property string dragUid:", modules)
+        self.assertIn("PersonalizationConfig.moveBarEntry(uid, zone, index)", modules)
 
     def test_dashboard_uses_shared_catalog(self):
         card = read(os.path.join(REPO_ROOT, "shell", "plugins", "settings",

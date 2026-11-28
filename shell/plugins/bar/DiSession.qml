@@ -49,7 +49,7 @@ Item {
                     anchors.fill: parent
                     wrappedShape: MaterialShapeCanvas.Shape.Cookie12Sided
                     text: actionDelegate.modelData.icon
-                    iconSize: 18
+                    iconSize: 18 * BarScale.iconFor(di.widgetBar)
                     fill: actionDelegate.isFocused ? 1 : 0
                     padding: 4
                     color: actionDelegate.isFocused ? Appearance.colors.colPrimary : Appearance.colors.colLayer1

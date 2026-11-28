@@ -22,8 +22,8 @@ Item {
     required property Item di
     anchors.fill: parent
 
-    readonly property bool showMediaControls: PersonalizationConfig.islandShowMediaControls
-    readonly property string visualizerStyle: PersonalizationConfig.islandVisualizerStyle
+    readonly property bool showMediaControls: di && typeof di.option === "function" ? di.option("showMediaControls") : false
+    readonly property string visualizerStyle: di && typeof di.option === "function" ? di.option("visualizerStyle") : "dots"
 
     // Probe surface (scripts/dev/probe-bar.sh): the B-10 control matrix
     // (controls x visualizer style) and the cava lease, read at runtime.
@@ -92,14 +92,14 @@ Item {
             id: trackTitleMetrics
             visible: false
             text: di.activePlayer?.trackTitle ?? ""
-            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(di.widgetBar)
             font.weight: Font.DemiBold
         }
         StyledText {
             id: trackArtistMetrics
             visible: false
             text: di.activePlayer?.trackArtist ?? ""
-            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(di.widgetBar)
         }
 
         ColumnLayout {
@@ -124,7 +124,7 @@ Item {
             StyledText {
                 Layout.fillWidth: true
                 text: di.activePlayer?.trackTitle ?? ""
-                font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+                font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(di.widgetBar)
                 font.weight: Font.DemiBold
                 color: Appearance.colors.colOnLayer0
                 elide: Text.ElideRight
@@ -134,7 +134,7 @@ Item {
             StyledText {
                 Layout.fillWidth: true
                 text: di.activePlayer?.trackArtist ?? ""
-                font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+                font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(di.widgetBar)
                 color: Appearance.colors.colOnLayer0
                 opacity: 0.7
                 elide: Text.ElideRight

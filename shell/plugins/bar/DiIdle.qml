@@ -34,8 +34,9 @@ Item {
     }
     anchors.fill: parent
 
-    readonly property bool systemIconsElsewhere: Config.options.bar.layouts.leftLayout.includes("systemIcons") || Config.options.bar.layouts.rightLayout.includes("systemIcons")
-    readonly property bool showAvatar: PersonalizationConfig.islandShowAvatar
+    readonly property bool systemIconsElsewhere: di.widgetBar ? ["left", "middle", "right"].some(z => (di.widgetBar.lanes?.[z] ?? []).some(e => e.enabled !== false && e.widgetId === "systemIcons")) : (PersonalizationConfig.barLayoutLeft.includes("systemIcons") || PersonalizationConfig.barLayoutRight.includes("systemIcons"))
+    readonly property bool showAvatar: di && typeof di.option === "function" ? di.option("showAvatar") : true
+    readonly property string satellite: di && typeof di.option === "function" ? di.option("satellite") : "clock"
 
     // Probe surface (scripts/dev/probe-bar.sh): the horizontal clock and the
     // avatar fallback are the two idle-face facts that cannot be read from the
@@ -87,7 +88,7 @@ Item {
             anchors.centerIn: parent
             visible: avatarImage.status !== Image.Ready
             text: "person"
-            iconSize: NexusStyle.font.bodyLarge * BarScale.font
+            iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(di.widgetBar)
             color: Appearance.colors.colOnPrimaryContainer
         }
     }
@@ -107,7 +108,7 @@ Item {
             reveal: !diIdleRoot.systemIconsElsewhere && VolumeService.sourceMuted
             MaterialSymbol {
                 text: "mic_off"
-                iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(di.widgetBar)
                 color: Appearance.colors.colOnLayer0
             }
         }
@@ -116,7 +117,7 @@ Item {
             reveal: !diIdleRoot.systemIconsElsewhere && VolumeService.sinkMuted
             MaterialSymbol {
                 text: "volume_off"
-                iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(di.widgetBar)
                 color: Appearance.colors.colOnLayer0
             }
         }
@@ -125,7 +126,7 @@ Item {
             reveal: !diIdleRoot.systemIconsElsewhere && !NetworkService.connected
             MaterialSymbol {
                 text: "wifi_off"
-                iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(di.widgetBar)
                 color: Appearance.colors.colError
             }
         }
@@ -137,7 +138,7 @@ Item {
         id: satelliteLoader
 
         anchors.centerIn: parent
-        sourceComponent: PersonalizationConfig.islandSatellite === "clock" ? clockComponent : PersonalizationConfig.islandSatellite === "weather" ? weatherComponent : null
+        sourceComponent: diIdleRoot.satellite === "clock" ? clockComponent : diIdleRoot.satellite === "weather" ? weatherComponent : null
 
         Component {
             id: clockComponent
@@ -154,13 +155,13 @@ Item {
                 MaterialSymbol {
                     fill: 0
                     text: WeatherService.hasValidData ? WeatherService.currentIconName : "cloud"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(di.widgetBar)
                     color: Appearance.colors.colOnLayer0
                     Layout.alignment: Qt.AlignVCenter
                 }
 
                 StyledText {
-                    font.pixelSize: di.isMaterial ? NexusStyle.font.bodyLarge * BarScale.font : NexusStyle.font.bodyMedium * BarScale.font
+                    font.pixelSize: (di.isMaterial ? NexusStyle.font.bodyLarge : NexusStyle.font.bodyMedium) * BarScale.fontFor(di.widgetBar)
                     font.features: {
                         "tnum": 1
                     }

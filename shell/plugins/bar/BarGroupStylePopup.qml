@@ -16,9 +16,10 @@ PopupWindow {
     readonly property var colorOptions: ["transparent", "layer0", "layer1", "layer2", "surfaceContainer", "primary", "primaryContainer", "secondary", "secondaryContainer", "tertiary", "tertiaryContainer", "errorContainer", "onError", "onLayer0"]
     readonly property real padding: Appearance.sizes.elevationMargin
     readonly property real bounceRoom: 24
-    readonly property bool barVertical: Config.options.bar.vertical
+    readonly property var barAxes: root.group && root.group.barAxes ? root.group.barAxes : PersonalizationConfig.barAxes
+    readonly property bool barVertical: root.barAxes.position === "left" || root.barAxes.position === "right"
     // B9.4: "end" means bottom for a horizontal bar, right for a vertical one.
-    readonly property bool barAtEnd: Config.options.bar.edge === "bottom" || Config.options.bar.edge === "right"
+    readonly property bool barAtEnd: root.barAxes.position === "bottom" || root.barAxes.position === "right"
     readonly property real awaySign: root.barAtEnd ? -1 : 1
     property bool closing: false
 

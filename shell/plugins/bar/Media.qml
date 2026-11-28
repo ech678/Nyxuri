@@ -17,11 +17,11 @@ Item {
     property bool contentColorOverridden: false
     signal styleEditorRequested
 
-    property bool vertical: false
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
-    // D4b entry axes: width clamp (D1 kept 160/300), the title line and
-    // the wheel behavior (volume step like the bar edge scroll).
     property var widgetEntry: null
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
     readonly property real mediaMinWidth: BarWidgetDefaults.option("media", root.widgetEntry, "minWidth")
     readonly property real mediaMaxWidth: BarWidgetDefaults.option("media", root.widgetEntry, "maxWidth")
     readonly property bool showTitle: BarWidgetDefaults.option("media", root.widgetEntry, "showTitle")
@@ -41,8 +41,6 @@ Item {
     readonly property string cleanedTitle: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
     readonly property string popupMode: Config.options?.media?.popupMode ?? "dock"
     property bool barMediaPopupVisible: false
-    property var widgetBar: null
-    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
 
     readonly property string artUrl: MprisController.artUrlOf(activePlayer) ?? ""
     readonly property string trackTitle: MprisController.titleOf(activePlayer) ?? ""
@@ -99,8 +97,8 @@ Item {
     property real allottedPrimarySize: -1
     readonly property real naturalPrimarySize: !root.shouldShow ? 0 : root.vertical ? root.implicitHeight : Math.max(root.mediaMinWidth, (isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8))
     readonly property real minimumPrimarySize: !root.shouldShow ? 0 : root.vertical ? root.implicitHeight : root.mediaMinWidth
-    implicitWidth: !root.shouldShow ? 0 : vertical ? Appearance.sizes.verticalBarWidth : Math.max(root.mediaMinWidth, Math.min((root.allottedPrimarySize > 0 ? root.allottedPrimarySize : (isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8)), root.mediaMaxWidth))
-    implicitHeight: vertical ? (isMaterial ? 32 : mediaCircProg.implicitHeight) : Appearance.sizes.barHeight
+    implicitWidth: !root.shouldShow ? 0 : vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : Math.max(root.mediaMinWidth, Math.min((root.allottedPrimarySize > 0 ? root.allottedPrimarySize : (isMaterial ? materialRow.implicitWidth : rowLayout.implicitWidth + 8)), root.mediaMaxWidth))
+    implicitHeight: vertical ? (isMaterial ? 32 : mediaCircProg.implicitHeight) : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     Timer {
         running: activePlayer?.playbackState == MprisPlaybackState.Playing
@@ -174,8 +172,8 @@ Item {
             anchor {
                 window: root.QsWindow.window
                 item: root
-                edges: (Config.options?.bar?.bottom ?? false) ? Edges.Top : Edges.Bottom
-                gravity: (Config.options?.bar?.bottom ?? false) ? Edges.Top : Edges.Bottom
+                edges: root.barAxes.position === "bottom" ? Edges.Top : Edges.Bottom
+                gravity: root.barAxes.position === "bottom" ? Edges.Top : Edges.Bottom
             }
             implicitWidth: mediaPopupContent.width + Appearance.sizes.elevationMargin * 2
             implicitHeight: mediaPopupContent.height + Appearance.sizes.elevationMargin * 2
@@ -196,7 +194,7 @@ Item {
                 }
                 opacity: presented ? 1 : 0
                 scale: presented ? 1 : 0.975
-                transformOrigin: (Config.options?.bar?.bottom ?? false) ? Item.Bottom : Item.Top
+                transformOrigin: root.barAxes.position === "bottom" ? Item.Bottom : Item.Top
                 Behavior on opacity {
                     enabled: Appearance.animationsEnabled
                     NumberAnimation {
@@ -267,7 +265,7 @@ Item {
                     anchors.centerIn: parent
                     fill: 1
                     text: root.activePlayer?.isPlaying ? "pause" : "music_note"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.contentColor
                 }
             }
@@ -287,7 +285,7 @@ Item {
             anchors.centerIn: parent
             fill: 1
             text: root.activePlayer?.isPlaying ? "pause" : "music_note"
-            iconSize: NexusStyle.font.bodyLarge * BarScale.font
+            iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
             color: root.mediaInk
         }
     }
@@ -316,7 +314,7 @@ Item {
                         anchors.centerIn: parent
                         fill: 1
                         text: root.activePlayer?.isPlaying ? "pause" : "music_note"
-                        iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                        iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                         color: Appearance.colors.colOnLayer1
                     }
                 }
@@ -394,7 +392,7 @@ Item {
                         MaterialSymbol {
                             anchors.centerIn: parent
                             text: "account_circle"
-                            iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                            iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                             color: M3Palette.primaryContainerForeground
                             visible: avatarImage.status === Image.Error || avatarImage.status === Image.Null
                         }
@@ -407,7 +405,7 @@ Item {
 
                         StyledText {
                             text: SystemIdentityService.accountName
-                            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+                            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                             color: root.mediaInk
                             elide: Text.ElideRight
                             Layout.fillWidth: true
@@ -416,7 +414,7 @@ Item {
 
                         StyledText {
                             id: distroLabel
-                            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+                            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                             color: root.mediaInk
                             opacity: 0.7
                             elide: Text.ElideRight
@@ -466,7 +464,7 @@ Item {
                             artRadius: artRect.radius
                             placeholderColor: root.mediaContainer
                             iconColor: root.mediaInk
-                            iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                            iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                         }
                     }
 
@@ -480,7 +478,7 @@ Item {
                             id: artistText
                             visible: !(Config.options?.bar?.m3?.media?.onlyTitle ?? false) && root.trackArtist.length > 0
                             text: root.trackArtist
-                            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+                            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                             color: root.mediaInk
                             elide: Text.ElideRight
                             Layout.fillWidth: true
@@ -492,7 +490,7 @@ Item {
                             readonly property bool titleOnly: Config.options?.bar?.m3?.media?.onlyTitle ?? false
                             Layout.topMargin: (root.trackArtist.length === 0) ? -13 : 0
                             text: root.trackTitle.length > 0 ? root.trackTitle : Translation.tr("No media")
-                            font.pixelSize: titleOnly ? NexusStyle.font.bodyMedium * BarScale.font : NexusStyle.font.bodySmall * BarScale.font
+                            font.pixelSize: titleOnly ? NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar) : NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                             font.weight: titleOnly ? Font.Medium : Font.Normal
                             color: titleOnly ? root.mediaInk : (root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.7) : ColorUtils.readableSubtext(root.mediaInk, root.mediaContainer, 0.72))
                             elide: Text.ElideRight
@@ -515,7 +513,7 @@ Item {
                             anchors.centerIn: parent
                             horizontalAlignment: Text.AlignHCenter
                             text: root.isPlaying ? "pause" : "play_arrow"
-                            iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                            iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                             fill: 1
                             color: root.playInk
                         }
@@ -537,7 +535,7 @@ Item {
                             anchors.centerIn: parent
                             horizontalAlignment: Text.AlignHCenter
                             text: "skip_next"
-                            iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                            iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                             fill: 1
                             color: root.mediaInk
                         }

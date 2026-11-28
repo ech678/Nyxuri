@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Templates
 import qs.commons
+import qs.commons.i18n
 import qs.ui
 
 // Slider row (Caelestia Nexus SliderRow): leading icon, label plus current
@@ -20,6 +21,8 @@ ConnectedRect {
     property real to: 1
     property real stepSize: 0
     property real wheelStep: stepSize > 0 ? stepSize : (to - from) / 20
+    property bool modified: false
+    property string resetTooltip: ""
 
     signal moved(real value)
 
@@ -27,6 +30,7 @@ ConnectedRect {
     // click, wheel step) — consumers with live-preview semantics (the
     // horizontal clock axes) persist on commit instead of on every tick.
     signal committed(real value)
+    signal resetRequested
 
     Layout.fillWidth: true
     implicitHeight: column.implicitHeight + NexusStyle.padding.medium * 2
@@ -72,6 +76,19 @@ ConnectedRect {
 
                     color: Appearance.m3colors.m3outline
                     font.pixelSize: NexusStyle.font.bodyMedium
+                }
+
+                IconButton {
+                    visible: root.modified
+                    Layout.alignment: Qt.AlignVCenter
+                    width: NexusStyle.icon.small + NexusStyle.padding.small
+                    height: NexusStyle.icon.small + NexusStyle.padding.small
+                    controlSize: NexusStyle.icon.small + NexusStyle.padding.small
+                    iconSize: NexusStyle.icon.small
+                    iconName: "restart_alt"
+                    accessibleName: root.resetTooltip.length > 0 ? root.resetTooltip : I18n.tr("Reset to default")
+                    tooltipText: accessibleName
+                    onClicked: root.resetRequested()
                 }
             }
 

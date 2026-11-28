@@ -24,7 +24,7 @@ import "OverflowLayout.js" as OverflowLayout
 
 Item {
     id: root
-    implicitHeight: Appearance.sizes.barHeight
+    implicitHeight: PersonalizationConfig.resolvedBarHeight(root.axes)
     width: parent.width
     // D4e per-bar host: the window injects its entry's config; standalone
     // mounts (the probe harness, direct file:// loads) fall back to the
@@ -268,7 +268,7 @@ Item {
         if (loader.item && loader.item.widgetEntry !== undefined)
             loader.item.widgetEntry = entry;
         if (loader.item && loader.item.widgetBar !== undefined)
-            loader.item.widgetBar = root.barConfig;
+            loader.item.widgetBar = Qt.binding(() => root.barConfig);
     }
 
     function shouldPaintMaterialPill(name) {

@@ -14,8 +14,9 @@ Item {
 
     // Injected by the bar lane hosts (D4a property-injection protocol).
     property var widgetEntry: null
+    property var widgetBar: null
 
-    property bool vertical: Config.options.bar.vertical
+    property bool vertical: root.widgetBar ? (root.widgetBar.axes.position === "left" || root.widgetBar.axes.position === "right") : false
 
     readonly property real spacerSize: BarWidgetDefaults.option("spacer", root.widgetEntry, "size")
 

@@ -31,9 +31,12 @@ ConnectedRect {
                                                                                    !!validate(input.text))
 
     property bool isError: false
+    property bool modified: false
+    property string resetTooltip: ""
 
     signal valueEdited(string value)
     signal editingFinished(string value)
+    signal resetRequested
 
     function clear(): void {
         input.clear();
@@ -79,6 +82,19 @@ ConnectedRect {
                 font.pixelSize: NexusStyle.font.labelSmall
                 elide: Text.ElideRight
             }
+        }
+
+        IconButton {
+            visible: root.modified
+            Layout.alignment: Qt.AlignVCenter
+            width: NexusStyle.icon.small + NexusStyle.padding.small
+            height: NexusStyle.icon.small + NexusStyle.padding.small
+            controlSize: NexusStyle.icon.small + NexusStyle.padding.small
+            iconSize: NexusStyle.icon.small
+            iconName: "restart_alt"
+            accessibleName: root.resetTooltip.length > 0 ? root.resetTooltip : I18n.tr("Reset to default")
+            tooltipText: accessibleName
+            onClicked: root.resetRequested()
         }
 
         TextField {

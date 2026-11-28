@@ -117,8 +117,8 @@ class BarDefaultsTest(unittest.TestCase):
 
     def test_shadow_axes_are_registered_out(self):
         body = js_var_body(self.defaults, "DEFAULTS")
-        for key in ("shadowIntensity", "shadowOpacity", "iconScale"):
-            self.assertNotIn(f"\n    {key}:", body, f"{key} must not ship as a live axis (D4e material)")
+        for key in ("shadowIntensity", "shadowOpacity"):
+            self.assertNotIn(f"\n    {key}:", body, f"{key} must not ship as a live axis (D5 material)")
         self.assertIn("D4e material", self.defaults)
 
     def test_is_custom_color_guard(self):
@@ -136,7 +136,7 @@ class MigrationV5Test(unittest.TestCase):
         cls.pc = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
 
     def test_version_is_five(self):
-        self.assertIn("var CURRENT_VERSION = 5", self.migrations)
+        self.assertIn("var CURRENT_VERSION = 6", self.migrations)
         self.assertIn("changed = migrateBarGlobals(config, seed) || changed;", self.migrations)
 
     def test_explicit_bar_globals_map(self):
@@ -249,8 +249,9 @@ class ConsumptionTest(unittest.TestCase):
         "LauncherButton.qml", "PowerButton.qml", "DynamicIsland.qml",
     )
     SETTINGS_SURFACE_FILES = (
-        "BarComponentsCard.qml", "GeneralBarPage.qml", "BarWidgetPage.qml",
-        "SortableMultiSelectField.qml",
+        "BarManagerCard.qml", "BarLaneSection.qml", "BarWidgetPickerPopup.qml",
+        "QuickSettingsListCard.qml", "BarModulesSection.qml",
+        "BarAppearanceSection.qml", "GeneralBarPage.qml", "BarWidgetPage.qml",
     )
 
     @classmethod
@@ -321,13 +322,15 @@ class ConsumptionTest(unittest.TestCase):
         qmldir = read(os.path.join(BAR_DIR, "qmldir"))
         self.assertIn("singleton BarScale 1.0 BarScale.qml", qmldir)
         scale = read(os.path.join(BAR_DIR, "BarScale.qml"))
-        self.assertIn("PersonalizationConfig.barAxes.fontScale", scale)
-        self.assertNotIn("iconScale", scale)
+        self.assertIn("function fontFor(widgetBar)", scale)
+        self.assertIn("function iconFor(widgetBar)", scale)
+        self.assertIn("axes.fontScale", scale)
+        self.assertIn("axes.iconScale", scale)
 
     def test_bar_surface_files_scale_type_reads(self):
-        # The negative lookahead must not be defeatable by backtracking:
-        # anchor the token end first, then reject the multiplier suffix.
-        unscaled = re.compile(r"NexusStyle\.font\.[a-zA-Z]+(?![a-zA-Z])(?! \* BarScale\.font)")
+        # Every NexusStyle.font.* read on a bar surface scales through
+        # BarScale.font / BarScale.fontFor(...) or BarScale.icon / BarScale.iconFor(...).
+        unscaled = re.compile(r"NexusStyle\.font\.[a-zA-Z]+(?![a-zA-Z])(?![^\n]*BarScale\.(font|icon))")
         for name in self.BAR_SURFACE_FONT_FILES:
             content = read(os.path.join(BAR_DIR, name))
             reads = [m.group(0) for m in unscaled.finditer(content)

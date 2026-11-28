@@ -63,9 +63,9 @@ BarWidgetSwitcher {
                         font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : (/^\d+$/.test(modelData) ? Appearance.font.main : Appearance.font.main)
                         font.pixelSize: {
                             if (modelData.match(/am|pm/i))
-                                return NexusStyle.font.bodySmall * BarScale.font;
+                                return NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar);
                             else
-                                return root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyLarge * BarScale.font;
+                                return root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyLarge * BarScale.fontFor(root.widgetBar);
                         }
                         color: root.contentColor
                         text: modelData.padStart(2, "0")
@@ -77,7 +77,7 @@ BarWidgetSwitcher {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.bottomMargin: 5
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
-                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.labelSmall * BarScale.font
+                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar)
                 color: root.contentColor
                 text: DateTime.shortDate
             }
@@ -106,7 +106,7 @@ BarWidgetSwitcher {
                             "tnum": 1
                         }
                         font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : (/^\d+$/.test(modelData) ? Appearance.font.main : Appearance.font.main)
-                        font.pixelSize: modelData.match(/am|pm/i) ? NexusStyle.font.labelSmall * BarScale.font - 2 : (root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyMedium * BarScale.font)
+                        font.pixelSize: modelData.match(/am|pm/i) ? NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar) - 2 : (root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar))
                         color: Appearance.colors.colPrimary
                         text: modelData.padStart(2, "0")
                     }
@@ -124,7 +124,7 @@ BarWidgetSwitcher {
                     anchors.centerIn: parent
                     fill: 0
                     text: "calendar_clock"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: M3Palette.primaryForeground
                 }
             }
@@ -137,19 +137,19 @@ BarWidgetSwitcher {
             StyledText {
                 visible: root.showDate
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
-                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium * BarScale.font
+                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: root.contentColor
                 text: root.longDate
             }
             StyledText {
                 visible: root.showDate
-                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
+                font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: root.contentColor
                 text: "•"
             }
             StyledText {
                 font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
-                font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyLarge * BarScale.font
+                font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodyLarge * BarScale.fontFor(root.widgetBar)
                 color: root.contentColor
                 text: DateTime.time ?? ""
                 font.letterSpacing: -0.4
@@ -172,7 +172,7 @@ BarWidgetSwitcher {
             StyledText {
                 visible: root.showDate
                 font.family: root._dateFontFamily.length > 0 ? root._dateFontFamily : Appearance.font.main
-                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium * BarScale.font
+                font.pixelSize: root._datePixelSize > 0 ? root._datePixelSize : NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                 color: M3Palette.pillInk("clockWidget")
                 // The per-instance long form (dateFormat axis) keeps the
                 // stacked-pill row identical across clock skins.
@@ -191,7 +191,7 @@ BarWidgetSwitcher {
                     id: timeText
                     anchors.centerIn: parent
                     font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
-                    font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodySmall * BarScale.font
+                    font.pixelSize: root._timePixelSize > 0 ? root._timePixelSize : NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                     color: M3Palette.primaryForeground
                     font.weight: Font.Bold
                     text: pill.time
@@ -215,7 +215,7 @@ BarWidgetSwitcher {
                     id: ampmText
                     anchors.centerIn: parent
                     font.family: root._timeFontFamily.length > 0 ? root._timeFontFamily : Appearance.font.main
-                    font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+                    font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
                     color: M3Palette.primary
                     text: pill.ampm
                 }

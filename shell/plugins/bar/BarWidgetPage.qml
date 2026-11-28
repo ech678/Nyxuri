@@ -17,6 +17,11 @@ Item {
     id: root
 
     signal backRequested
+    signal routeRequested(string section)
+
+    function openRoute(section) {
+        root.routeRequested(section);
+    }
 
     // Session identity of the edited entry (chip gear → GeneralBarPage).
     property string widgetUid: ""
@@ -24,6 +29,7 @@ Item {
     readonly property var entry: PersonalizationConfig.barEntryByUid(root.widgetUid)
     readonly property string widgetId: root.entry ? root.entry.widgetId : ""
     readonly property bool entryAlive: root.entry !== null
+    readonly property bool hasOverrides: !!(root.entry && root.entry.overrides && Object.keys(root.entry.overrides).length > 0)
     // dux OverflowLayout.pinned: spacer/separator/island never leave the
     // bar, so their editor pages carry no overflow group.
     readonly property bool showOverflowGroup: root.entryAlive && ["spacer", "separator", "island"].indexOf(root.widgetId) === -1
@@ -61,7 +67,7 @@ Item {
     // Dead-entry guard: a drag/remove can drop the edited entry while the
     // page is open (the page outlives its target for one interaction).
     onEntryAliveChanged: {
-        if (!root.entryAlive)
+        if (root.widgetUid !== "" && !root.entryAlive)
             root.backRequested();
     }
 
@@ -90,20 +96,23 @@ Item {
                 PreferenceHeader {
                     first: true
                     text: I18n.tr("Widget")
+                    showReset: root.hasOverrides
+                    resetText: I18n.tr("Reset widget options")
+                    onResetRequested: PersonalizationConfig.resetBarWidgetOverrides(root.widgetUid)
                 }
 
-                PreferenceToggle {
-                    first: true
-                    text: I18n.tr("Show in bar")
-                    checked: root.entryAlive && root.entry.enabled !== false
-                    onToggled: checked => PersonalizationConfig.setBarEntryEnabled(root.widgetUid, checked)
-                }
+                PreferenceGroup {
+                    PreferenceToggle {
+                        text: I18n.tr("Show in bar")
+                        checked: root.entryAlive && root.entry.enabled !== false
+                        onToggled: checked => PersonalizationConfig.setBarEntryEnabled(root.widgetUid, checked)
+                    }
 
-                PreferenceInfo {
-                    last: true
-                    label: I18n.tr("Lane")
-                    value: root.zoneLabel
-                    icon: "view_agenda"
+                    PreferenceInfo {
+                        label: I18n.tr("Lane")
+                        value: root.zoneLabel
+                        icon: "view_agenda"
+                    }
                 }
 
                 // D4d shared overflow group (bar-config.md D4d): entry axes
@@ -115,43 +124,47 @@ Item {
                     text: I18n.tr("Overflow")
                 }
 
-                PreferenceSelect {
+                PreferenceGroup {
                     visible: root.showOverflowGroup
-                    first: true
-                    label: I18n.tr("When the bar is full")
-                    model: [
-                        {
-                            "value": "section",
-                            "label": I18n.tr("Follow lane")
-                        },
-                        {
-                            "value": "auto",
-                            "label": I18n.tr("May collapse into the overflow menu")
-                        },
-                        {
-                            "value": "bar",
-                            "label": I18n.tr("Always stay in the bar")
-                        },
-                        {
-                            "value": "always",
-                            "label": I18n.tr("Always in the overflow menu")
-                        }
-                    ]
-                    currentValue: root.entry && root.entry.overrides && root.entry.overrides.overflowMode !== undefined ? root.entry.overrides.overflowMode : "section"
-                    inputRegionService: PopupInputRegionService
-                    onSelected: value => root.set("overflowMode", String(value) === "section" ? undefined : String(value))
-                }
 
-                PreferenceSlider {
-                    visible: root.showOverflowGroup
-                    last: true
-                    label: I18n.tr("Overflow priority")
-                    value: root.entry && root.entry.overrides && root.entry.overrides.overflowPriority !== undefined ? root.entry.overrides.overflowPriority : 0
-                    valueLabel: Math.round(root.entry && root.entry.overrides && root.entry.overrides.overflowPriority !== undefined ? root.entry.overrides.overflowPriority : 0)
-                    from: -10
-                    to: 10
-                    stepSize: 1
-                    onMoved: value => root.set("overflowPriority", Math.round(value) === 0 ? undefined : Math.round(value))
+                    PreferenceSelect {
+                        label: I18n.tr("When the bar is full")
+                        model: [
+                            {
+                                "value": "section",
+                                "label": I18n.tr("Follow lane")
+                            },
+                            {
+                                "value": "auto",
+                                "label": I18n.tr("May collapse into the overflow menu")
+                            },
+                            {
+                                "value": "bar",
+                                "label": I18n.tr("Always stay in the bar")
+                            },
+                            {
+                                "value": "always",
+                                "label": I18n.tr("Always in the overflow menu")
+                            }
+                        ]
+                        currentValue: root.entry && root.entry.overrides && root.entry.overrides.overflowMode !== undefined ? root.entry.overrides.overflowMode : "section"
+                        inputRegionService: PopupInputRegionService
+                        modified: !!(root.entry && root.entry.overrides && root.entry.overrides.overflowMode !== undefined)
+                        onSelected: value => root.set("overflowMode", String(value) === "section" ? undefined : String(value))
+                        onResetRequested: root.set("overflowMode", undefined)
+                    }
+
+                    PreferenceSlider {
+                        label: I18n.tr("Overflow priority")
+                        value: root.entry && root.entry.overrides && root.entry.overrides.overflowPriority !== undefined ? root.entry.overrides.overflowPriority : 0
+                        valueLabel: Math.round(root.entry && root.entry.overrides && root.entry.overrides.overflowPriority !== undefined ? root.entry.overrides.overflowPriority : 0)
+                        from: -10
+                        to: 10
+                        stepSize: 1
+                        modified: !!(root.entry && root.entry.overrides && root.entry.overrides.overflowPriority !== undefined)
+                        onMoved: value => root.set("overflowPriority", Math.round(value) === 0 ? undefined : Math.round(value))
+                        onResetRequested: root.set("overflowPriority", undefined)
+                    }
                 }
 
                 Loader {

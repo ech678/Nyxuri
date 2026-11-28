@@ -70,9 +70,17 @@ ShellRoot {
             height: 32
             property real pillHeight: 32
             property bool isMaterial: PersonalizationConfig.barIsMaterial
+            property var widgetBar: null
             property var activePlayer: null
             property bool mediaTrackInfoVisible: false
             property real mediaTextContentWidth: 0
+            function option(key) {
+                if (key === "showMediaControls")
+                    return PersonalizationConfig.islandShowMediaControls;
+                if (key === "visualizerStyle")
+                    return PersonalizationConfig.islandVisualizerStyle;
+                return BarWidgetDefaults.option("island", PersonalizationConfig.islandEntry(), key);
+            }
 
             Loader {
                 id: islandMediaLoader
@@ -1684,13 +1692,61 @@ ShellRoot {
             return result;
         }
 
-        // D4e e2: the window host topology (window mode). Scene "two" adds a
-        // second bottom bar whose lanes are clock-only; dump reports the
-        // host topology and the LAST-registered window's content — the
-        // probe seam takes the newest window, which is the second bar's,
-        // so the dump proves lanes render per entry. Scene "off" disables
-        // the second entry (its windows must drop to zero). Scene "clean"
-        // restores the factory single bar.
+        // D4e e5: v5 -> v6 migration folds non-default [island] widget
+        // appearance axes onto the singleton "island" lane entry, preserves
+        // [island.horizontalClock], strips legacy island keys + layoutMigrated,
+        // deletes emptied [island], and stays idempotent on repeat runs.
+        function d4eMigrationV6(): string {
+            const legacy = {
+                "configVersion": 5,
+                "bar": {
+                    "configs": [{
+                        "id": "default",
+                        "lanes": {
+                            "left": ["workspaces"],
+                            "middle": ["island"],
+                            "right": ["clock"]
+                        }
+                    }]
+                },
+                "island": {
+                    "satellite": "weather",
+                    "showAvatar": false,
+                    "visualizerStyle": "dots",
+                    "hideDate": true,
+                    "layoutMigrated": true,
+                    "horizontalClock": {
+                        "hourFormat": "hh"
+                    }
+                }
+            };
+            const seed = {
+                "defaults": BarWidgetDefaults.DEFAULTS,
+                "barDefaults": BarDefaults.DEFAULTS
+            };
+            const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
+            const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), seed);
+            const entry = first.config.bar.configs[0].lanes.middle[0] ?? {};
+            const strippedLegacy = Object.assign({}, legacy);
+            delete strippedLegacy.island.horizontalClock;
+            const emptiedRun = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(strippedLegacy)), seed);
+            return JSON.stringify({
+                "changed": first.changed,
+                "version": first.config.configVersion,
+                "foldedOnEntry": entry.id === "island" && entry.satellite === "weather" && entry.showAvatar === false && entry.hideDate === true,
+                "defaultsSkipped": entry.visualizerStyle === undefined,
+                "clockKept": Boolean(first.config.island && first.config.island.horizontalClock && first.config.island.horizontalClock.hourFormat === "hh"),
+                "flatStripped": Boolean(first.config.island && first.config.island.satellite === undefined && first.config.island.showAvatar === undefined && first.config.island.hideDate === undefined && first.config.island.layoutMigrated === undefined),
+                "emptyIslandDeleted": emptiedRun.config.island === undefined,
+                "idempotent": second.changed === false && JSON.stringify(second.config) === JSON.stringify(first.config)
+            });
+        }
+
+        // D4e e2 + e6: the window host topology and per-bar thickness/scales
+        // (window mode). Scene "two" adds a second bottom bar with clock-only
+        // lanes plus custom thickness (50), fontScale (1.1), iconScale (1.25).
+        // Scene "off" disables the second entry (windows drop to zero).
+        // Scene "clean" restores the factory single bar.
         function d4eWindowsSet(scene: string): string {
             PersonalizationConfig.selectedBarId = "";
             PersonalizationConfig.barConfigs.map(config => config.id).filter(id => id !== "default").forEach(id => PersonalizationConfig.deleteBarConfig(id));
@@ -1698,6 +1754,9 @@ ShellRoot {
                 const secondId = PersonalizationConfig.addBarConfig();
                 PersonalizationConfig.selectedBarId = secondId;
                 PersonalizationConfig.setBarPosition("bottom");
+                PersonalizationConfig.setBarThickness(50);
+                PersonalizationConfig.setBarFontScale(1.1);
+                PersonalizationConfig.setBarIconScale(1.25);
                 PersonalizationConfig.setBarLayouts(["clock"], [], []);
                 if (scene === "off")
                     PersonalizationConfig.setBarEnabled(secondId, false);
@@ -1708,13 +1767,18 @@ ShellRoot {
         function d4eWindowsDump(): string {
             const barScope = windowLoader.item;
             const report = barScope && barScope.probeHostReport ? JSON.parse(barScope.probeHostReport()) : [];
-            // Per-entry content: the second bar's own window, not the
-            // newest-registration seam (signature sort decides that one).
+            const first = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("default") : null;
             const second = barScope && barScope.probeHostWindow ? barScope.probeHostWindow("bar2") : null;
             const content = second ? second.barContent : null;
             return JSON.stringify({
                 "hosts": report,
+                "firstHeight": first ? Math.round(first.height) : 0,
+                "firstFontScale": first && first.barConfig ? first.barConfig.axes.fontScale : 0,
+                "firstIconScale": first && first.barConfig ? first.barConfig.axes.iconScale : 0,
                 "secondEdge": second ? String(second.edge) : "",
+                "secondHeight": second ? Math.round(second.height) : 0,
+                "secondFontScale": second && second.barConfig ? second.barConfig.axes.fontScale : 0,
+                "secondIconScale": second && second.barConfig ? second.barConfig.axes.iconScale : 0,
                 "secondLeftIds": content ? content.effectiveLeftLayout.map(entry => entry.widgetId) : [],
                 "secondRightIds": content ? content.effectiveRightLayout.map(entry => entry.widgetId) : []
             });

@@ -15,13 +15,14 @@ import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 RippleButton {
     id: root
+    property var widgetEntry: null
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
-    property bool vertical: Config.options.bar.vertical
+    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
     property real buttonPadding: 5
-    // D4b click axes: "default" stays the session toggle (Mod+X parity).
-    property var widgetEntry: null
 
     implicitWidth: isMaterial ? Appearance.sizes.barPowerButtonSize : 22
     implicitHeight: implicitWidth
@@ -40,7 +41,7 @@ RippleButton {
         anchors.centerIn: parent
         visible: !root.isMaterial
         text: "power_settings_new"
-        iconSize: 18
+        iconSize: 18 * BarScale.iconFor(root.widgetBar)
         color: root.contentColor
     }
 
@@ -48,7 +49,7 @@ RippleButton {
         anchors.centerIn: parent
         visible: root.isMaterial
         text: "power_settings_new"
-        iconSize: NexusStyle.font.bodyLarge * BarScale.font
+        iconSize: NexusStyle.font.bodyLarge * BarScale.fontFor(root.widgetBar)
         color: Appearance.colors.colOnPrimary
         colSymbol: Appearance.colors.colPrimary
         wrappedShape: MaterialShape.Shape.Cookie12Sided

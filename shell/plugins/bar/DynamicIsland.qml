@@ -13,9 +13,17 @@ import qs.commons
 import qs.ui
 import M3Shapes
 
+import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+
 Item {
     id: root
+    property var widgetEntry: null
+    property var widgetBar: null
     property bool mirrored: false
+
+    function option(key) {
+        return BarWidgetDefaults.option("island", root.widgetEntry, key);
+    }
 
     readonly property real pillHeight: 32
     readonly property real idleCollapsedWidth: 144
@@ -35,8 +43,9 @@ Item {
     readonly property real batteryWidth: 170
     readonly property real badgeSize: 32
     readonly property real badgeSpacing: 6
-    readonly property bool isMaterial: PersonalizationConfig.barIsMaterial
-    property bool vertical: Config.options.bar.vertical
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    readonly property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
 
     property string manualFocusId: ""
 
@@ -376,7 +385,7 @@ Item {
         // paintBackground: false and the blacklist keeps the group tint off).
         // end4: material and center-only bars leave the island transparent so
         // the frame color shows through.
-        color: root.isMaterial || (GlobalStates.barCenterOnly && Config.options.bar.cornerStyle === 0) ? "transparent" : Appearance.colors.colLayer0
+        color: root.isMaterial || (GlobalStates.barCenterOnly && root.barAxes.cornerStyle === 0) ? "transparent" : Appearance.colors.colLayer0
         radius: height / 2
         clip: true
         visible: !root.vertical
@@ -475,7 +484,7 @@ Item {
                 StyledText {
                     Layout.alignment: Qt.AlignVCenter
                     text: root.batteryStatusText()
-                    font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
+                    font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                     font.weight: Font.DemiBold
                     color: root.batteryAlertColor()
                 }
@@ -488,14 +497,14 @@ Item {
                     Layout.alignment: Qt.AlignVCenter
                     text: root.batteryIcon()
                     fill: 1
-                    iconSize: 16
+                    iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                     color: root.batteryAlertColor()
                 }
 
                 StyledText {
                     Layout.alignment: Qt.AlignVCenter
                     text: `${Math.round(Battery.percentage * 100)}`
-                    font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
+                    font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
                     font.features: {
                         "tnum": 1
                     }
@@ -529,7 +538,7 @@ Item {
                     color: root.isMaterial ? Appearance.colors.colPrimary : Appearance.colors.colLayer0
                     colSymbol: root.isMaterial ? Appearance.colors.colOnPrimary : Appearance.colors.colOnLayer0
                     text: root.iconForProviderId(badgeItem.modelData.id)
-                    iconSize: 16
+                    iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                     fill: 1
                     padding: 4
                 }

@@ -27,8 +27,9 @@ Item {
     property color contentColor: Appearance.colors.colOnLayer0
     property bool contentColorOverridden: false
     property bool vertical: false
-    // D4b entry axes: the end4 280px title clamp and L/M/R click actions.
     property var widgetEntry: null
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     readonly property real maxWidth: BarWidgetDefaults.option("activeWindow", root.widgetEntry, "maxWidth")
 
     readonly property string outputName: root.QsWindow.window?.screen?.name ?? ""
@@ -44,8 +45,8 @@ Item {
 
     readonly property color subtextColor: root.contentColorOverridden ? Qt.alpha(root.contentColor, 0.7) : Appearance.colors.colSubtext
 
-    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : Math.min(colLayout.implicitWidth + 12, root.maxWidth)
-    implicitHeight: root.vertical ? 22 : Appearance.sizes.barHeight
+    implicitWidth: root.vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : Math.min(colLayout.implicitWidth + 12, root.maxWidth)
+    implicitHeight: root.vertical ? 22 : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     // D4b click axes: transparent to the lane unless an action consumed
     // the click ("none" default swallows nothing, the handler is inert).
@@ -88,7 +89,7 @@ Item {
 
         StyledText {
             Layout.fillWidth: true
-            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
             color: root.subtextColor
             elide: Text.ElideRight
             text: root.activeAppClass !== "" ? root.activeAppClass : Translation.tr("Desktop")
@@ -96,7 +97,7 @@ Item {
 
         StyledText {
             Layout.fillWidth: true
-            font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
+            font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
             color: root.contentColor
             elide: Text.ElideRight
             text: root.activeTitle !== "" ? root.activeTitle : root.workspaceFallbackTitle

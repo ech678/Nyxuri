@@ -11,6 +11,10 @@ import qs.ui
 MouseArea {
     id: root
     required property SystemTrayItem item
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    readonly property bool barVertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    readonly property bool barAtEnd: root.barAxes.position === "bottom" || root.barAxes.position === "right"
     property bool targetMenuOpen: false
     // Injected by the SysTray delegates (D4b entry axes).
     property bool tintIcon: true
@@ -21,8 +25,8 @@ MouseArea {
 
     hoverEnabled: true
     acceptedButtons: Qt.LeftButton | Qt.RightButton
-    implicitWidth: 20
-    implicitHeight: 20
+    implicitWidth: Math.round(20 * BarScale.iconFor(root.widgetBar))
+    implicitHeight: Math.round(20 * BarScale.iconFor(root.widgetBar))
     onPressed: event => {
         switch (event.button) {
         case Qt.LeftButton:
@@ -50,14 +54,15 @@ MouseArea {
         active: false
         sourceComponent: SysTrayMenu {
             Component.onCompleted: this.open()
+            widgetBar: root.widgetBar
             trayItemMenuHandle: root.item.menu
             trayItemId: root.item.id
             anchor {
                 window: root.QsWindow.window
                 item: root
-                gravity: Config.options.bar.vertical ? (Config.options.bar.bottom ? Edges.Left : Edges.Right) : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-                edges: Config.options.bar.vertical ? (Config.options.bar.bottom ? Edges.Left : Edges.Right) : (Config.options.bar.bottom ? Edges.Top : Edges.Bottom)
-                adjustment: Config.options.bar.vertical ? PopupAdjustment.SlideY : PopupAdjustment.SlideX
+                gravity: root.barVertical ? (root.barAtEnd ? Edges.Left : Edges.Right) : (root.barAtEnd ? Edges.Top : Edges.Bottom)
+                edges: root.barVertical ? (root.barAtEnd ? Edges.Left : Edges.Right) : (root.barAtEnd ? Edges.Top : Edges.Bottom)
+                adjustment: root.barVertical ? PopupAdjustment.SlideY : PopupAdjustment.SlideX
             }
             onMenuOpened: window => root.menuOpened(window)
             onMenuClosed: {
@@ -98,6 +103,6 @@ MouseArea {
         id: tooltip
         extraVisibleCondition: root.containsMouse
         alternativeVisibleCondition: extraVisibleCondition
-        anchorEdges: (!Config.options.bar.bottom && !Config.options.bar.vertical) ? Edges.Bottom : Edges.Top
+        anchorEdges: (!root.barAtEnd && !root.barVertical) ? Edges.Bottom : Edges.Top
     }
 }

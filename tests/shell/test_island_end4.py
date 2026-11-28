@@ -109,17 +109,17 @@ class IslandEnd4FacesContractTest(unittest.TestCase):
         # icons right-anchored.
         self.assertIn("id: statusIconsRow", content)
         self.assertIn("anchors.centerIn: parent", content)
-        self.assertIn("sourceComponent: PersonalizationConfig.islandSatellite", content)
+        self.assertIn("sourceComponent: diIdleRoot.satellite === \"clock\" ? clockComponent : diIdleRoot.satellite === \"weather\" ? weatherComponent : null", content)
         # The idle width contract still feeds the island host.
         self.assertIn("di.idleTextContentWidth", content)
 
     def test_di_media_b10_control_set(self):
         """B-10: the island media face carries the end4 control set — playback
-        buttons behind islandShowMediaControls, visualizerStyle dots/wave/none,
+        buttons behind showMediaControls, visualizerStyle dots/wave/none,
         and the wave holds its cava lease only while playing."""
         content = read_end4("DiMedia.qml")
-        self.assertIn("PersonalizationConfig.islandShowMediaControls", content)
-        self.assertIn("PersonalizationConfig.islandVisualizerStyle", content)
+        self.assertIn('di.option("showMediaControls")', content)
+        self.assertIn('di.option("visualizerStyle")', content)
         self.assertIn("id: mediaControlsRow", content)
         self.assertIn("WaveVisualizer", content)
         self.assertIn("visualizerStyle === \"wave\"", content)

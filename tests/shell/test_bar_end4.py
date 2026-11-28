@@ -105,13 +105,13 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("readonly property bool barIsMaterial", config)
         self.assertIn("readonly property bool barIsMaterialHug", config)
         self.assertIn("readonly property bool barIsPanel", config)
-        # B9.6: UtilButton is the end4 button verbatim — it never branches on
-        # material (one hover language for both bar skins), so it left this list.
+        # D4e e6: per-bar widgets derive material from their own bar's axes
+        # (root.barAxes.cornerStyle), never Config.options.bar.cornerStyle.
         for name in ("Media.qml", "SysTray.qml", "UtilButtons.qml",
                      "Divisor.qml", "Visualizer.qml", "BatteryIndicator.qml"):
             content = read_bar_file(name)
-            self.assertIn("PersonalizationConfig.barIsMaterial", content, name)
-            self.assertNotIn("cornerStyle === 3", content, f"{name} re-derives material")
+            self.assertIn("root.barAxes.cornerStyle", content, name)
+            self.assertNotIn("Config.options.bar.cornerStyle", content, f"{name} reads global cornerStyle")
 
     def test_system_icons_are_the_inir_fork(self):
         content = read_bar_file("SystemIcons.qml")
@@ -162,7 +162,7 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_idle_avatar_is_optional(self):
         content = read_bar_file("DiIdle.qml")
-        self.assertIn("PersonalizationConfig.islandShowAvatar", content)
+        self.assertIn('di.option("showAvatar")', content)
         self.assertIn("visible: diIdleRoot.showAvatar", content)
         self.assertIn("avatarBlockWidth", content)
 
@@ -242,7 +242,7 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertIn("(root.activeNumber - 1) % root.shownBudget", content)
         self.assertIn("fakeWorkspace", content)
         # end4 metrics: material slots are wider (30), default 26.
-        self.assertIn("PersonalizationConfig.barIsMaterial ? 30 : 26", content)
+        self.assertIn("(root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4) ? 30 : 26", content)
         # Four styles through the verbatim WorkspacesAlt fork.
         self.assertIn("WorkspacesAlt", content)
         alt = read_bar_file("WorkspacesAlt.qml")
@@ -280,7 +280,7 @@ class BarEnd4ContractTest(unittest.TestCase):
         self.assertNotIn("anchors.rightMargin: 6", active)
         # Island capsule: transparent on material / center-only like end4.
         island = read_bar_file("DynamicIsland.qml")
-        self.assertIn('root.isMaterial || (GlobalStates.barCenterOnly && Config.options.bar.cornerStyle === 0) ? "transparent"', island)
+        self.assertIn('root.isMaterial || (GlobalStates.barCenterOnly && root.barAxes.cornerStyle === 0) ? "transparent"', island)
         # Middle frame hugs the island (-4 / +8, full height).
         content = read_bar_file("BarContent.qml")
         self.assertIn("middleRow.implicitWidth - 4", content)
@@ -353,7 +353,7 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_dynamic_island_is_material_binding(self):
         content = read_bar_file("DynamicIsland.qml")
-        self.assertIn("PersonalizationConfig.barIsMaterial", content)
+        self.assertIn("root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4", content)
 
     def test_personalization_config_bar_keys(self):
         content = read_services_file("PersonalizationConfig.qml")
@@ -421,18 +421,18 @@ class VerticalAndMarginContractTest(unittest.TestCase):
 
     def test_popups_stop_deriving_right_from_the_bottom_bool(self):
         popup = read_bar_file("StyledPopup.qml")
-        self.assertIn("Config.options?.bar?.edge", popup)
+        self.assertIn("root.barAxes.position", popup)
         self.assertIn("root.barEdge === \"right\"", popup)
         self.assertNotIn('Config.options?.bar?.bottom ?? false) ? "right"', popup)
         style_popup = read_bar_file("BarGroupStylePopup.qml")
-        self.assertIn('Config.options.bar.edge === "right"', style_popup)
+        self.assertIn('root.barAxes.position === "right"', style_popup)
 
     def test_vertical_content_is_the_end4_fork(self):
         content = read_bar_file("VerticalBarContent.qml")
         self.assertIn("Fork & Trim: end4-pC", content)
         self.assertIn("GPL-3", content)
         self.assertIn("readonly property bool vertical: true", content)
-        self.assertIn("Appearance.sizes.verticalBarWidth", content)
+        self.assertIn("PersonalizationConfig.resolvedVerticalBarWidth(root.axes)", content)
         self.assertIn("laneTopHeight", content)
         self.assertIn("laneCenterY", content)
         # The island has no vertical shape yet (ROADMAP B9.4). D4a: the
@@ -475,7 +475,7 @@ class VerticalAndMarginContractTest(unittest.TestCase):
         bar = read_bar_file("Bar.qml")
         self.assertIn("contentOffsetX", bar)
         self.assertIn("not clear an anchor", bar)
-        self.assertIn("width: barRoot.vertical ? Appearance.sizes.verticalBarWidth : parent.width", bar)
+        self.assertIn("width: barRoot.vertical ? barRoot.thickness : parent.width", bar)
         content = read_bar_file("BarContent.qml")
         self.assertNotIn("anchors.left: root.isMaterialHug ? parent.left : undefined", content)
         self.assertNotIn("anchors.centerIn: root.isMaterialHug ? undefined : parent", content)

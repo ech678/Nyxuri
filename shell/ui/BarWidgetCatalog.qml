@@ -119,8 +119,9 @@ QtObject {
         return I18n.tr(entry.label);
     }
 
-    // D4b per-instance options pages (files live in plugins/bar/options/).
+    // D4b/D4e per-instance options pages (files live in plugins/bar/options/).
     readonly property var optionsFiles: ({
+        island: "IslandOptions.qml",
         clock: "ClockOptions.qml",
         workspaces: "WorkspacesOptions.qml",
         systemMonitor: "SystemMonitorOptions.qml",

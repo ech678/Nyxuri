@@ -358,6 +358,22 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   的 `Qt.callLater` 补宿主守卫（销毁竞态下不得碰服务）。门禁：`test_d1`
   新增「全库 `Appearance.animation.<token>` 必须落在 Animations.qml 令牌表」。
 
+### D4e e4–e6 设置面、岛接入与叶级收口（2026-11-28）
+
+- **e4 设置面与共享原子**：
+  - `shell/ui/` 新增四件复用原子 `PreferenceGroup.qml`（自动识别 `isPreferenceRow` 可见子行打圆角，避免手动 `first`/`last` 漂移）、`PreferenceCollapsibleGroup.qml`（高度裁剪折叠容器，规避 Quickshell `ColumnLayout` 切换 `visible` 的零宽 bug）、`PreferenceControlledBy.qml`、`PreferenceVisualPicker.qml`（`edge` / `icon` 视觉选择卡），并为 `PreferenceHeader` 与输入原子（Toggle / Slider / Select / Input）统一补齐 `modified` / `showReset` / `resetRequested` 复位槽。
+  - `BarManagerCard.qml` 在 `GeneralBarPage` 顶部管理 `barConfigs`（单选激活 `selectBar`、内联重命名、新增（上限 4）、启停切换、保护默认/末条不删、全停警示）。
+  - 退役 `BarComponentsCard.qml` / `SortableMultiSelectField.qml` / `LayoutDragCoordinator.qml`（chip 卡），改用 `BarModulesSection.qml` 中的跨栏拖拽协调器 + 三栏 `BarLaneSection.qml` 列表编辑器（拖拽手柄、溢出模式折页、spacer 内联 `MaterialStepper`、行点进 `BarWidgetPage`、单部件开关/删除、`BarWidgetPickerPopup` 添加并守卫 `island` 单例）；`quickSettingsComponents` 独立收口在 `QuickSettingsListCard.qml`。
+  - 部件选项页 schema 化评估结论：**保留 13 页手写 `options/*.qml`**，`Manifest`/`SchemaSettingsPage.qml` 的 5 型 `controls` 词表绑定 `PluginSettings` 且缺节标题、`visibleWhen`、hex 校验、`PreferenceAction`、`argv` 拆分与 `SettingsSearchAnchor`；改为在手写页内升级 `PreferenceGroup` 与复位槽。
+- **e5 灵动岛迁入条目与 v6 迁移**：
+  - `BarWidgetDefaults.DEFAULTS.island` 接管五项外形键（`satellite: "clock"`、`showAvatar: true`、`showMediaControls: false`、`visualizerStyle: "dots"`、`hideDate: false`）。
+  - `ConfigMigrations` 升至 **`CURRENT_VERSION = 6`**（`ConfigService.qml` 头标 `# nyxuri-config-schema: 6`，fast-path `2..6`）；`MIGRATED_ISLAND_KEYS` 在 `version < 6` 时将非默认键折叠进各 bar 的 `island` / `dynamicIsland` 条目、剥离旧平铺键与废弃 `layoutMigrated`、仅在无 `[island.horizontalClock]` 等子节时删除空 `[island]`；`horizontalClock`（字体轴/字形排版）与 `bar.island` 状态灯保持独立配置节。
+  - `DynamicIsland` 接收 `widgetEntry`/`widgetBar` 并暴露 `option(key)`；`DiIdle`（含按 `di.widgetBar.lanes` 判定 `systemIconsElsewhere`）与 `DiMedia` 改读条目覆盖；新增 `options/IslandOptions.qml` 并注册到 `BarWidgetCatalog`。
+- **e6 `DensityPresets`、`iconScale` 与叶级清扫**：
+  - `DensityPresets.js`（Fork & Trim 自 dux `DensityPresets.js`）提供 `compact` / `comfortable`（对齐 `BarDefaults.DEFAULTS` 基线）/ `spacious` 三档预设，作用域为当前选中 bar（`applyBarDensityPreset`）。
+  - `BarDefaults.DEFAULTS` 新增 `iconScale: 1.0`；`BarScale.qml` 提供 `fontFor(widgetBar)` 与 `iconFor(widgetBar)`；`PersonalizationConfig` 提供 `resolvedBarHeight(axes)` / `resolvedVerticalBarWidth(axes)` / `barStyleBoostFor(axes)`，解耦设置态与每窗实况高度。
+  - `Bar` / `BarContent` / `VerticalBarContent` / `BarGroup` / `BarGroupStylePopup` / `StyledPopup` / `LaneOverflowHost` 及全部 bar 部件叶组件收敛为消费各自 `widgetBar` / `barAxes`、`resolved*` 尺寸与 `BarScale.fontFor` / `BarScale.iconFor`，断开对全局 `Config.options.bar.bottom` / `vertical` / `cornerStyle` 的回源依赖。
+
 ### D4e e1–e3 证据
 
 - probe `d4e` 节（store / signature / windows 三段）：双 bar 存储往返、

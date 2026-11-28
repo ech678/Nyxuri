@@ -7,13 +7,13 @@ import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
 
 MouseArea {
     id: root
+    property var widgetEntry: null
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property color contentColor: Appearance.colors.colOnSecondaryContainer
     property bool contentColorOverridden: false
     property bool vertical: false
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
-    // D4b entry axes: the percent readout and the wattage line (energyRate
-    // from UPower) plus L/M/R click actions.
-    property var widgetEntry: null
+    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
     readonly property bool showPercent: BarWidgetDefaults.option("battery", root.widgetEntry, "showPercent")
     readonly property bool showPower: BarWidgetDefaults.option("battery", root.widgetEntry, "showPower")
     readonly property var chargeState: Battery.chargeState
@@ -27,11 +27,9 @@ MouseArea {
 
     visible: Battery.available
 
-    implicitWidth: !Battery.available ? 0 : vertical ? Appearance.sizes.verticalBarWidth : batteryProgress.valueBarWidth + 8 + (powerLabel.visible ? powerLabel.implicitWidth + 4 : 0)
-    implicitHeight: !Battery.available ? 0 : vertical ? batteryProgress.valueBarWidth + 8 : Appearance.sizes.barHeight
+    implicitWidth: !Battery.available ? 0 : vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : batteryProgress.valueBarWidth + 8 + (powerLabel.visible ? powerLabel.implicitWidth + 4 : 0)
+    implicitHeight: !Battery.available ? 0 : vertical ? batteryProgress.valueBarWidth + 8 : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
-    property var widgetBar: null
-    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     readonly property bool clickForDetails: !root.barAxes.hoverPopouts
     hoverEnabled: !root.clickForDetails
 
@@ -73,7 +71,7 @@ MouseArea {
                         Layout.rightMargin: -2
                         fill: 1
                         text: "bolt"
-                        iconSize: NexusStyle.font.bodySmall * BarScale.font
+                        iconSize: NexusStyle.font.bodySmall * BarScale.iconFor(root.widgetBar)
                         visible: root.isCharging && root.percentage < 1
                     }
                     StyledText {
@@ -98,7 +96,7 @@ MouseArea {
                         fill: 1
                         text: "bolt"
                         Layout.topMargin: 4
-                        iconSize: NexusStyle.font.bodySmall * BarScale.font
+                        iconSize: NexusStyle.font.bodySmall * BarScale.iconFor(root.widgetBar)
                         visible: root.isCharging && root.percentage < 1
                     }
                     StyledText {
@@ -133,7 +131,7 @@ MouseArea {
         anchors.verticalCenter: parent.verticalCenter
         text: root.powerText
         color: root.contentColorOverridden ? root.contentColor : Appearance.colors.colOnLayer1
-        font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+        font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(root.widgetBar)
         font.features: ({
             "tnum": 1
         })

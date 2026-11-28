@@ -58,7 +58,7 @@ Item {
             color: Appearance.colors.colPrimary
             colSymbol: Appearance.colors.colOnPrimary
             text: "notifications"
-            iconSize: di.isMaterial ? 20 : 14
+            iconSize: (di.isMaterial ? 20 : 14) * BarScale.iconFor(di.widgetBar)
             fill: 1
             padding: 2
             visible: !notifIcon.visible
@@ -79,7 +79,7 @@ Item {
         StyledText {
             Layout.fillWidth: true
             text: (diNotifsRoot.notif?.summary ?? "").replace(/\n/g, " ")
-            font.pixelSize: NexusStyle.font.bodySmall * BarScale.font
+            font.pixelSize: NexusStyle.font.bodySmall * BarScale.fontFor(di.widgetBar)
             font.weight: Font.DemiBold
             color: Appearance.colors.colOnLayer0
             elide: Text.ElideRight
@@ -89,7 +89,7 @@ Item {
         StyledText {
             Layout.fillWidth: true
             text: (diNotifsRoot.notif?.body ?? "").replace(/\n/g, " ")
-            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(di.widgetBar)
             color: Appearance.colors.colOnLayer0
             opacity: 0.7
             elide: Text.ElideRight
@@ -107,7 +107,7 @@ Item {
             topMargin: 8
         }
         text: TimeService.hours + ":" + TimeService.minutes
-        font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font - 2
+        font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(di.widgetBar) - 2
         color: Appearance.colors.colOnLayer0
         opacity: 0.8
     }

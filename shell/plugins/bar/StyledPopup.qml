@@ -81,7 +81,7 @@ LazyLoader {
     readonly property real m3OuterGap: (root.widgetBar ? root.barAxes.cornerStyle : (Config.options?.bar?.m3?.cornerStyle ?? 0)) === 3 ? (Config.options?.bar?.m3?.gapsOut ?? 0) : 0
     // B9.5: popups start after the outer edge margin the bar itself reserves.
     readonly property real barEdgeMargin: root.widgetBar ? root.barAxes.edgeMargin : (Config.options?.bar?.edgeMargin ?? 0)
-    readonly property real barThickness: (root.barVertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight) + root.barEdgeMargin + root.m3OuterGap
+    readonly property real barThickness: (root.barVertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : PersonalizationConfig.resolvedBarHeight(root.barAxes)) + root.barEdgeMargin + root.m3OuterGap
 
     PanelWindow {
         id: clickOutsideBackdrop

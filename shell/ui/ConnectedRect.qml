@@ -12,6 +12,7 @@ Rectangle {
     property bool first: false
     property bool last: false
     property real uniformRadius: -1
+    readonly property bool isPreferenceRow: true
 
     readonly property real groupTopRadius: root.first ? NexusStyle.rounding.extraLarge :
                                                         NexusStyle.rounding.extraSmall

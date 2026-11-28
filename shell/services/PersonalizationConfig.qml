@@ -7,6 +7,7 @@ import "../commons/SidebarPolicy.js" as SidebarPolicy
 import "../commons/WallpaperSource.js" as WallpaperSource
 import "BarWidgetDefaults.js" as BarWidgetDefaults
 import "BarDefaults.js" as BarDefaults
+import "DensityPresets.js" as DensityPresets
 import "ConfigMigrations.js" as ConfigMigrations
 import qs.services
 import qs.commons.i18n
@@ -284,9 +285,11 @@ Singleton {
     // B9.3: layout membership is the island's only switch. The old
     // `islandEnabled` gate is read once during load (legacy migration) and is
     // never serialized again.
-    // B8.4: idle-face satellite is an explicit optional part, not the iNiR
-    // leftWidget hardcode that rendered weather under a "clockWidget" value.
-    property string islandSatellite: "clock"
+    // D4e e5: the island's five appearance axes live on the singleton "island"
+    // lane entry overrides (BarWidgetDefaults.DEFAULTS.island); these readonly
+    // views project from there so IslandPage/HorizontalClockPage/probes keep
+    // reading one source of truth.
+    readonly property string islandSatellite: BarWidgetDefaults.option("island", root.islandEntry(), "satellite")
     readonly property var islandSatelliteOptions: [
         {
             "value": "clock",
@@ -307,8 +310,8 @@ Singleton {
     // B-10: the island media face unfreezes the end4 control set — playback
     // buttons plus a visualizer style. end4 defaults: controls off, dots;
     // cava runs only while the media face is visible and playing.
-    property bool islandShowMediaControls: false
-    property string islandVisualizerStyle: "dots"
+    readonly property bool islandShowMediaControls: BarWidgetDefaults.option("island", root.islandEntry(), "showMediaControls") === true
+    readonly property string islandVisualizerStyle: BarWidgetDefaults.option("island", root.islandEntry(), "visualizerStyle")
     readonly property var islandVisualizerStyleOptions: [
         {
             "value": "dots",
@@ -376,11 +379,28 @@ Singleton {
     readonly property bool barIsMaterial: root.barCornerStyle === 3 || root.barCornerStyle === 4
     readonly property bool barIsMaterialHug: root.barCornerStyle === 4
     readonly property bool barIsPanel: root.barCornerStyle === 5
+    function barStyleBoostFor(axes) {
+        const cornerStyle = axes ? axes.cornerStyle : root.barCornerStyle;
+        return cornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : ((cornerStyle === 4 || cornerStyle === 5) ? 4 : 0);
+    }
+
+    function resolvedBarHeight(axes) {
+        const a = axes || root.barAxes;
+        const base = a.barThickness > 0 ? a.barThickness : root.defaultBarThickness;
+        return base + root.barStyleBoostFor(a);
+    }
+
+    function resolvedVerticalBarWidth(axes) {
+        const a = axes || root.barAxes;
+        const base = a.verticalThickness > 0 ? a.verticalThickness : root.defaultBarVerticalThickness;
+        return base + root.barStyleBoostFor(a);
+    }
+
     // end4 style heights (ROADMAP B-2): Float adds the outer gap on both edges,
     // Material hug and Panel add 4 for their round decorators. Everything else
     // keeps the user's thickness, and groups/OSD/popups read the evaluated
-    // height through Appearance.sizes.barHeight.
-    readonly property real barStyleHeightBoost: root.barCornerStyle === 1 ? Appearance.sizes.hyprlandGapsOut * 2 : ((root.barIsMaterialHug || root.barIsPanel) ? 4 : 0)
+    // height through Appearance.sizes.barHeight (or per-bar resolvedBarHeight).
+    readonly property real barStyleHeightBoost: root.barStyleBoostFor(root.barAxes)
     Binding {
         target: Appearance
         property: "barStyleBoost"
@@ -690,10 +710,10 @@ Singleton {
     property bool keyboardPanelCaps: true
     property bool keyboardPanelNum: false
 
-    property bool islandHideDate: false
+    readonly property bool islandHideDate: BarWidgetDefaults.option("island", root.islandEntry(), "hideDate") === true
     // Idle-face avatar is optional: the identity circle can be hidden while the
     // satellite clock/weather and status icons stay.
-    property bool islandShowAvatar: true
+    readonly property bool islandShowAvatar: BarWidgetDefaults.option("island", root.islandEntry(), "showAvatar") !== false
     // D1's `time.dateFormat` became the clock entry's `dateFormat` axis
     // (D4b): the Qt format pattern now lives on the lane entry and the
     // clock widget formats it per instance.
@@ -1410,19 +1430,19 @@ Singleton {
     }
 
     function setIslandSatellite(value) {
-        setValue("islandSatellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
+        setIslandEntryOverride("satellite", normalizedOption(root.islandSatelliteOptions, value, "clock"));
     }
 
     function setIslandShowMediaControls(value) {
-        setValue("islandShowMediaControls", value === true);
+        setIslandEntryOverride("showMediaControls", value === true);
     }
 
     function setIslandVisualizerStyle(value) {
-        setValue("islandVisualizerStyle", normalizedOption(root.islandVisualizerStyleOptions, value, "dots"));
+        setIslandEntryOverride("visualizerStyle", normalizedOption(root.islandVisualizerStyleOptions, value, "dots"));
     }
 
     function setIslandShowAvatar(value) {
-        setValue("islandShowAvatar", value === true);
+        setIslandEntryOverride("showAvatar", value === true);
     }
 
     function setFontFamily(role, family) {
@@ -1593,6 +1613,28 @@ Singleton {
         setBarAxis("fontScale", isFinite(numeric) ? Math.max(0.8, Math.min(1.5, Math.round(numeric * 100) / 100)) : 1);
     }
 
+    function setBarIconScale(value) {
+        const numeric = Number(value);
+        setBarAxis("iconScale", isFinite(numeric) ? Math.max(0.8, Math.min(1.5, Math.round(numeric * 100) / 100)) : 1);
+    }
+
+    function applyBarDensityPreset(level) {
+        const preset = DensityPresets.values("bar", String(level || ""));
+        const keys = Object.keys(preset);
+        if (keys.length === 0)
+            return false;
+        return root.withBarConfigs(config => {
+            let changed = false;
+            keys.forEach(key => {
+                if (config.axes[key] !== preset[key]) {
+                    config.axes[key] = preset[key];
+                    changed = true;
+                }
+            });
+            return changed;
+        });
+    }
+
     function setBarSurfaceColor(value) {
         setBarAxis("surfaceColor", typeof value === "string" && value.length > 0 && value.length <= 32 ? value : "default");
     }
@@ -1672,6 +1714,78 @@ Singleton {
         if (!zone)
             return;
         setBarAxis(zone + "OverflowMode", normalizedOption(BarDefaults.LANE_OVERFLOW_MODES, value, "auto"));
+    }
+
+    function selectBar(barId) {
+        const id = String(barId || "");
+        if (id === "" || !root.barConfigById(id))
+            root.selectedBarId = "";
+        else
+            root.selectedBarId = id;
+    }
+
+    function resetBarAxes() {
+        const defaults = root.normalizeBarAxes({});
+        return root.withBarConfigs(config => {
+            let changed = false;
+            Object.keys(defaults).forEach(key => {
+                if (key === "position" || key === "screenList")
+                    return;
+                const same = Array.isArray(config.axes[key])
+                    ? JSON.stringify(config.axes[key]) === JSON.stringify(defaults[key])
+                    : config.axes[key] === defaults[key];
+                if (!same) {
+                    config.axes[key] = Array.isArray(defaults[key]) ? defaults[key].slice() : defaults[key];
+                    changed = true;
+                }
+            });
+            return changed;
+        });
+    }
+
+    function barAxesModified(axes) {
+        const a = axes || root.barAxes;
+        const defaults = BarDefaults.DEFAULTS;
+        const keys = Object.keys(defaults);
+        for (let i = 0; i < keys.length; i += 1) {
+            const key = keys[i];
+            if (key === "position" || key === "screenList")
+                continue;
+            const same = Array.isArray(a[key]) ? JSON.stringify(a[key]) === JSON.stringify(defaults[key]) : a[key] === defaults[key];
+            if (!same)
+                return true;
+        }
+        return false;
+    }
+
+    function resetBarWidgetOverrides(uid) {
+        if (!uid)
+            return false;
+        return root.withBarConfigs(config => {
+            let changed = false;
+            ["left", "middle", "right"].forEach(zone => {
+                config.lanes[zone].forEach(entry => {
+                    if (entry.uid !== uid)
+                        return;
+                    if (entry.overrides && Object.keys(entry.overrides).length > 0) {
+                        entry.overrides = {};
+                        changed = true;
+                    }
+                });
+            });
+            return changed;
+        });
+    }
+
+    function resetBarLanes() {
+        return root.withBarConfigs((config, all) => {
+            const usedSingletons = root.singletonIdsInUse(all, config, undefined);
+            const next = root.normalizeConfigLanes({}, usedSingletons, config.id);
+            if (JSON.stringify(next) === JSON.stringify(config.lanes))
+                return false;
+            config.lanes = next;
+            return true;
+        });
     }
 
     // Sentinel axes (-1 = follow the style baseline) or bounded ints; the
@@ -1838,6 +1952,7 @@ Singleton {
             squareCorners: raw.squareCorners === true,
             radius: root.clampedBarSentinelInt(raw.radius, -1, 0, 32),
             fontScale: scaled(raw.fontScale, 1),
+            iconScale: scaled(raw.iconScale, 1),
             surfaceColor: typeof raw.surfaceColor === "string" && raw.surfaceColor.length <= 32 ? raw.surfaceColor : "default",
             surfaceTransparency: raw.surfaceTransparency === -1 ? -1 : fraction(raw.surfaceTransparency, -1),
             borderEnabled: raw.borderEnabled === true,
@@ -2054,6 +2169,63 @@ Singleton {
                 const lane = lanes[zones[z]];
                 if (Array.isArray(lane) && lane.some(entry => entry.widgetId === widgetId))
                     return true;
+            }
+        }
+        return false;
+    }
+
+    // D4e e5: locate the unique singleton island entry across barConfigs.
+    function islandEntry() {
+        const configs = Array.isArray(root.barConfigs) ? root.barConfigs : [];
+        for (let c = 0; c < configs.length; c += 1) {
+            const lanes = configs[c].lanes || {};
+            for (const zone of ["left", "middle", "right"]) {
+                const lane = lanes[zone];
+                if (!Array.isArray(lane))
+                    continue;
+                for (let i = 0; i < lane.length; i += 1) {
+                    if (lane[i].widgetId === "island")
+                        return lane[i];
+                }
+            }
+        }
+        return null;
+    }
+
+    function setIslandEntryOverride(key, value) {
+        const configs = Array.isArray(root.barConfigs) ? root.barConfigs : [];
+        for (let c = 0; c < configs.length; c += 1) {
+            const lanes = configs[c].lanes || {};
+            for (const zone of ["left", "middle", "right"]) {
+                const lane = lanes[zone];
+                if (!Array.isArray(lane))
+                    continue;
+                for (let i = 0; i < lane.length; i += 1) {
+                    if (lane[i].widgetId !== "island")
+                        continue;
+                    const uid = lane[i].uid;
+                    const barId = configs[c].id;
+                    return root.withBarConfig(barId, config => {
+                        let changed = false;
+                        ["left", "middle", "right"].forEach(z => {
+                            config.lanes[z].forEach(entry => {
+                                if (entry.uid !== uid)
+                                    return;
+                                const defaults = BarWidgetDefaults.DEFAULTS.island || {};
+                                const next = Object.assign({}, entry.overrides);
+                                if (value === undefined || value === null || value === defaults[key])
+                                    delete next[key];
+                                else
+                                    next[key] = value;
+                                if (JSON.stringify(next) !== JSON.stringify(entry.overrides)) {
+                                    entry.overrides = next;
+                                    changed = true;
+                                }
+                            });
+                        });
+                        return changed;
+                    });
+                }
             }
         }
         return false;
@@ -2673,7 +2845,7 @@ Singleton {
     }
 
     function setIslandHideDate(value) {
-        setValue("islandHideDate", !!value);
+        setIslandEntryOverride("hideDate", !!value);
     }
 
     function setBarShowNames(value) {
@@ -2856,12 +3028,6 @@ Singleton {
                 }
             },
             "island": {
-                "satellite": root.islandSatellite,
-                "layoutMigrated": root.islandLayoutMigrated,
-                "hideDate": root.islandHideDate,
-                "showAvatar": root.islandShowAvatar,
-                "showMediaControls": root.islandShowMediaControls,
-                "visualizerStyle": root.islandVisualizerStyle,
                 "horizontalClock": {
                     "fontSize": root.horizontalClockFontSize,
                     "axes": root.cloneMap(root.horizontalClockAxes),
@@ -3093,16 +3259,9 @@ Singleton {
         root.shellBackgroundOpacity = normalizedBoundedReal(effects.shellBackgroundOpacity, 1, 0, 1);
         root.shellBlurEnabled = typeof effects.shellBlurEnabled === "boolean" ? effects.shellBlurEnabled : false;
         root.shellBlurXray = typeof effects.shellBlurXray === "boolean" ? effects.shellBlurXray : true;
-        // B9.3 legacy read: `enabled=false` used to hide the island while the
-        // layout still listed it. The v3 migration applies it once (via
-        // resolveBarLayouts); membership is the only truth from then on.
-        root.islandSatellite = normalizedOption(root.islandSatelliteOptions, island.satellite, "clock");
-        root.islandHideDate = typeof island.hideDate === "boolean" ? island.hideDate : false;
-        root.islandShowAvatar = typeof island.showAvatar === "boolean" ? island.showAvatar : true;
-        root.islandShowMediaControls = typeof island.showMediaControls === "boolean" ? island.showMediaControls : false;
-        root.islandVisualizerStyle = normalizedOption(root.islandVisualizerStyleOptions, island.visualizerStyle, "dots");
-        // D1: `time.dateFormat` (iNiR key shape) — a Qt format pattern for the
-        // long date form; empty keeps the stock "dddd, dd/MM".
+        // D4e e5: island appearance axes live on the singleton "island" lane
+        // entry (migrated from [island] in v6) and project reactively off
+        // barConfigs below.
         // iNiR keyboardIndicators block; the old island.capsLockOsd/numLockOsd
         // pair migrates to popup.caps/num so an existing choice is not lost.
         root.keyboardShowPopup = typeof keyboard.showPopup === "boolean" ? keyboard.showPopup : true;

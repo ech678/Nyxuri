@@ -280,7 +280,7 @@ Scope {
                                     readonly property bool anchoredBottom: barRoot.edge === "bottom" || barRoot.vertical
                                     readonly property bool anchoredLeft: barRoot.edge === "left" || !barRoot.vertical
                                     readonly property bool anchoredRight: barRoot.edge === "right" || !barRoot.vertical
-                                    readonly property real thickness: barRoot.vertical ? Appearance.sizes.verticalBarWidth : Appearance.sizes.barHeight
+                                    readonly property real thickness: barRoot.vertical ? PersonalizationConfig.resolvedVerticalBarWidth(barRoot.axes) : PersonalizationConfig.resolvedBarHeight(barRoot.axes)
                                     // B9.5 outer margins: normal axis = away from the screen edge,
                                     // along axis = the two ends. 0 keeps end4's edge-flush look.
                                     readonly property real edgeMargin: barRoot.axes.edgeMargin
@@ -288,7 +288,7 @@ Scope {
                                     // The margins and the reserved exclusive zone share one pure
                                     // implementation (commons/BarGeometry.js) with the probe.
                                     readonly property var windowMargins: BarGeometry.margins(barRoot.edge, barRoot.vertical, barRoot.edgeMargin, barRoot.sideMarginPx, barRoot.layerGap, barRoot.autoHideEnabled, barRoot.deadPixel)
-                                    readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, barRoot.axes.cornerStyle, Config.options.bar.m3.gapsOut, barRoot.edgeMargin)
+                                    readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, barRoot.axes.barThickness, barRoot.axes.verticalThickness, barRoot.axes.cornerStyle, Config.options.bar.m3.gapsOut, barRoot.edgeMargin)
                                     // The content is instantiated exactly once, by the active
                                     // orientation branch (B8.6: a second copy stole islandHost and
                                     // doubled every service consumer).
@@ -391,8 +391,8 @@ Scope {
                                     // bar to Overlay so the reveal channel stays alive above a
                                     // fullscreen toplevel (default off keeps the Top layer).
                                     WlrLayershell.layer: barRoot.fullscreenAutoHide ? WlrLayer.Overlay : WlrLayer.Top
-                                    implicitHeight: barRoot.vertical ? 0 : (Appearance.sizes.barHeight + barRoot.shellRadius + (barRoot.autoHideEnabled ? barRoot.layerGap : 0))
-                                    implicitWidth: barRoot.vertical ? (Appearance.sizes.verticalBarWidth + barRoot.shellRadius + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)) : 0
+                                    implicitHeight: barRoot.vertical ? 0 : (barRoot.thickness + barRoot.shellRadius + (barRoot.autoHideEnabled ? barRoot.layerGap : 0))
+                                    implicitWidth: barRoot.vertical ? (barRoot.thickness + barRoot.shellRadius + (barRoot.autoHideEnabled ? barRoot.layerGap : 0)) : 0
                                     // When Overlay-layer, bar shares a layer with the screen-corner click zones (ScreenCorners.qml)
                                     // and same-layer overlap is resolved by stacking, not layer priority - bar was winning and
                                     // swallowing the tiny corner-open hit rects. Carve them out of the bar's own mask so clicks
@@ -641,8 +641,8 @@ Scope {
                                             // the content 2519 wide / 1440 tall inside the window.
                                             x: barRoot.vertical ? ((barRoot.edge === "right" ? parent.width - width + slideOffset : slideOffset) + (barRoot.edge === "right" && barRoot.deadPixel ? -1 : 0)) : 0
                                             y: barRoot.vertical ? 0 : ((barRoot.edge === "bottom" ? parent.height - height + slideOffset : slideOffset) + (barRoot.edge === "bottom" && barRoot.deadPixel ? -1 : 0))
-                                            width: barRoot.vertical ? Appearance.sizes.verticalBarWidth : parent.width
-                                            height: barRoot.vertical ? parent.height : Appearance.sizes.barHeight
+                                            width: barRoot.vertical ? barRoot.thickness : parent.width
+                                            height: barRoot.vertical ? parent.height : barRoot.thickness
                                             Behavior on x {
                                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                                             }

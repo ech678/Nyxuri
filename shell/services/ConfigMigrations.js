@@ -9,7 +9,7 @@
 
 // v2: the schema-2 file without a configVersion key (pre-D4a).
 var LEGACY_VERSION = 2;
-var CURRENT_VERSION = 5;
+var CURRENT_VERSION = 6;
 
 // Explicit key map for the v3 step (dux MIGRATED_GLOBALS pattern): the
 // layout keys [[bar.configs]] supersedes. A key rename can never silently
@@ -96,6 +96,17 @@ var MIGRATED_BAR_GLOBALS = {
 // they become plain entry overrides.
 var WIDGET_STYLE_KEYS = ["color", "borderColor", "radius", "borderWidth", "padding"];
 
+// v6 explicit key map (D4e e5): [island] widget appearance axes fold onto
+// the singleton island lane entry; horizontalClock and keyboardIndicators
+// stay in their own sections.
+var MIGRATED_ISLAND_KEYS = {
+    satellite: "satellite",
+    showAvatar: "showAvatar",
+    showMediaControls: "showMediaControls",
+    visualizerStyle: "visualizerStyle",
+    hideDate: "hideDate"
+};
+
 // Runs every pending step. seed carries what the caller (who owns the pure
 // resolve helpers and the widget whitelist) resolved from the legacy keys:
 // { lanes: {left, middle, right}, allowedIds, defaults } — defaults is the
@@ -118,6 +129,11 @@ function migrateConfig(parsed, seed) {
     if (version < 5) {
         changed = migrateBarGlobals(config, seed) || changed;
         version = 5;
+        config.configVersion = version;
+    }
+    if (version < 6) {
+        changed = migrateIslandGlobals(config, seed) || changed;
+        version = 6;
         config.configVersion = version;
     }
     return {
@@ -328,6 +344,70 @@ function migrateBarGlobals(config, seed) {
         delete bar.widgetStyles;
         touched = true;
     }
+    return touched;
+}
+
+// v6 (D4e e5): fold [island] widget appearance axes into the singleton
+// "island" lane entry across [[bar.configs]], skipping defaults, keeping
+// any value already on the entry, and stripping the legacy keys + obsolete
+// layoutMigrated marker afterwards.
+function migrateIslandGlobals(config, seed) {
+    const island = config.island;
+    if (!island || typeof island !== "object" || Array.isArray(island))
+        return false;
+    const defaults = seed && seed.defaults && seed.defaults.island ? seed.defaults.island : {};
+    const bar = config.bar && typeof config.bar === "object" && !Array.isArray(config.bar) ? config.bar : null;
+    const configs = bar && Array.isArray(bar.configs) ? bar.configs : [];
+    let touched = false;
+
+    for (let b = 0; b < configs.length; b++) {
+        const lanes = configs[b] && configs[b].lanes;
+        if (!lanes || typeof lanes !== "object")
+            continue;
+        for (const zone of ["left", "middle", "right"]) {
+            const lane = lanes[zone];
+            if (!Array.isArray(lane))
+                continue;
+            for (let i = 0; i < lane.length; i++) {
+                const raw = lane[i];
+                const id = typeof raw === "string" ? raw : (raw && typeof raw === "object" ? raw.id : null);
+                if (id !== "island" && id !== "dynamicIsland")
+                    continue;
+                const entry = typeof raw === "string" ? {
+                    id: raw
+                } : raw;
+                let copied = false;
+                for (const entryKey in MIGRATED_ISLAND_KEYS) {
+                    const flatKey = MIGRATED_ISLAND_KEYS[entryKey];
+                    const value = island[flatKey];
+                    if (value === undefined || entry[entryKey] !== undefined)
+                        continue;
+                    if (defaults[entryKey] !== undefined && value === defaults[entryKey])
+                        continue;
+                    entry[entryKey] = value;
+                    copied = true;
+                }
+                if (copied) {
+                    lane[i] = entry;
+                    touched = true;
+                }
+            }
+        }
+    }
+
+    for (const entryKey in MIGRATED_ISLAND_KEYS) {
+        const flatKey = MIGRATED_ISLAND_KEYS[entryKey];
+        if (island[flatKey] !== undefined) {
+            delete island[flatKey];
+            touched = true;
+        }
+    }
+    if (island.layoutMigrated !== undefined) {
+        delete island.layoutMigrated;
+        touched = true;
+    }
+    if (Object.keys(island).length === 0)
+        delete config.island;
     return touched;
 }
 

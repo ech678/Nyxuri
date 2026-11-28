@@ -17,9 +17,11 @@ Item {
     // height is user-configurable (bar.height), so at anything but 40 the
     // icons floated as small chips in a taller bar. Scale off the real bar
     // size and let bar.m3.dockToPanel.* override with an explicit px value.
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     readonly property real slotSize: root.vertical
-        ? Appearance.sizes.baseVerticalBarWidth
-        : Appearance.sizes.baseBarHeight
+        ? root.barAxes.verticalThickness
+        : root.barAxes.barThickness
     readonly property real cfgIconSize: Config.options?.bar?.m3?.dockToPanel?.iconSize ?? 0
     readonly property real cfgBtnSize: Config.options?.bar?.m3?.dockToPanel?.buttonSize ?? 0
     readonly property real naturalIconSize: Math.round(root.slotSize * 0.68)
@@ -31,11 +33,11 @@ Item {
         ? Math.max(18, root.cfgBtnSize)
         : root.naturalButtonSize
     property real btnSize: Math.max(root.requestedButtonSize, root.requestedIconSize + 6)
-    property real iconSize: Math.min(root.requestedIconSize, root.btnSize - 6)
+    property real iconSize: Math.min(root.requestedIconSize, root.btnSize - 6) * BarScale.iconFor(root.widgetBar)
     property real btnSpacing: Math.max(0, Config.options?.bar?.m3?.dockToPanel?.buttonSpacing ?? 2)
     property real buttonPadding: Math.max(3, Math.round(root.btnSize * 0.1))
-    property bool vertical:    Config.options.bar.vertical
-    property bool isMaterial:  Config.options.bar.m3.cornerStyle === 3
+    property bool vertical:    root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial:  root.barAxes.cornerStyle === 3
     property var pinnedApps: Config.options?.dock.pinnedApps ?? []
     property var activeUnpinned: TaskbarApps.apps.filter(
         a => !a.pinned && a.appId !== "SEPARATOR" && a.toplevels.length > 0
@@ -85,11 +87,11 @@ Item {
     }
 
     implicitWidth:  vertical
-        ? (isMaterial ? Appearance.sizes.verticalBarWidth : Appearance.sizes.verticalBarWidth - 10)
+        ? (isMaterial ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) - 10)
         : pill.implicitWidth
     implicitHeight: vertical
         ? pill.implicitHeight
-        : Appearance.sizes.barHeight
+        : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     function swapSlots(from, to) {
         if (from === to) return
@@ -115,7 +117,7 @@ Item {
         implicitWidth: root.isMaterial && !root.vertical
             ? flow.implicitWidth + Math.round(root.btnSize * 0.36)
             : root.vertical
-                ? (root.isMaterial ? root.btnSize + 6 : Appearance.sizes.verticalBarWidth - 10)
+                ? (root.isMaterial ? root.btnSize + 6 : PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) - 10)
                 : flow.implicitWidth + 4
 
         implicitHeight: root.isMaterial && root.vertical
@@ -124,7 +126,7 @@ Item {
                 ? root.btnSize + 6
                 : root.vertical
                     ? flow.implicitHeight + 4
-                    : Appearance.sizes.barHeight
+                    : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
         Behavior on implicitWidth {
             animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
@@ -193,9 +195,9 @@ Item {
                             id: pinnedMenu
                             anchorItem: pinnedButton
                             anchorHovered: pinnedButton.hovered
-                            popupAbove: Config.options?.bar?.bottom ?? false
+                            popupAbove: root.barAxes.position === "bottom"
                             popupSide: root.vertical
-                                ? ((Config.options?.bar?.bottom ?? false) ? Edges.Left : Edges.Right)
+                                ? (root.barAxes.position === "right" ? Edges.Left : Edges.Right)
                                 : 0
                             closeOnHoverLost: false
                             model: [
@@ -403,9 +405,9 @@ Item {
                             id: activeMenu
                             anchorItem: activeButton
                             anchorHovered: activeButton.hovered
-                            popupAbove: Config.options?.bar?.bottom ?? false
+                            popupAbove: root.barAxes.position === "bottom"
                             popupSide: root.vertical
-                                ? ((Config.options?.bar?.bottom ?? false) ? Edges.Left : Edges.Right)
+                                ? (root.barAxes.position === "right" ? Edges.Left : Edges.Right)
                                 : 0
                             closeOnHoverLost: false
                             model: [

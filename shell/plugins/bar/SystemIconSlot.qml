@@ -39,6 +39,7 @@ Item {
     property string slotKey: ""
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
+    property var widgetBar: null
     property bool isMaterial: PersonalizationConfig.barIsMaterial
     default property alias content: contentHost.data
 
@@ -125,7 +126,7 @@ Item {
 
                 anchors.centerIn: parent
                 visible: root.iconText.length > 0
-                iconSize: Appearance.sizes.barUtilIconSize
+                iconSize: Appearance.sizes.barUtilIconSize * BarScale.iconFor(root.widgetBar)
                 fill: root.isActive ? 1 : 0
                 color: root.hovered && root.isMaterial ? M3Palette.primaryForeground : root.resolvedContentColor
 
@@ -168,7 +169,7 @@ Item {
             elide: Text.ElideRight
             clip: true
 
-            font.pixelSize: NexusStyle.font.labelSmall * BarScale.font
+            font.pixelSize: NexusStyle.font.labelSmall * BarScale.fontFor(root.widgetBar)
             font.features: { "tnum": 1 }
             color: root.hovered && root.isMaterial ? M3Palette.primaryForeground : root.resolvedContentColor
 

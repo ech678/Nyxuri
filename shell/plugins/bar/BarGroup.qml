@@ -90,6 +90,11 @@ Item {
         return root.resolveColorName(onName) ?? Appearance.colors.colOnLayer1;
     }
 
+    onWidgetEntryChanged: {
+        if (root.loadedWidget && "widgetEntry" in root.loadedWidget)
+            root.loadedWidget.widgetEntry = root.widgetEntry;
+    }
+
     Binding {
         target: root.loadedWidget && "contentColor" in root.loadedWidget ? root.loadedWidget : null
         property: "contentColor"
@@ -238,8 +243,8 @@ Item {
             widget.allottedPrimarySize = size;
     }
 
-    implicitWidth: !root.hasContent ? 0 : vertical && root.isMaterial ? Appearance.sizes.baseVerticalBarWidth - 6 : (root.contentWidth + padding * 2)
-    implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : Appearance.sizes.baseBarHeight
+    implicitWidth: !root.hasContent ? 0 : vertical && root.isMaterial ? (root.barAxes.verticalThickness - 6) : (root.contentWidth + padding * 2)
+    implicitHeight: vertical ? (gridLayout.implicitHeight + padding * 2) : root.barAxes.barThickness
 
     default property alias items: gridLayout.children
 

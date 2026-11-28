@@ -30,7 +30,7 @@ import "OverflowLayout.js" as OverflowLayout
 Item {
     id: root
 
-    implicitWidth: Appearance.sizes.verticalBarWidth
+    implicitWidth: PersonalizationConfig.resolvedVerticalBarWidth(root.axes)
     height: parent ? parent.height : 0
     // Orientation marker: Bar.qml's probe helpers and the runtime probe read
     // this instead of guessing from the screen edge.
@@ -243,7 +243,7 @@ Item {
         if (loader.item && loader.item.widgetEntry !== undefined)
             loader.item.widgetEntry = entry;
         if (loader.item && loader.item.widgetBar !== undefined)
-            loader.item.widgetBar = root.barConfig;
+            loader.item.widgetBar = Qt.binding(() => root.barConfig);
     }
 
     function shouldPaintMaterialPill(name) {

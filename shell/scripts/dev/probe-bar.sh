@@ -519,6 +519,7 @@ fi
 # the rebuild signature (style-stable, routing-sensitive).
 d4e_store_state=""
 d4e_signature_state=""
+d4e_migration_v6_state=""
 d4e_windows_two_state=""
 d4e_windows_off_state=""
 d4e_windows_clean_state=""
@@ -527,6 +528,9 @@ if ipc d4eStore >/dev/null 2>&1; then
 fi
 if ipc d4eSignature >/dev/null 2>&1; then
     d4e_signature_state=$(ipc d4eSignature 2>/dev/null || true)
+fi
+if ipc d4eMigrationV6 >/dev/null 2>&1; then
+    d4e_migration_v6_state=$(ipc d4eMigrationV6 2>/dev/null || true)
 fi
 
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
@@ -744,7 +748,7 @@ ipc cornerStyle 1 >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" <<'PY'
 import json
 import re
 import sys
@@ -765,7 +769,7 @@ import sys
  d4b_instances_state, d4b_click_vocabulary, d4c_migration_state,
  d4c_sentinels_state, d4c_roles_state, d4d_behavior_state,
  d4d_overflow_resolve_state, d4d_overflow_cramped_state,
- d4d_overflow_reset_state, d4e_store_state, d4e_signature_state,
+ d4d_overflow_reset_state, d4e_store_state, d4e_signature_state, d4e_migration_v6_state,
  d4e_windows_two_state, d4e_windows_off_state, d4e_windows_clean_state) = sys.argv[1:74]
 
 
@@ -1445,7 +1449,7 @@ d4a_entries_ok = bool(
 )
 d4a_migration_ok = bool(
     d4a_migration.get("changed") is True
-    and d4a_migration.get("version") == 5
+    and d4a_migration.get("version") == 6
     and d4a_migration.get("aliasResolved") is True
     and d4a_migration.get("islandSeeded") is True
     and d4a_migration.get("legacyStripped") is True
@@ -1456,7 +1460,7 @@ d4a_persistence_ok = bool(
     and d4a_persistence.get("singleKey") is True
     and d4a_persistence.get("restoredEmpty") is True
     and d4a_persistence.get("enabledViewDropsDisabled") is True
-    and d4a_persistence.get("configVersion") == 5
+    and d4a_persistence.get("configVersion") == 6
     and isinstance(d4a_persistence.get("disabledSparse"), list)
 )
 d4a_ok = d4a_entries_ok and d4a_migration_ok and d4a_persistence_ok
@@ -1467,7 +1471,7 @@ d4b_instances = json.loads(d4b_instances_state) if d4b_instances_state.strip() e
 d4b_click = json.loads(d4b_click_vocabulary) if d4b_click_vocabulary.strip() else {}
 d4b_migration_ok = bool(
     d4b_migration.get("changed") is True
-    and d4b_migration.get("version") == 5
+    and d4b_migration.get("version") == 6
     and d4b_migration.get("workspacesFolded") is True
     and d4b_migration.get("workspacesDefaultsSkipped") is True
     and d4b_migration.get("separatorFolded") is True
@@ -1498,7 +1502,7 @@ d4c_sentinels = json.loads(d4c_sentinels_state) if d4c_sentinels_state.strip() e
 d4c_roles = json.loads(d4c_roles_state) if d4c_roles_state.strip() else {}
 d4c_migration_ok = bool(
     d4c_migration.get("changed") is True
-    and d4c_migration.get("version") == 5
+    and d4c_migration.get("version") == 6
     and d4c_migration.get("positionFolded") is True
     and d4c_migration.get("cornerStyleFolded") is True
     and d4c_migration.get("borderlessFolded") is True
@@ -1572,6 +1576,17 @@ d4d_ok = d4d_behavior_ok and d4d_overflow_resolve_ok and d4d_overflow_cramped_ok
 
 d4e_store = json.loads(d4e_store_state) if d4e_store_state.strip() else {}
 d4e_signature = json.loads(d4e_signature_state) if d4e_signature_state.strip() else {}
+d4e_migration_v6 = json.loads(d4e_migration_v6_state) if d4e_migration_v6_state.strip() else {}
+d4e_migration_v6_ok = bool(
+    d4e_migration_v6.get("changed") is True
+    and d4e_migration_v6.get("version") == 6
+    and d4e_migration_v6.get("foldedOnEntry") is True
+    and d4e_migration_v6.get("defaultsSkipped") is True
+    and d4e_migration_v6.get("clockKept") is True
+    and d4e_migration_v6.get("flatStripped") is True
+    and d4e_migration_v6.get("emptyIslandDeleted") is True
+    and d4e_migration_v6.get("idempotent") is True
+)
 d4e_store_ok = bool(
     # singleNull/bar1PristineIdentity are emitted for diagnostics only:
     # earlier probe sections legitimately leave axis deviations behind, so
@@ -1614,9 +1629,15 @@ d4e_windows_two_ok = bool(
     len(_two_hosts) == 2
     and _by_id(_two_hosts, "default").get("position") == "top" and _by_id(_two_hosts, "default").get("windows", 0) >= 1
     and _by_id(_two_hosts, "bar2").get("position") == "bottom" and _by_id(_two_hosts, "bar2").get("windows", 0) >= 1
-    # The second bar's own window: bottom edge, its OWN clock-only lanes —
-    # per-entry rendering, not the settings-facing views.
+    # The second bar's own window: bottom edge, its OWN clock-only lanes,
+    # and its OWN thickness (50) & fontScale (1.1) & iconScale (1.25).
     and d4e_windows_two.get("secondEdge") == "bottom"
+    and d4e_windows_two.get("firstHeight", 0) > 0
+    and d4e_windows_two.get("secondHeight", 0) > d4e_windows_two.get("firstHeight", 0)
+    and d4e_windows_two.get("firstIconScale") == 1.0
+    and d4e_windows_two.get("secondIconScale") == 1.25
+    and d4e_windows_two.get("firstFontScale") == 1.0
+    and d4e_windows_two.get("secondFontScale") == 1.1
     and d4e_windows_two.get("secondLeftIds") == ["clock"]
     and d4e_windows_two.get("secondRightIds") == []
 )
@@ -1629,7 +1650,7 @@ d4e_windows_clean_ok = bool(
     len(_clean_hosts) == 1
     and _by_id(_clean_hosts, "default").get("windows", 0) >= 1
 )
-d4e_ok = d4e_store_ok and d4e_signature_ok and d4e_windows_two_ok and d4e_windows_off_ok and d4e_windows_clean_ok
+d4e_ok = d4e_store_ok and d4e_signature_ok and d4e_migration_v6_ok and d4e_windows_two_ok and d4e_windows_off_ok and d4e_windows_clean_ok
 
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
@@ -1874,12 +1895,23 @@ report = {
             "positionMoved": d4e_signature.get("positionMoved"),
             "disableMoved": d4e_signature.get("disableMoved"),
         },
+        "migrationV6": {
+            "ok": d4e_migration_v6_ok,
+            "version": d4e_migration_v6.get("version"),
+            "foldedOnEntry": d4e_migration_v6.get("foldedOnEntry"),
+            "emptyIslandDeleted": d4e_migration_v6.get("emptyIslandDeleted"),
+            "idempotent": d4e_migration_v6.get("idempotent"),
+        },
         "windows": {
             "ok": d4e_windows_two_ok and d4e_windows_off_ok and d4e_windows_clean_ok,
             "two": {
                 "ok": d4e_windows_two_ok,
                 "hosts": d4e_windows_two.get("hosts"),
                 "secondEdge": d4e_windows_two.get("secondEdge"),
+                "firstHeight": d4e_windows_two.get("firstHeight"),
+                "secondHeight": d4e_windows_two.get("secondHeight"),
+                "firstIconScale": d4e_windows_two.get("firstIconScale"),
+                "secondIconScale": d4e_windows_two.get("secondIconScale"),
                 "secondLeftIds": d4e_windows_two.get("secondLeftIds"),
             },
             "off": {

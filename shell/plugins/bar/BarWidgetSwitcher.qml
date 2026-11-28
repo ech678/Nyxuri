@@ -8,8 +8,10 @@ import QtQuick.Layouts
 
 Item {
     id: root
-    property bool vertical: false
-    property bool isMaterial: PersonalizationConfig.barIsMaterial
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: root.barAxes.cornerStyle === 3 || root.barAxes.cornerStyle === 4
     property real horizontalExtraPadding: 12
 
     property Component colDefault
@@ -17,8 +19,8 @@ Item {
     property Component rowDefault
     property Component rowMaterial
 
-    implicitWidth: root.vertical ? Appearance.sizes.verticalBarWidth : (rowLoader.item?.implicitWidth ?? 0) + (root.isMaterial ? 0 : root.horizontalExtraPadding)
-    implicitHeight: root.vertical ? (colLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
+    implicitWidth: root.vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : (rowLoader.item?.implicitWidth ?? 0) + (root.isMaterial ? 0 : root.horizontalExtraPadding)
+    implicitHeight: root.vertical ? (colLoader.item?.implicitHeight ?? 0) : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     Loader {
         id: colLoader

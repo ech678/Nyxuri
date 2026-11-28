@@ -38,10 +38,10 @@ var DEFAULTS = {
     // Shape axes.
     squareCorners: false,
     radius: -1,
-    // Content scaling (multiplier over the NexusStyle type scale). The
-    // icon twin is D4e density material: bar icon slots are end4-baseline
-    // literals (97 sites), not type-scale reads.
+    // Content scaling (multiplier over the NexusStyle type scale / icon
+    // baseline). D4e e6 adds iconScale alongside fontScale.
     fontScale: 1.0,
+    iconScale: 1.0,
     // Bar surface (the bar's own background shell).
     surfaceColor: "default",
     surfaceTransparency: -1,

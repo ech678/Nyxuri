@@ -9,8 +9,10 @@ import qs.ui
 
 MouseArea {
     id: root
-    property bool vertical: Config.options.bar.vertical
-    property bool isMaterial: Config.options.bar.m3.cornerStyle === 3
+    property var widgetBar: null
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
+    property bool vertical: root.barAxes.position === "left" || root.barAxes.position === "right"
+    property bool isMaterial: root.barAxes.cornerStyle === 3
     readonly property color statusContainer: Updates.updateStronglyAdvised
         ? M3Palette.error
         : Updates.updateAdvised ? M3Palette.tertiary : M3Palette.primary
@@ -18,8 +20,8 @@ MouseArea {
         ? M3Palette.errorForeground
         : Updates.updateAdvised ? M3Palette.tertiaryForeground : M3Palette.primaryForeground
 
-    implicitWidth: vertical ? Appearance.sizes.verticalBarWidth : (contentLoader.item?.implicitWidth ?? 0)
-    implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : Appearance.sizes.barHeight
+    implicitWidth: vertical ? PersonalizationConfig.resolvedVerticalBarWidth(root.barAxes) : (contentLoader.item?.implicitWidth ?? 0)
+    implicitHeight: vertical ? (contentLoader.item?.implicitHeight ?? 0) : PersonalizationConfig.resolvedBarHeight(root.barAxes)
 
     cursorShape: Qt.PointingHandCursor
     acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -40,7 +42,7 @@ MouseArea {
         StyledText {
             leftPadding: 5
             rightPadding: 3
-            font.pixelSize: NexusStyle.font.bodyMedium * BarScale.font
+            font.pixelSize: NexusStyle.font.bodyMedium * BarScale.fontFor(root.widgetBar)
             color: root.isMaterial
                 ? M3Palette.pillInk("updatesCount")
                 : Appearance.colors.colOnLayer1
@@ -63,7 +65,7 @@ MouseArea {
                 visible: !root.isMaterial
                 Layout.alignment: Qt.AlignVCenter
                 text: "deployed_code_update"
-                iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                 color: Updates.updateStronglyAdvised ? Appearance.m3colors.m3error
                     : Updates.updateAdvised ? Appearance.colors.colTertiary
                     : Appearance.colors.colOnLayer1
@@ -79,7 +81,7 @@ MouseArea {
                 MaterialSymbol {
                     anchors.centerIn: parent
                     text: "deployed_code_update"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.statusInk
                 }
             }
@@ -100,7 +102,7 @@ MouseArea {
                 visible: !root.isMaterial
                 Layout.alignment: Qt.AlignHCenter
                 text: "deployed_code_update"
-                iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                 color: Updates.updateStronglyAdvised ? Appearance.m3colors.m3error
                     : Updates.updateAdvised ? Appearance.colors.colTertiary
                     : Appearance.colors.colOnLayer1
@@ -117,7 +119,7 @@ MouseArea {
                 MaterialSymbol {
                     anchors.centerIn: parent
                     text: "deployed_code_update"
-                    iconSize: NexusStyle.font.bodyLarge * BarScale.font
+                    iconSize: NexusStyle.font.bodyLarge * BarScale.iconFor(root.widgetBar)
                     color: root.statusInk
                 }
             }

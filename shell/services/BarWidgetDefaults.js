@@ -133,7 +133,13 @@ var DEFAULTS = {
         occupiedColorMode: "theme",
         occupiedCustomColor: "#625B71"
     },
-    island: {},
+    island: {
+        satellite: "clock",
+        showAvatar: true,
+        showMediaControls: false,
+        visualizerStyle: "dots",
+        hideDate: false
+    },
     visualizer: {},
     systemIcons: {},
     utilButtons: {

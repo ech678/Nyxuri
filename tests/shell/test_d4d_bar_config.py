@@ -250,7 +250,7 @@ class GroupProtocolTest(unittest.TestCase):
     def test_lane_overflow_host_shape(self):
         self.assertIn("property var overflowGroups: []", self.host)
         self.assertIn("function toggle(): void", self.host)
-        self.assertIn("OverflowLayout.expanderIcon(Config.options.bar.edge, root.open)", self.host)
+        self.assertIn("OverflowLayout.expanderIcon(root.barAxes.position, root.open)", self.host)
         self.assertIn("hoverActivates: false", self.host)
         self.assertIn("closeOnOutsideClick: true", self.host)
         # Restore-before-deactivate: the popup window tree is destroyed on
