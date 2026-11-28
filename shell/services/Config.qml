@@ -59,16 +59,12 @@ Singleton {
             readonly property alias layouts: m3Options.layouts
 
             readonly property QtObject autoHide: QtObject {
-                // B9.7: user-visible surface is only the slide-out switch.
-                // pushWindows / hoverRegionWidth / super-reveal stay internal
-                // defaults — they have live consumers in Bar.qml but no UI.
+                // B9.7 selected-bar projection. D4h moved pushWindows /
+                // superReveal / smart / peek onto the [[bar.configs]] entry
+                // axes (per-bar truth); hoverRegionWidth stays internal —
+                // the input-mask corner cutout has no settings surface.
                 readonly property bool enable: PersonalizationConfig.barAutoHide
-                readonly property bool pushWindows: false
                 readonly property int hoverRegionWidth: 2
-                readonly property QtObject showWhenPressingSuper: QtObject {
-                    readonly property bool enable: false
-                    readonly property int delay: 100
-                }
             }
 
             readonly property QtObject m3: QtObject {

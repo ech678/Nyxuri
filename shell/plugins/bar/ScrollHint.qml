@@ -6,6 +6,8 @@ import qs.services
 Revealer { // Scroll hint
     id: root
     property string icon
+    // "left"/"right" (row): hug the inner edge beside the middle lane.
+    // "top"/"bottom" (rail, D4h): hug the seam ends of the start/end halves.
     property string side: "left"
     property string tooltipText: ""
 
@@ -13,6 +15,8 @@ Revealer { // Scroll hint
         id: mouseArea
         anchors.right: root.side === "left" ? parent.right : undefined
         anchors.left: root.side === "right" ? parent.left : undefined
+        anchors.bottom: root.side === "top" ? parent.bottom : undefined
+        anchors.top: root.side === "bottom" ? parent.top : undefined
         implicitWidth: contentColumn.implicitWidth
         implicitHeight: contentColumn.implicitHeight
         property bool hovered: false

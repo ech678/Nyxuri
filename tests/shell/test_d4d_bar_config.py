@@ -357,10 +357,13 @@ class SettingsPageTest(unittest.TestCase):
             "setBarClickThrough", "setBarHoverPopouts", "setBarHoverPopoutDelay",
         ):
             self.assertIn(text, section)
-        # The auto-hide toggle moved here from Structure/Style (single home).
-        self.assertLess(behavior_idx, self.appearance.index('text: I18n.tr("Autohide")'))
-        style_section = self.appearance[self.appearance.index('text: I18n.tr("Structure")'):behavior_idx]
-        self.assertNotIn("setBarAutoHide", style_section)
+        # D4h: the toggle became the three-state segmented control (the
+        # single home for the autohide storage keys); the plain "Autohide"
+        # toggle row no longer exists anywhere in the section.
+        self.assertIn("setBarAutoHideMode", section)
+        self.assertIn("autoHideModePicker", self.appearance)
+        self.assertNotIn('text: I18n.tr("Autohide")', section)
+        self.assertNotIn("setBarAutoHideMode", self.appearance[:behavior_idx])
 
     def test_widget_editor_overflow_group(self):
         self.assertIn('["spacer", "separator", "island"].indexOf(root.widgetId) === -1', self.widget_page)

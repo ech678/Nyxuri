@@ -71,6 +71,13 @@ var DEFAULTS = {
     clickThrough: false,
     hoverPopouts: true,
     hoverPopoutDelay: 150,
+    // D4h behavior additions (bar-config.md D4h). Every default is the
+    // pre-D4h behavior: smart off, no reservation reveal, no super reveal,
+    // no workspace-switch peek.
+    autoHideSmart: false,
+    pushWindows: false,
+    superReveal: false,
+    peekOnWorkspaceSwitch: false,
     // Per-lane overflow default ("auto" or "bar").
     leftOverflowMode: "auto",
     middleOverflowMode: "auto",
@@ -86,6 +93,10 @@ var BEHAVIOR_KEYS = [
     "autoHide",
     "autoHideDelay",
     "autoHideStrict",
+    "autoHideSmart",
+    "pushWindows",
+    "superReveal",
+    "peekOnWorkspaceSwitch",
     "hideOnFullscreen",
     "clickThrough",
     "hoverPopouts",
@@ -95,6 +106,14 @@ var BEHAVIOR_KEYS = [
     "rightOverflowMode",
     "screenList"
 ];
+
+// D4h internal behavior timings (bar-config.md D4h). Deliberately not axes:
+// one cadence for every bar, no settings rows. The super delay carries over
+// the bridge's historical 100ms; the peek cadence follows the noctalia
+// show_on_workspace_switch reference (80ms debounce / 450ms stay).
+var SUPER_REVEAL_DELAY_MS = 100;
+var PEEK_DEBOUNCE_MS = 80;
+var PEEK_STAY_MS = 450;
 
 var LANE_OVERFLOW_MODES = ["auto", "bar"];
 

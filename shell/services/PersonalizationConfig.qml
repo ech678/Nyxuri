@@ -338,8 +338,9 @@ Singleton {
     // path. Setters write through withBarConfigs — nothing assigns these.
     readonly property string barPosition: root.activeBarConfig().axes.position
     // B9.7 settled keys. `barAutoHide` drives the slide-out window;
-    // pushWindows / hoverRegionWidth / super-reveal stay internal bridge
-    // defaults — consumed, but not user-visible surface.
+    // D4h moved pushWindows / superReveal / smart / peek onto the entry
+    // axes (per-bar truth) — the bridge keeps only the selected-bar
+    // projection and the internal hoverRegionWidth.
     readonly property bool barAutoHide: root.activeBarConfig().axes.autoHide
     // Screen filter for the bar windows. Empty list = every screen (end4
     // semantics); names come from Quickshell.screens.
@@ -1612,6 +1613,32 @@ Singleton {
         setBarAxis("autoHide", value === true);
     }
 
+    // D4h behavior additions (bar-config.md D4h). The three-state picker
+    // routes through setBarAutoHideMode; each setter stays single-key so the
+    // sparse writer sees one deviation per axis.
+    function setBarAutoHideSmart(value) {
+        setBarAxis("autoHideSmart", value === true);
+    }
+
+    function setBarPushWindows(value) {
+        setBarAxis("pushWindows", value === true);
+    }
+
+    function setBarSuperReveal(value) {
+        setBarAxis("superReveal", value === true);
+    }
+
+    function setBarPeekOnWorkspaceSwitch(value) {
+        setBarAxis("peekOnWorkspaceSwitch", value === true);
+    }
+
+    // "off" | "on" | "smart" -> the two storage keys. setBarAxis already
+    // minimal-writes, so a mode flip costs at most two deviations.
+    function setBarAutoHideMode(mode) {
+        setBarAutoHide(mode === "on" || mode === "smart");
+        setBarAutoHideSmart(mode === "smart");
+    }
+
     function setBarScreenList(value) {
         setBarAxis("screenList", root.normalizedScreenList(Array.isArray(value) ? value : []));
     }
@@ -2022,6 +2049,10 @@ Singleton {
             // hover-opens.
             autoHideDelay: root.clampedBarInt(raw.autoHideDelay, 0, 2000, 0),
             autoHideStrict: raw.autoHideStrict === true,
+            autoHideSmart: raw.autoHideSmart === true,
+            pushWindows: raw.pushWindows === true,
+            superReveal: raw.superReveal === true,
+            peekOnWorkspaceSwitch: raw.peekOnWorkspaceSwitch === true,
             hideOnFullscreen: raw.hideOnFullscreen === true,
             clickThrough: raw.clickThrough === true,
             hoverPopouts: raw.hoverPopouts !== false,

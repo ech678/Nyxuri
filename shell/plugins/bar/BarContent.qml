@@ -110,6 +110,22 @@ Item {
     // B9.6 probe surface: the raw middle-row width, so the island-hug branch
     // (frame width = row - 4, not row + 10) is assertable at runtime.
     readonly property real middleRowImplicitWidth: middleRow.implicitWidth
+    // D4h probe surface: the orientation-aware scroll strips — row: either
+    // side of the middle lane; rail: the start/end halves along the track.
+    readonly property var scrollZones: ({
+            "start": {
+                "x": Math.round(barLeftScrollArea.x),
+                "y": Math.round(barLeftScrollArea.y),
+                "w": Math.round(barLeftScrollArea.width),
+                "h": Math.round(barLeftScrollArea.height)
+            },
+            "end": {
+                "x": Math.round(barRightScrollArea.x),
+                "y": Math.round(barRightScrollArea.y),
+                "w": Math.round(barRightScrollArea.width),
+                "h": Math.round(barRightScrollArea.height)
+            }
+        })
     readonly property bool trayHasItems: SystemTray.items.values.length > 0
     readonly property bool batteryAvailable: Battery.available
 
@@ -337,8 +353,10 @@ Item {
     // Edge scroll (iNiR behaviour kept through the B8.1 re-fork): the bare bar
     // on either side of the middle lane steps brightness / volume. Widgets sit
     // above these areas, so a scroll over a widget still belongs to the widget.
-    // The strips bind zero-extent geometry on the rail (they have no rail
-    // counterpart yet — D4h adds the vertical scroll actions).
+    // D4h rail counterpart: the strips become the rail's start/end halves
+    // along the track (zone 即真相 — the start half keeps the start action,
+    // the end half the end action; D-9, the same axis pair serves both
+    // orientations). Dead under click-through, as registered in D4d.
     readonly property string leftAction: Config.options?.bar?.leftScrollAction ?? "brightness"
     readonly property string rightAction: Config.options?.bar?.rightScrollAction ?? "volume"
 
@@ -441,13 +459,17 @@ Item {
         anchors.margins: root.barPadding
 
         // Declared before the lanes so a widget always wins the click; only the
-        // bare bar around them feeds these. Zero-extent on the rail.
+        // bare bar around them feeds these. Row: the strips either side of the
+        // middle lane. Rail: the start/end halves along the track (D4h) —
+        // the same split relative to the middle lane, rotated.
         FocusedScrollMouseArea {
             id: barLeftScrollArea
             anchors.top: parent.top
-            anchors.bottom: parent.bottom
             anchors.left: parent.left
-            width: Math.max(0, absoluteCenter.x)
+            anchors.right: root.vertical ? parent.right : undefined
+            anchors.bottom: root.vertical ? undefined : parent.bottom
+            width: root.vertical ? parent.width : Math.max(0, absoluteCenter.x)
+            height: root.vertical ? Math.max(0, absoluteCenter.y) : parent.height
 
             onScrollDown: root.performScrollAction(root.leftAction, false)
             onScrollUp: root.performScrollAction(root.leftAction, true)
@@ -457,20 +479,25 @@ Item {
                 reveal: barLeftScrollArea.hovered && (Config.options?.bar?.showScrollHints ?? true) && root.leftAction !== "none"
                 icon: root.getScrollIcon(root.leftAction)
                 tooltipText: root.getScrollTooltip(root.leftAction)
-                side: "left"
-                anchors.right: parent.right
+                side: root.vertical ? "top" : "left"
+                anchors.right: root.vertical ? undefined : parent.right
                 anchors.rightMargin: Appearance.sizes.spacingLarge
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.bottom: root.vertical ? parent.bottom : undefined
+                anchors.bottomMargin: Appearance.sizes.spacingLarge
+                anchors.horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
+                anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
                 z: 1
             }
         }
 
         FocusedScrollMouseArea {
             id: barRightScrollArea
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
+            anchors.top: root.vertical ? undefined : parent.top
+            anchors.left: root.vertical ? parent.left : undefined
             anchors.right: parent.right
-            width: Math.max(0, parent.width - (absoluteCenter.x + absoluteCenter.width))
+            anchors.bottom: parent.bottom
+            width: root.vertical ? parent.width : Math.max(0, parent.width - (absoluteCenter.x + absoluteCenter.width))
+            height: root.vertical ? Math.max(0, parent.height - (absoluteCenter.y + absoluteCenter.height)) : parent.height
 
             onScrollDown: root.performScrollAction(root.rightAction, false)
             onScrollUp: root.performScrollAction(root.rightAction, true)
@@ -480,10 +507,13 @@ Item {
                 reveal: barRightScrollArea.hovered && (Config.options?.bar?.showScrollHints ?? true) && root.rightAction !== "none"
                 icon: root.getScrollIcon(root.rightAction)
                 tooltipText: root.getScrollTooltip(root.rightAction)
-                side: "right"
-                anchors.left: parent.left
+                side: root.vertical ? "bottom" : "right"
+                anchors.left: root.vertical ? undefined : parent.left
                 anchors.leftMargin: Appearance.sizes.spacingLarge
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.top: root.vertical ? parent.top : undefined
+                anchors.topMargin: Appearance.sizes.spacingLarge
+                anchors.horizontalCenter: root.vertical ? parent.horizontalCenter : undefined
+                anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
                 z: 1
             }
         }

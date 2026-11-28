@@ -658,9 +658,10 @@ class BarB9_7SettingsSweepTest(unittest.TestCase):
     def test_settings_page_rows_and_gates(self):
         appearance = read_bar_file("BarAppearanceSection.qml")
         modules = read_bar_file("BarModulesSection.qml")
-        # D4f: atomic backplate toggle + autohide.
+        # D4f: atomic backplate toggle. D4h: the autohide toggle became the
+        # three-state segmented control (setBarAutoHideMode).
         self.assertIn('I18n.tr("Bar backplate")', appearance)
-        self.assertIn('I18n.tr("Autohide")', appearance)
+        self.assertIn("setBarAutoHideMode", appearance)
         # D4b: the divider rows and the Numbers style gate moved to the
         # per-instance options pages; the appearance tab keeps frame axes.
         self.assertNotIn("barDividerStyle", appearance)

@@ -545,6 +545,25 @@ if ipc d4gCatalog >/dev/null 2>&1; then
     d4g_catalog_state=$(ipc d4gCatalog 2>/dev/null || true)
 fi
 
+# D4h: behavior additions round-trip (smart/pushWindows/superReveal/peek)
+# and the orientation-aware scroll strips (row then rail).
+d4h_behavior_state=""
+d4h_scroll_row_state=""
+d4h_scroll_rail_state=""
+if ipc d4hBehavior >/dev/null 2>&1; then
+    d4h_behavior_state=$(ipc d4hBehavior 2>/dev/null || true)
+fi
+if ipc d4hScrollZones >/dev/null 2>&1; then
+    ipc edge top >/dev/null 2>&1 || true
+    ipc reload >/dev/null 2>&1 || true
+    sleep 0.7
+    d4h_scroll_row_state=$(ipc d4hScrollZones 2>/dev/null || true)
+    ipc edge left >/dev/null 2>&1 || true
+    ipc reload >/dev/null 2>&1 || true
+    sleep 0.7
+    d4h_scroll_rail_state=$(ipc d4hScrollZones 2>/dev/null || true)
+fi
+
 # Tray surface (B9.1): publish fake StatusNotifierItems on the probe's own
 # session bus, then let the widget pin/unpin against the real store.
 tray_initial=""
@@ -815,6 +834,21 @@ if ipc windowMode true >/dev/null 2>&1; then
             ipc d4gWindowsSet clean >/dev/null 2>&1 || true
             sleep 0.6
         fi
+        # D4h: smart-hide parks the bar with its reservation (no compositor
+        # windows in the harness -> the empty-workspace leg), and the peek
+        # reveals on noteWorkspaceSwitch() then expires after the stay.
+        if ipc d4hWindowSet smart >/dev/null 2>&1; then
+            sleep 0.6
+            printf 'd4h-smart\t%s\n' "$(ipc d4hWindowDump 2>/dev/null || true)" >>"${window_file}"
+            ipc d4hPeek >/dev/null 2>&1 || true
+            sleep 0.15
+            printf 'd4h-peek-held\t%s\n' "$(ipc d4hWindowDump 2>/dev/null || true)" >>"${window_file}"
+            sleep 0.7
+            printf 'd4h-peek-expired\t%s\n' "$(ipc d4hWindowDump 2>/dev/null || true)" >>"${window_file}"
+            ipc d4hWindowSet clean >/dev/null 2>&1 || true
+            sleep 0.6
+            printf 'd4h-clean\t%s\n' "$(ipc d4hWindowDump 2>/dev/null || true)" >>"${window_file}"
+        fi
     else
         printf 'error: bar window probe did not come up\n' >&2
         exit 3
@@ -867,7 +901,7 @@ ipc stylePreset floating >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" "${d4g_catalog_state}" "${d4g_rail_state}" "${d4g_defaults_state}" "${d4g_avoid_state}" "${d4g_windows_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" "${d4g_catalog_state}" "${d4g_rail_state}" "${d4g_defaults_state}" "${d4g_avoid_state}" "${d4g_windows_state}" "${d4h_behavior_state}" "${d4h_scroll_row_state}" "${d4h_scroll_rail_state}" <<'PY'
 import json
 import re
 import sys
@@ -890,7 +924,8 @@ import sys
  d4d_overflow_resolve_state, d4d_overflow_cramped_state,
  d4d_overflow_reset_state, d4e_store_state, d4e_signature_state, d4e_migration_v6_state,
  d4e_windows_two_state, d4e_windows_off_state, d4e_windows_clean_state,
- d4f_style_state, d4g_catalog_state, d4g_rail_state, d4g_defaults_state, d4g_avoid_state, d4g_windows_state) = sys.argv[1:80]
+ d4f_style_state, d4g_catalog_state, d4g_rail_state, d4g_defaults_state, d4g_avoid_state, d4g_windows_state,
+ d4h_behavior_state, d4h_scroll_row_state, d4h_scroll_rail_state) = sys.argv[1:83]
 
 
 def load_tsv(path):
@@ -1216,10 +1251,12 @@ system_icons_report = {
 
 # B9.4 window geometry: both axes on every edge, plus the exact round trip
 # that used to leave the bar invisible after top -> left -> top. B9.7 appends
-# the autohide reservation rows to the same file.
+# the autohide reservation rows to the same file; D4h appends its smart/peek
+# rows, filtered out the same way.
 window_rows = load_tsv_rows(window_path)
 autohide_rows = {row[0][0]: row[1] for row in window_rows if row[0] and str(row[0][0]).startswith("autohide-")}
-window_rows = [row for row in window_rows if not (row[0] and str(row[0][0]).startswith("autohide-"))]
+d4h_window_rows = {row[0][0]: row[1] for row in window_rows if row[0] and str(row[0][0]).startswith("d4h-")}
+window_rows = [row for row in window_rows if not (row[0] and (str(row[0][0]).startswith("autohide-") or str(row[0][0]).startswith("d4h-")))]
 window_cases = []
 window_ok = len(window_rows) == 5
 top_snapshots = []
@@ -1290,6 +1327,30 @@ autohide_ok = bool(
     and (autohide_off_row.get("exclusiveZone") or 0) > 0
 )
 window_ok = window_ok and autohide_ok
+
+# D4h window rows: smart parks WITH its reservation in the driver-less
+# harness (the empty-workspace leg), the peek reveals through the debounce
+# + stay window and expires after it, and clean restores the defaults.
+d4h_smart_row = d4h_window_rows.get("d4h-smart") or {}
+d4h_peek_held_row = d4h_window_rows.get("d4h-peek-held") or {}
+d4h_peek_expired_row = d4h_window_rows.get("d4h-peek-expired") or {}
+d4h_clean_row = d4h_window_rows.get("d4h-clean") or {}
+d4h_window_ok = bool(
+    d4h_smart_row.get("found") is True
+    and d4h_smart_row.get("smartAxis") is True
+    and d4h_smart_row.get("peekAxis") is True
+    and d4h_smart_row.get("autoHide") is False
+    and (d4h_smart_row.get("exclusiveZone") or 0) > 0
+    and d4h_peek_held_row.get("peekShow") is True
+    and d4h_peek_held_row.get("mustShow") is True
+    and d4h_peek_expired_row.get("peekShow") is False
+    and d4h_peek_expired_row.get("mustShow") is False
+    and d4h_clean_row.get("found") is True
+    and d4h_clean_row.get("smartAxis") is False
+    and d4h_clean_row.get("peekShow") is False
+    and (d4h_clean_row.get("exclusiveZone") or 0) > 0
+)
+window_ok = window_ok and d4h_window_ok
 
 # B9.6: style-editor chain, fixed-slot workspaces and the island hug.
 def _b96(json_blob):
@@ -1700,6 +1761,49 @@ d4d_overflow_reset_ok = bool(
 )
 d4d_ok = d4d_behavior_ok and d4d_overflow_resolve_ok and d4d_overflow_cramped_ok and d4d_overflow_reset_ok
 
+# D4h: behavior additions + the orientation-aware scroll strips.
+d4h_behavior = json.loads(d4h_behavior_state) if d4h_behavior_state.strip() else {}
+d4h_scroll_row = json.loads(d4h_scroll_row_state) if d4h_scroll_row_state.strip() else {}
+d4h_scroll_rail = json.loads(d4h_scroll_rail_state) if d4h_scroll_rail_state.strip() else {}
+
+def _zones_ok(zones, vertical):
+    if not isinstance(zones, dict):
+        return False
+    start, end = zones.get("start") or {}, zones.get("end") or {}
+    if not start or not end:
+        return False
+    if vertical:
+        # Rail: full-width halves stacked along the track, start above end.
+        return bool(
+            start.get("w", 0) > 0 and end.get("w", 0) > 0
+            and start.get("w", 0) == end.get("w", 0)
+            and start.get("h", 0) > 0 and end.get("h", 0) > 0
+            and start.get("y", 0) + start.get("h", 0) <= end.get("y", 0) + 1
+        )
+    # Row: full-height strips either side of the middle lane.
+    return bool(
+        start.get("h", 0) > 0 and end.get("h", 0) > 0
+        and start.get("w", 0) > 0 and end.get("w", 0) > 0
+        and start.get("x", 0) + start.get("w", 0) <= end.get("x", 0) + 1
+    )
+
+d4h_behavior_ok = bool(
+    d4h_behavior.get("defaultsPreserved") is True
+    and d4h_behavior.get("smartLive") is True
+    and d4h_behavior.get("pushWindowsLive") is True
+    and d4h_behavior.get("superRevealLive") is True
+    and d4h_behavior.get("peekLive") is True
+    and d4h_behavior.get("sparseDeviationsOnly") is True
+    and d4h_behavior.get("reset") is True
+)
+d4h_scroll_ok = bool(
+    d4h_scroll_row.get("vertical") is False
+    and d4h_scroll_rail.get("vertical") is True
+    and _zones_ok(d4h_scroll_row.get("zones"), False)
+    and _zones_ok(d4h_scroll_rail.get("zones"), True)
+)
+d4h_ok = d4h_behavior_ok and d4h_scroll_ok
+
 d4e_store = json.loads(d4e_store_state) if d4e_store_state.strip() else {}
 d4e_signature = json.loads(d4e_signature_state) if d4e_signature_state.strip() else {}
 d4e_migration_v6 = json.loads(d4e_migration_v6_state) if d4e_migration_v6_state.strip() else {}
@@ -1919,7 +2023,7 @@ ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hi
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok and d4g_ok and d4g_rail_ok and d4g_defaults_ok and d4g_avoid_ok and d4g_windows_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok and d4g_ok and d4g_rail_ok and d4g_defaults_ok and d4g_avoid_ok and d4g_windows_ok and d4h_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -2207,6 +2311,27 @@ report = {
             "ok": d4g_avoid_ok and d4g_windows_ok,
             "projection": d4g_avoid,
             "windows": d4g_windows,
+        },
+    },
+    "d4h": {
+        "ok": d4h_ok,
+        "behavior": {
+            "ok": d4h_behavior_ok,
+            "defaultsPreserved": d4h_behavior.get("defaultsPreserved"),
+            "sparseDeviationsOnly": d4h_behavior.get("sparseDeviationsOnly"),
+            "reset": d4h_behavior.get("reset"),
+        },
+        "scrollZones": {
+            "ok": d4h_scroll_ok,
+            "row": d4h_scroll_row.get("zones"),
+            "rail": d4h_scroll_rail.get("zones"),
+        },
+        "windows": {
+            "ok": d4h_window_ok,
+            "smart": d4h_smart_row,
+            "peekHeld": d4h_peek_held_row,
+            "peekExpired": d4h_peek_expired_row,
+            "clean": d4h_clean_row,
         },
     },    "b96": {
         "ok": b96_ok,

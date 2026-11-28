@@ -29,6 +29,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
 import "../../services/BarWidgetDefaults.js" as BarWidgetDefaults
+import "../../services/BarDefaults.js" as BarDefaults
 import "BarStyle.js" as BarStyle
 
 ButtonMouseArea {
@@ -416,7 +417,9 @@ ButtonMouseArea {
     /////////////////// Super key press handling ///////////////////
     Timer {
         id: superPressAndHeldTimer
-        interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
+        // D4h: the toggle moved to the owning bar entry's superReveal axis
+        // (per-bar truth); the delay is the shared internal constant.
+        interval: BarDefaults.SUPER_REVEAL_DELAY_MS
         repeat: false
         onTriggered: {
             root.superPressAndHeld = true;
@@ -425,7 +428,7 @@ ButtonMouseArea {
     Connections {
         target: GlobalStates
         function onSuperDownChanged() {
-            if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable)
+            if (root.barAxes.superReveal !== true)
                 return;
             if (GlobalStates.superDown)
                 superPressAndHeldTimer.restart();

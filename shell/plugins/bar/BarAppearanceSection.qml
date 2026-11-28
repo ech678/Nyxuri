@@ -20,13 +20,7 @@ ColumnLayout {
     readonly property var axes: PersonalizationConfig.barAxes
     readonly property bool axesModified: PersonalizationConfig.barAxesModified(root.axes)
     readonly property string activePreset: BarStylePresets.currentPreset(root.axes)
-    readonly property bool layoutAdvancedModified: root.axes.sideMargin !== BarDefaults.DEFAULTS.sideMargin
-        || root.axes.sideMarginPercent !== BarDefaults.DEFAULTS.sideMarginPercent
-        || root.axes.spacing !== BarDefaults.DEFAULTS.spacing
-        || root.axes.innerPadding !== BarDefaults.DEFAULTS.innerPadding
-        || root.axes.widgetPadding !== BarDefaults.DEFAULTS.widgetPadding
-        || Math.abs(root.axes.fontScale - BarDefaults.DEFAULTS.fontScale) > 0.001
-        || Math.abs(root.axes.iconScale - BarDefaults.DEFAULTS.iconScale) > 0.001
+    readonly property bool layoutAdvancedModified: root.axes.sideMargin !== BarDefaults.DEFAULTS.sideMargin || root.axes.sideMarginPercent !== BarDefaults.DEFAULTS.sideMarginPercent || root.axes.spacing !== BarDefaults.DEFAULTS.spacing || root.axes.innerPadding !== BarDefaults.DEFAULTS.innerPadding || root.axes.widgetPadding !== BarDefaults.DEFAULTS.widgetPadding || Math.abs(root.axes.fontScale - BarDefaults.DEFAULTS.fontScale) > 0.001 || Math.abs(root.axes.iconScale - BarDefaults.DEFAULTS.iconScale) > 0.001
 
     readonly property string densityLevel: DensityPresets.currentLevel("bar", root.axes)
     readonly property var densityOptions: [
@@ -134,6 +128,10 @@ ColumnLayout {
     function sentinelLabel(value): string {
         return value < 0 ? I18n.tr("Auto") : Math.round(value) + " px";
     }
+
+    // D4h three-state autohide: "off" | "on" | "smart" over the two storage
+    // keys (autoHide + autoHideSmart). The segmented picker writes both.
+    readonly property string autoHideMode: root.axes.autoHideSmart ? "smart" : (root.axes.autoHide ? "on" : "off")
 
     function toggleBarScreen(screenName, on) {
         const allNames = root.detectedScreens.map(screen => screen?.name ?? "").filter(name => name.length > 0);
@@ -604,22 +602,48 @@ ColumnLayout {
         }
     }
 
-    // 5. Behavior (D4d)
+    // 5. Behavior (D4d + D4h)
     PreferenceHeader {
         text: I18n.tr("Behavior")
     }
 
     PreferenceGroup {
-        PreferenceToggle {
-            text: I18n.tr("Autohide")
-            checked: PersonalizationConfig.barAutoHide
-            modified: PersonalizationConfig.barAutoHide !== BarDefaults.DEFAULTS.autoHide
-            onToggled: PersonalizationConfig.setBarAutoHide(checked)
-            onResetRequested: PersonalizationConfig.setBarAutoHide(BarDefaults.DEFAULTS.autoHide)
+        // D4h: the toggle became a three-state segmented control
+        // (关 / 开 / 智能) writing both storage keys; every follow-up row
+        // only shows while the mode is active — the default view gains no
+        // rows.
+        PreferenceVisualPicker {
+            id: autoHideModePicker
+
+            previewMode: "icon"
+            choices: [
+                {
+                    key: "off",
+                    label: I18n.tr("Off"),
+                    icon: "visibility_off"
+                },
+                {
+                    key: "on",
+                    label: I18n.tr("On"),
+                    icon: "auto_hide"
+                },
+                {
+                    key: "smart",
+                    label: I18n.tr("Smart"),
+                    icon: "brightness_auto"
+                }
+            ]
+            selectedKey: root.autoHideMode
+            onSelected: key => PersonalizationConfig.setBarAutoHideMode(String(key))
+
+            SettingsSearchAnchor {
+                target: autoHideModePicker
+                anchorId: "bar.behavior.autohide"
+            }
         }
 
         PreferenceSlider {
-            visible: PersonalizationConfig.barAutoHide
+            visible: root.autoHideMode !== "off"
             label: I18n.tr("Autohide delay")
             value: root.axes.autoHideDelay
             valueLabel: root.axes.autoHideDelay <= 0 ? I18n.tr("Off") : Math.round(root.axes.autoHideDelay) + " ms"
@@ -632,12 +656,39 @@ ColumnLayout {
         }
 
         PreferenceToggle {
-            visible: PersonalizationConfig.barAutoHide
+            visible: root.autoHideMode !== "off"
             text: I18n.tr("Strict autohide")
             checked: root.axes.autoHideStrict
             modified: root.axes.autoHideStrict !== BarDefaults.DEFAULTS.autoHideStrict
             onToggled: PersonalizationConfig.setBarAutoHideStrict(checked)
             onResetRequested: PersonalizationConfig.setBarAutoHideStrict(BarDefaults.DEFAULTS.autoHideStrict)
+        }
+
+        PreferenceToggle {
+            visible: root.autoHideMode !== "off"
+            text: I18n.tr("Reserve space when hidden")
+            checked: root.axes.pushWindows
+            modified: root.axes.pushWindows !== BarDefaults.DEFAULTS.pushWindows
+            onToggled: PersonalizationConfig.setBarPushWindows(checked)
+            onResetRequested: PersonalizationConfig.setBarPushWindows(BarDefaults.DEFAULTS.pushWindows)
+        }
+
+        PreferenceToggle {
+            visible: root.autoHideMode !== "off"
+            text: I18n.tr("Reveal while holding Super")
+            checked: root.axes.superReveal
+            modified: root.axes.superReveal !== BarDefaults.DEFAULTS.superReveal
+            onToggled: PersonalizationConfig.setBarSuperReveal(checked)
+            onResetRequested: PersonalizationConfig.setBarSuperReveal(BarDefaults.DEFAULTS.superReveal)
+        }
+
+        PreferenceToggle {
+            visible: root.autoHideMode !== "off"
+            text: I18n.tr("Peek on workspace switch")
+            checked: root.axes.peekOnWorkspaceSwitch
+            modified: root.axes.peekOnWorkspaceSwitch !== BarDefaults.DEFAULTS.peekOnWorkspaceSwitch
+            onToggled: PersonalizationConfig.setBarPeekOnWorkspaceSwitch(checked)
+            onResetRequested: PersonalizationConfig.setBarPeekOnWorkspaceSwitch(BarDefaults.DEFAULTS.peekOnWorkspaceSwitch)
         }
 
         PreferenceToggle {

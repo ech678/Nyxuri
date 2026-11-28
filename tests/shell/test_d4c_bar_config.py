@@ -373,7 +373,8 @@ class SettingsPageTest(unittest.TestCase):
                      'PersonalizationConfig.setBarSurfaceTransparency(', 'PersonalizationConfig.setBarBorderEnabled(',
                      'PersonalizationConfig.setBarWidgetOutlineEnabled(', 'PersonalizationConfig.setBarWidgetTransparency(',
                      'PersonalizationConfig.setBarScreenList(', 'PersonalizationConfig.setBarBackplate(',
-                     'PersonalizationConfig.setBarAutoHide('):
+                     # D4h: the toggle became the three-state mode writer.
+                     'PersonalizationConfig.setBarAutoHideMode('):
             self.assertIn(call, self.page, call)
 
     def test_sentinel_rows_render_auto(self):

@@ -648,6 +648,59 @@ ShellRoot {
             });
         }
 
+        // D4h window evidence: smart-hide + workspace-switch peek on the real
+        // PanelWindow. "smart" engages the smart axis (peek on too); "clean"
+        // restores the pre-D4h defaults. With no compositor driver the
+        // workspace reads empty, so smart must park the bar WITH its
+        // reservation (the no-windows leg of the contract).
+        function d4hWindowSet(scene: string): string {
+            PersonalizationConfig.selectedBarId = "";
+            if (scene === "smart") {
+                PersonalizationConfig.setBarAxis("autoHide", false);
+                PersonalizationConfig.setBarAxis("autoHideSmart", true);
+                PersonalizationConfig.setBarAxis("peekOnWorkspaceSwitch", true);
+            } else {
+                PersonalizationConfig.setBarAxis("autoHideSmart", false);
+                PersonalizationConfig.setBarAxis("peekOnWorkspaceSwitch", false);
+                PersonalizationConfig.setBarAxis("autoHide", false);
+            }
+            return "OK";
+        }
+
+        function d4hWindowDump(): string {
+            const window = windowLoader.item ? windowLoader.item.windowProbe : null;
+            if (!window)
+                return JSON.stringify({
+                    "found": false
+                });
+            return JSON.stringify({
+                "found": true,
+                "autoHide": window.autoHideEnabled === true,
+                "smartAxis": window.axes.autoHideSmart === true,
+                "peekAxis": window.axes.peekOnWorkspaceSwitch === true,
+                "pushWindowsAxis": window.axes.pushWindows === true,
+                "superRevealAxis": window.axes.superReveal === true,
+                "peekShow": window.peekShow === true,
+                "mustShow": window.mustShow === true,
+                "exclusiveZone": Math.round(window.exclusiveZone)
+            });
+        }
+
+        // Drive the peek entry point directly (no compositor workspace events
+        // in the harness). The dump right after must still be within the
+        // 80ms debounce + 450ms stay window; the harness sleeps ~150ms.
+        function d4hPeek(): string {
+            const window = windowLoader.item ? windowLoader.item.windowProbe : null;
+            if (!window || !window.noteWorkspaceSwitch)
+                return JSON.stringify({
+                    "found": false
+                });
+            window.noteWorkspaceSwitch();
+            return JSON.stringify({
+                "found": true
+            });
+        }
+
         // Layout scenes: "mediaOnly" is the self-hiding-widget contract (an
         // empty lane must collapse to zero instead of keeping capsule
         // padding); "default" restores the shipped three-lane layout.
@@ -1606,6 +1659,43 @@ ShellRoot {
                 "hoverDelayLive": axes.hoverPopoutDelay === 250,
                 "sparseDeviationsOnly": sparse.indexOf("autoHideDelay") !== -1 && sparse.indexOf("hoverPopouts") === -1,
                 "reset": after.autoHideDelay === 0 && after.autoHideStrict === false && after.hideOnFullscreen === false && after.clickThrough === false && after.hoverPopoutDelay === 150
+            });
+        }
+
+        // D4h: behavior additions round-trip through the named setters —
+        // every default preserves the pre-D4h behavior and the sparse
+        // writer only persists deviations (same discipline as d4dBehavior).
+        function d4hBehavior(): string {
+            const before = PersonalizationConfig.barAxes;
+            PersonalizationConfig.setBarAutoHideSmart(true);
+            PersonalizationConfig.setBarPushWindows(true);
+            PersonalizationConfig.setBarSuperReveal(true);
+            PersonalizationConfig.setBarPeekOnWorkspaceSwitch(true);
+            const axes = PersonalizationConfig.barAxes;
+            const sparse = JSON.stringify(PersonalizationConfig.sparseBarConfigs());
+            PersonalizationConfig.setBarAutoHideSmart(false);
+            PersonalizationConfig.setBarPushWindows(false);
+            PersonalizationConfig.setBarSuperReveal(false);
+            PersonalizationConfig.setBarPeekOnWorkspaceSwitch(false);
+            const after = PersonalizationConfig.barAxes;
+            return JSON.stringify({
+                "defaultsPreserved": before.autoHideSmart === false && before.pushWindows === false && before.superReveal === false && before.peekOnWorkspaceSwitch === false,
+                "smartLive": axes.autoHideSmart === true,
+                "pushWindowsLive": axes.pushWindows === true,
+                "superRevealLive": axes.superReveal === true,
+                "peekLive": axes.peekOnWorkspaceSwitch === true,
+                "sparseDeviationsOnly": sparse.indexOf("autoHideSmart") !== -1 && sparse.indexOf("pushWindows") !== -1 && sparse.indexOf("superReveal") !== -1 && sparse.indexOf("peekOnWorkspaceSwitch") !== -1 && sparse.indexOf("hoverPopouts") === -1,
+                "reset": after.autoHideSmart === false && after.pushWindows === false && after.superReveal === false && after.peekOnWorkspaceSwitch === false
+            });
+        }
+
+        // D4h: the orientation-aware scroll strips (row: either side of the
+        // middle lane; rail: the start/end halves along the track).
+        function d4hScrollZones(): string {
+            const content = barLoader.item;
+            return JSON.stringify({
+                "vertical": probeRoot.probeVertical,
+                "zones": content ? content.scrollZones : null
             });
         }
 

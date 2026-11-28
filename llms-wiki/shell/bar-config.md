@@ -527,6 +527,42 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
     834 例绿；会话 probe exit=0 全绿零 logErrors。实机项归作者：双 bar 转角
     观感与接缝、通知/侧栏让位手感、autoHide 往返下的让位节奏。
 
+## 行为补遗（D4h）
+
+D4d 七轴之外的调研补件，2026-11-28 落地。**每个默认值 = D4h 前现行行为**，全新键、
+无 configVersion 迁移（版本链停在 7）。四个轴全部落在 `[[bar.configs]]` 条目上，
+多 bar 各配各的。
+
+### 轴表（`BarDefaults.DEFAULTS` 增量）
+
+| 轴 | 默认 | 语义 |
+| --- | --- | --- |
+| `autoHideSmart` | false | 智能隐藏（noctalia `smart_auto_hide` 语义）：本输出活跃工作区有窗→入 autoHide 通道（边缘条揭示），无窗→常驻+占位。`autoHideEnabled = autoHide \|\| fullscreenAutoHide \|\| (smart && workspaceHasWindows)`，完全复用既有 hideHold/掩码/边缘条机器；数据面 `CompositorDriver.activeWorkspaceForOutput` + `windowsForWorkspace`（wallpaper 服务同型消费）。无驱动环境（探针）读作常驻。设置面一个三态分段控件（关/开/智能）经 `setBarAutoHideMode` 写两键 |
+| `pushWindows` | false | 隐藏时占位：bar 显出期间保留 exclusiveZone（reservationShow/HideTimer 往返，D4d 既有机器）。原 `Config` 桥同名内部键升格为条目轴 |
+| `superReveal` | false | 按住 Super 显出：Bar.qml `superShow` + Workspaces 图标演示面（`superPressAndHeld`）双消费者都读所在 bar 的条目轴。原桥 `showWhenPressingSuper.enable` 升格；delay 100ms 降为共享常量 `BarDefaults.SUPER_REVEAL_DELAY_MS` |
+| `peekOnWorkspaceSwitch` | false | 切工作区 peek：本输出活跃工作区切换→80ms 去抖→450ms 停留（常量 `PEEK_DEBOUNCE_MS`/`PEEK_STAY_MS`，一套节奏不设轴）。`peekShow` 接进 `mustShow` 链（复用 reveal 机器，无第二套滑出实现）；有效→有效的 id 转换才算切换（驱动连接/开关翻转不触发）；设置面仅在自动隐藏开启时可见 |
+
+### 轨滚动区（D-9 对照）
+
+BarContent 两条滚轴区方向感知：行=中道两侧竖条（现状不变），轨=沿轨的上半/下半
+（zone 即真相——start 半区吃 start 动作、end 半区吃 end 动作，**同一组轴横竖同值**，
+按中道几何旋转，非字面对半）。动作沿用 `leftScrollAction`/`rightScrollAction`，
+词表 brightness/volume/workspace/none + OSD + ScrollHint 全套复用，零新键。
+ScrollHint 增 top/bottom 侧语义（贴中缝两端；箭头本就上下竖排）。clickThrough 下
+与行侧滚轴同规失效（D4d 既有登记边界）。
+
+### 桥收敛与登记边界
+
+- `Config.options.bar.autoHide` 收敛为 `enable`（selected-bar 投影，probe/migrate
+  消费）+ `hoverRegionWidth`（输入掩码角挖口，无设置面）；`pushWindows`/
+  `showWhenPressingSuper` QtObject 形状退役（vendor 参考树不在运行时）。
+- 设置面 Behavior 组：三态 picker 替换 Autohide toggle，五行（延迟/严格/占位/Super/
+  peek）仅 mode≠off 可见——默认视图不增行；搜索锚 `bar.behavior.autohide` 登记 manifest。
+- 登记边界：`ScreenBarLayout` 避让投影是静态配置投影，smart 隐藏（有窗）期间侧栏/
+  通知仍按 band 让位——让位跟随轴、不跟随实况可见性，宁多让不让不足；实况级让位
+  挂窗口增长基建（D5）。peek 的实窗证据由探针直驱 `noteWorkspaceSwitch()`（容器无
+  合成器工作区事件）；工作区事件驱动的实况归作者实机验收。
+
 ## 证据
 
 - **D4a**：probe `d4a` 节——条目几何（禁用不实例化/lane 塌陷/spacer 注入 40 vs
@@ -558,6 +594,13 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   - schema v7：`ConfigMigrations.CURRENT_VERSION = 7`（头标 `# nyxuri-config-schema: 7`，fast-path `2..7`），`version < 7` 通过显式映射表将历史 `cornerStyle`/`borderless`/`showBackground` 折叠为上述原子轴并剥离旧键与平铺遗留键。
   - 设置面重排：`BarAppearanceSection.qml` 顺序收敛为 `Appearance`（6 枚 `PreferenceVisualPicker` 预设卡）→ `Layout`（可折叠 `Advanced` 数值微调）→ `Screens` → `Structure` → `Surface`（可折叠 `Widget layer`）→ `Behavior`。
   - 机器证据：契约测试 `tests/shell/test_d4f_bar_style.py` + `tests/shell/` 回归绿；probe `d4f` 节（v7 迁移、预设写入/自定义失亮、D-8 退役校验、`capsuleRadius` + `groupColor: "transparent"`、`vertical` 仅 `materialHug` +4）与 Weston 运行态 probe 全绿；实机视觉过目（六档外观等价与设置页折叠体验）归作者。
+- **D4h**：probe `d4h` 节——行为轴往返（默认保现行/稀疏写入/复位）、方向感知滚轴
+  （行 1182×36 两侧 / 轨 36×649 上下半、start 先于 end）、窗口相（smart 无窗→常驻
+  带预留 zone=41、peek 直驱 `noteWorkspaceSwitch`→held `peekShow/mustShow` true→
+  ~0.85s 过期 false→clean 复位）。契约测试 `tests/shell/test_d4h_bar_config.py`
+  （25 例）；tests/shell 全量 859 例绿；session probe exit=0 全绿。实机项归作者：
+  智能隐藏手感（有窗/无窗切换）、peek 体感、Super 按住显出、隐藏占位的窗口避让、
+  轨滚轮上下半动作与 ScrollHint 视觉。
 - **D4g 批一（单宿主并回）**：`AxisContext.qml` 整抄（dux 61 行剪裁）+
   `VerticalBarContent` 并回 `BarContent` + `Bar.qml` 单挂载（翻边不重建）+
   probe 装载轴驱动。机器证据：bar 相关契约测试 275 例绿（end4/d4a–f/runtime/

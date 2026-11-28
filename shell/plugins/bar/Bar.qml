@@ -8,6 +8,7 @@ import qs.services
 import qs.commons
 import qs.ui
 import "../../commons/BarGeometry.js" as BarGeometry
+import "../../services/BarDefaults.js" as BarDefaults
 import "BarStyle.js" as BarStyle
 
 // Separate Material 3 bar selected by `bar.appearanceStyle === "m3"`.
@@ -215,7 +216,7 @@ Scope {
 
                                     Timer {
                                         id: showBarTimer
-                                        interval: (Config?.options.bar.autoHide.showWhenPressingSuper.delay ?? 100)
+                                        interval: BarDefaults.SUPER_REVEAL_DELAY_MS
                                         repeat: false
                                         onTriggered: {
                                             barRoot.superShow = true;
@@ -224,7 +225,10 @@ Scope {
                                     Connections {
                                         target: GlobalStates
                                         function onSuperDownChanged() {
-                                            if (!Config?.options.bar.autoHide.showWhenPressingSuper.enable)
+                                            // D4h: the reveal toggle moved to the entry axis
+                                            // (superReveal) — per-bar truth, was the bridge
+                                            // global showWhenPressingSuper.enable.
+                                            if (barRoot.axes.superReveal !== true)
                                                 return;
                                             if (GlobalStates.superDown)
                                                 showBarTimer.restart();
@@ -256,12 +260,65 @@ Scope {
                                     readonly property var laneMaskMiddle: barRoot.barContent ? barRoot.barContent.laneMaskMiddle : null
                                     readonly property var laneMaskRight: barRoot.barContent ? barRoot.barContent.laneMaskRight : null
                                     readonly property bool fullscreenAutoHide: barRoot.hideOnFullscreenAxis && CompositorDriver.available && CompositorDriver.fullscreenToplevelOnScreen(barRoot.outputName)
-                                    // Reveal grace: while held, the slide-out stays parked even
-                                    // though mustShow dropped (the pointer may come right back).
-                                    // Initial false: changed handlers do not fire for initial
-                                    // binding values, so a boot-time autoHide config must find
-                                    // the bar already in the hidden half of the state.
-                                    property bool hideHold: false
+                                    // D4h smart hide (bar-config.md D4h, noctalia smart_auto_hide
+                                    // semantics): while the active workspace of this output has
+                                    // windows the autoHide channel engages; while it is empty the
+                                    // bar parks shown with its reservation. Empty workspace in a
+                                    // driver-less environment (probes) reads as parked.
+                                    readonly property bool smartHideAxis: barRoot.axes.autoHideSmart === true
+                                    readonly property var activeWorkspace: CompositorDriver.available ? CompositorDriver.activeWorkspaceForOutput(barRoot.outputName) : null
+                                    readonly property bool workspaceHasWindows: barRoot.smartHideAxis && CompositorDriver.available && (CompositorDriver.windowsForWorkspace(barRoot.activeWorkspace?.id ?? -1).length > 0)
+                                    readonly property bool autoHideEnabled: (barRoot.axes.autoHide === true) || barRoot.fullscreenAutoHide || (barRoot.smartHideAxis && barRoot.workspaceHasWindows)
+                                    // D4h: the reservation toggle moved to the entry axis
+                                    // (pushWindows) — was the bridge global of the same name.
+                                    readonly property bool pushWindowsWhenShown: barRoot.axes.pushWindows === true
+                                    // D4h workspace-switch peek (bar-config.md D4h, noctalia
+                                    // show_on_workspace_switch cadence): a workspace change on
+                                    // this output briefly reveals a hidden bar — debounced, then
+                                    // parked for PEEK_STAY_MS. The probe drives
+                                    // noteWorkspaceSwitch() directly (no compositor workspace
+                                    // events in the harness).
+                                    readonly property bool peekEnabled: (barRoot.axes.autoHide === true || barRoot.smartHideAxis) && barRoot.axes.peekOnWorkspaceSwitch === true
+                                    property bool peekShow: false
+                                    // Last-seen active workspace id; -2 = untracked (peek off).
+                                    readonly property int peekWorkspaceId: barRoot.peekEnabled && barRoot.activeWorkspace ? (barRoot.activeWorkspace.id ?? -1) : -2
+                                    property int lastPeekWorkspaceId: -2
+                                    onPeekWorkspaceIdChanged: {
+                                        // A valid -> valid transition is a real switch; the first
+                                        // assignment (driver connecting, peek toggled on) is not.
+                                        if (barRoot.peekWorkspaceId >= 0 && barRoot.lastPeekWorkspaceId >= 0 && barRoot.peekWorkspaceId !== barRoot.lastPeekWorkspaceId)
+                                            barRoot.noteWorkspaceSwitch();
+                                        barRoot.lastPeekWorkspaceId = barRoot.peekWorkspaceId;
+                                    }
+                                    function noteWorkspaceSwitch(): void {
+                                        if (!barRoot.peekEnabled)
+                                            return;
+                                        peekDebounce.restart();
+                                    }
+                                    Timer {
+                                        id: peekDebounce
+                                        interval: BarDefaults.PEEK_DEBOUNCE_MS
+                                        repeat: false
+                                        onTriggered: {
+                                            if (barRoot.peekEnabled) {
+                                                barRoot.peekShow = true;
+                                                peekStay.restart();
+                                            }
+                                        }
+                                    }
+                                    Timer {
+                                        id: peekStay
+                                        interval: BarDefaults.PEEK_STAY_MS
+                                        repeat: false
+                                        onTriggered: barRoot.peekShow = false
+                                    }
+                                    onPeekEnabledChanged: {
+                                        if (!barRoot.peekEnabled) {
+                                            peekDebounce.stop();
+                                            peekStay.stop();
+                                            barRoot.peekShow = false;
+                                        }
+                                    }
                                     // dux gapEnterSuppressed lineage (DBarBody): with
                                     // click-through the hidden bar's mask is the full band but
                                     // the revealed bar's mask is lanes-only, so a pointer over a
@@ -270,8 +327,12 @@ Scope {
                                     // enter generated by the mask expanding under a resting
                                     // pointer) keeps the bar hidden.
                                     property bool gapEnterSuppressed: false
-                                    readonly property bool autoHideEnabled: (barRoot.axes.autoHide === true) || barRoot.fullscreenAutoHide
-                                    readonly property bool pushWindowsWhenShown: Config.options?.bar?.autoHide?.pushWindows ?? false
+                                    // Reveal grace: while held, the slide-out stays parked even
+                                    // though mustShow dropped (the pointer may come right back).
+                                    // Initial false: changed handlers do not fire for initial
+                                    // binding values, so a boot-time autoHide config must find
+                                    // the bar already in the hidden half of the state.
+                                    property bool hideHold: false
                                     readonly property bool overviewOwnsEdge: GlobalStates.overviewOpen || CompositorDriver.inOverview
                                     readonly property string outputName: barRoot.screen?.name ?? ""
                                     readonly property bool materialHug: barRoot.styleContext.isLaneHug
@@ -327,7 +388,7 @@ Scope {
                                     property bool controlPanelHold: false
                                     readonly property bool interactionHold: contextMenuHold || leftSidebarHold || rightSidebarHold || mediaControlsHold || controlPanelHold
                                     readonly property bool pointerShow: !overviewOwnsEdge && hoverRegion.containsMouse && !barRoot.gapEnterSuppressed
-                                    property bool mustShow: pointerShow || superShow || interactionHold
+                                    property bool mustShow: pointerShow || superShow || interactionHold || peekShow
                                     property bool reservationActive: false
                                     onMustShowChanged: {
                                         if (barRoot.mustShow) {
