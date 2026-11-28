@@ -64,7 +64,8 @@
   锚定屏幕边向屏内生长（width/height/radius Behavior，展开 500ms 弹性）；输入区域用
   窗口级 `mask: Region` 限定在岛实际范围。SDF 液态融合用 `long_split.frag.qsb`
   （纯 QML ShaderEffect，不违纯 QML 红线）。
-- 岛媒体面解冻（B-10）执行归 D1；竖向岛维持挂起（end4 自身不完整，无基线可抄）。
+- 岛媒体面解冻（B-10）执行归 D1；竖向岛：沿轨紧凑面进 D4g（D-9，基线是 dux `DIsland`
+  的轴向模型），文本面挂 D5 窗口增长基建——「无基线可抄」只对 end4 成立。
 
 ## 验证
 
