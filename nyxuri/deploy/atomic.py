@@ -342,6 +342,7 @@ def recover_interrupted_swaps() -> List[str]:
                 recovered.append(base)
             except OSError as exc:
                 log_msg("WARN", f"could not restore orphaned living area {old_dest}: {exc}")
+                continue
         if tmp_new.exists() or tmp_new.is_symlink():
             remove_path(tmp_new)
         try:

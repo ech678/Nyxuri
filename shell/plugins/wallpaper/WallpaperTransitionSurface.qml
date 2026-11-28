@@ -175,16 +175,20 @@ Item {
     function requestWallpaper(path, immediate) {
         const requested = path || "";
         root.lastError = "";
-        root.contentReady(requested);
         if (requested === "") {
+            root.contentReady("");
             root.setImmediate("");
             return;
         }
 
-        if (requested === root.currentSource && !root.nextSource)
+        if (requested === root.currentSource && !root.nextSource) {
+            if (root.currentViewport && root.currentViewport.ready)
+                root.contentReady(requested);
             return;
+        }
 
         if (root.isColorSource(requested)) {
+            root.contentReady(requested);
             root.setImmediate(requested);
             return;
         }

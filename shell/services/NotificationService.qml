@@ -506,6 +506,8 @@ Singleton {
     }
 
     function saveNotifications() {
+        if (root.historyDegraded)
+            return;
         saveDebounce.restart();
     }
 
@@ -513,7 +515,11 @@ Singleton {
         id: saveDebounce
         interval: 100
         repeat: false
-        onTriggered: notifFileView.setText(root.stringifyList(root.list))
+        onTriggered: {
+            if (root.historyDegraded)
+                return;
+            notifFileView.setText(root.stringifyList(root.list));
+        }
     }
 
     function appNameListForGroups(groups) {
@@ -695,7 +701,8 @@ Singleton {
 
     Component.onDestruction: {
         saveDebounce.stop();
-        notifFileView.setText(root.stringifyList(root.list));
+        if (!root.historyDegraded)
+            notifFileView.setText(root.stringifyList(root.list));
         if (ensureStoreDir)
             ensureStoreDir.running = false;
         root.list.forEach(notif => root.stopPopupTimer(notif));
