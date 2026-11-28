@@ -527,7 +527,7 @@ class TestShellManagement(unittest.TestCase):
         nm_path = os.path.join(shell_dir, "services", "NotificationService.qml")
         with open(nm_path, "r", encoding="utf-8") as f:
             nm_content = f.read()
-        self.assertIn("defaultPopupTimeoutMs: 7000", nm_content)
+        self.assertIn("defaultPopupTimeoutMs: PersonalizationConfig.notificationTimeoutMs", nm_content)
         self.assertIn("notifications.json", nm_content)
         self.assertIn("silent: UiPreferences.dndEnabled", nm_content)
         self.assertIn("popupInhibited:", nm_content)

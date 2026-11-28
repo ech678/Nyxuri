@@ -390,7 +390,7 @@ NexusPageBase {
             onToggled: PersonalizationConfig.setShellBlurEnabled(checked)
         }
 
-        PreferenceSlider {
+        PreferenceToggle {
             last: true
             text: I18n.tr("Blur wallpaper only")
             subtext: BlurService.niriIntegrationReady ? I18n.tr("Turning this off also blurs windows and uses more resources") : I18n.tr("Configure Niri blur integration first")
@@ -407,7 +407,6 @@ NexusPageBase {
         PreferenceSlider {
             first: true
             label: I18n.tr("Foreground layer contrast")
-            subtext: I18n.tr("Opacity of layered cards and surfaces relative to the background")
             valueLabel: Math.round((1 - PersonalizationConfig.shellContentTransparency) * 100) + " %"
             value: Math.round((1 - PersonalizationConfig.shellContentTransparency) * 100)
             from: 5

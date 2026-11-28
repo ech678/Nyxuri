@@ -3535,13 +3535,13 @@ Singleton {
         root.sidebarWidth = root.normalizedBoundedInt(sidebar.width, 420, 320, 640);
         root.sidebarOpacity = (sidebar.opacity === undefined || Number(sidebar.opacity) < 0) ? -1 : normalizedBoundedReal(sidebar.opacity, 1, 0, 1);
         root.sidebarBlurEnabled = sidebar.blurEnabled !== false;
-        const notif = root.asObject(data.notifications);
+        const notif = configSection(source.notifications);
         const validNotifPos = ["top-right", "top-left", "top-center", "bottom-right", "bottom-left", "bottom-center"];
         root.notificationPosition = validNotifPos.indexOf(String(notif.position || "")) !== -1 ? String(notif.position) : "top-right";
         root.notificationWidth = root.normalizedBoundedInt(notif.width, 380, 280, 560);
         root.notificationOpacity = (notif.opacity === undefined || Number(notif.opacity) < 0) ? -1 : normalizedBoundedReal(notif.opacity, 1, 0, 1);
         root.notificationTimeoutMs = root.normalizedBoundedInt(notif.timeoutMs, 5000, 1000, 30000);
-        const spot = root.asObject(data.spotlight);
+        const spot = configSection(source.spotlight);
         root.spotlightOpacity = (spot.opacity === undefined || Number(spot.opacity) < 0) ? -1 : normalizedBoundedReal(spot.opacity, 1, 0, 1);
         root.spotlightBlurEnabled = spot.blurEnabled !== false;
         root.spotlightGridColumns = root.normalizedBoundedInt(spot.gridColumns, 5, 3, 8);

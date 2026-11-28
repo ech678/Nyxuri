@@ -53,6 +53,8 @@ class TestConfigSectionHardening(unittest.TestCase):
             "const bar = configSection(source.bar)",
             "const tray = configSection(bar.tray)",
             "const sidebar = configSection(source.sidebar)",
+            "const notif = configSection(source.notifications)",
+            "const spot = configSection(source.spotlight)",
             "const desktopCards = configSection(source.desktopCards)",
             "const transition = configSection(wallpaper.transition)",
             "const overview = configSection(wallpaper.overview)",
@@ -65,6 +67,8 @@ class TestConfigSectionHardening(unittest.TestCase):
 
     def test_no_section_keeps_a_truthy_non_object(self):
         loader = self._loader()
+        self.assertNotIn("asObject", loader)
+        self.assertNotIn("data.", loader)
         for section in ("wallpaper", "theme", "effects", "island", "bar", "sidebar",
                         "desktopCards", "hotCorners"):
             self.assertNotIn("parsed.%s || {}" % section, loader)

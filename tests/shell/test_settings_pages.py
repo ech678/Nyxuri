@@ -634,8 +634,9 @@ class TestGeneralBarPageRebuild(unittest.TestCase):
         for atom in ("PreferenceHeader", "PreferenceGroup", "ConnectedRect"):
             self.assertIn(atom, manager, f"BarManagerCard must use the atom: {atom}")
         # Selects ride the appearance tab (corner/borderless/groupColor/density/
-        # surfaceColor/borderColor/outlineColor); the modules tab carries none.
-        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 7,
+        # lengthMode/surfaceColor/borderColor/widgetTextColor/outlineColor/
+        # leftScrollAction/rightScrollAction); the modules tab carries none.
+        self.assertEqual(appearance.count("inputRegionService: PopupInputRegionService"), 11,
                          "the appearance selects must register the popup input region")
         self.assertEqual(modules.count("inputRegionService: PopupInputRegionService"), 0,
                          "the modules selects moved to the per-widget options pages")
@@ -1251,6 +1252,29 @@ class TestShortcutsPageRebuild(unittest.TestCase):
         for token in LEGACY_VOCABULARY + ("SettingsSection", "SettingsRow", "SettingsActionRow",
                                           "StyledSwitch"):
             self.assertNotIn(token, source, f"legacy token re-entered ShortcutsPage: {token}")
+
+
+class TestThemePageAtomIntegrity(unittest.TestCase):
+    """ThemePage must only bind supported properties on Preference* atoms."""
+
+    def test_preference_sliders_only_use_slider_properties(self):
+        source = _read("ThemePage.qml")
+        lines = source.splitlines()
+        for i, line in enumerate(lines):
+            if not re.match(r"^\s*PreferenceSlider\s*\{", line):
+                continue
+            depth = 0
+            for j in range(i, len(lines)):
+                l = lines[j]
+                depth += l.count("{") - l.count("}")
+                if j > i:
+                    if depth <= 0:
+                        break
+                    if depth == 1:
+                        self.assertIsNone(
+                            re.match(r"^\s*(text|subtext|checked|onToggled)\s*:", l),
+                            f"ThemePage.qml:{j + 1}: invalid property on PreferenceSlider: {l.strip()}",
+                        )
 
 
 if __name__ == "__main__":
