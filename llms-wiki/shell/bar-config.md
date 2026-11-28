@@ -497,7 +497,7 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
     `commons/BarScreenLayout.js`（dux `LayoutResolver.js` Fork & Trim：岛/
     帧/哥特翼/行堆叠等 dux 特有分支全裁）。输入只取 barConfigs × 屏（配置
     真相，不读窗口实例），输出每屏每边 band 预留 + 逐 bar tuck insets；
-    预留 = `BarGeometry.exclusiveZone`（窗口绑定的同一函数），autoHide 条目
+    预留 = `BarGeometry.screenReservation`（`edgeMargin + exclusiveZone`，其中窗口绑定的 `BarGeometry.exclusiveZone` 只含 `thickness + boostExtra + innerMargin`，避免在 `wlr-layer-shell` 中把 `edgeMargin` 叠算两次），autoHide 条目
     预留 0（dux `reserves` 血统）。屏幕列表语义沿 D4e（空 = 全屏，无匹配
     回落全屏）。
   - **转角接合**（作者拍板，偏离 dux）：同角相遇按 configOrder 裁决——先建
@@ -586,7 +586,7 @@ ScrollHint 增 top/bottom 侧语义（贴中缝两端；箭头本就上下竖排
 - **D4f**：样式原子化 + v7 迁移（2026-11-28）——
   - `cornerStyle`（6 档）× `borderless`（5 档）× `showBackground` 退役为正交原子轴，存储在 `[[bar.configs]].axes`：
     - 结构/材质：`backplate`（bool）、`lanePill`（bool）、`tint`（bool）
-    - 外边距：`edgeMargin`（int，`0` = 贴边，`>0` = 悬浮，默认 `5`）、`sideMargin`（int，哨兵 `-1` = `floating && backplate` 时解析为 `gapsOut`，否则 `0`）
+    - 外边距：`edgeMargin`（int，屏幕外侧边距，`0` = 贴边，`>0` = 悬浮，默认 `5`）、`innerMargin`（int，窗口内侧边距，默认 `0`）、`sideMargin`（int，哨兵 `-1` = `floating && backplate` 时解析为 `gapsOut`，否则 `0`）
     - 部件外观：`widgetStyle`（`"fused"` / `"separate"` / `"flat"`）、`capsuleRadius`（`"pill"` / `"rounded"` / `"px"`）、`widgetRadius`（`0..32`，`capsuleRadius === "px"` 时生效）、`groupColor` 补齐 `"transparent"`
   - 两层纯解析：`services/BarDefaults.js` 提供 `deriveStyle(axes, gapsOut)` / `styleBoost(style)` / `resolvedSideMargin(axes, style, gapsOut)` / `capsuleFullRadius` / `capsuleMidRadius`；`plugins/bar/BarStyle.js` 组合 `deriveStyle` 输出窗口/内容/分组/岛/弹层消费的展示上下文（满足插件与服务解耦边界）。
   - 外形起点配方：`services/BarStylePresets.js` 定义六档只写轴不落盘配方（`hug` / `floating` / `islands` / `material` / `materialHug` / `panel`），`applyBarStylePreset(key)` 按键写入、`currentPreset(axes)` 匹配高亮（偏离任何样式键即失亮为自定义）。

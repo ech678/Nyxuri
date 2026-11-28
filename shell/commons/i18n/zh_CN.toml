@@ -2008,6 +2008,7 @@
 "Wind" = "风况"
 "Wind data is unavailable" = "风况数据暂不可用"
 "Window animation selection is unavailable in this session" = "当前会话不支持选择窗口动画"
+"Window edge margin" = "窗口侧边距"
 "Window gaps" = "窗口间距"
 "Window previews" = "窗口预览"
 "Windows" = "窗口"

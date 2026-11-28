@@ -429,7 +429,7 @@ class CornerJunctionTest(unittest.TestCase):
     def test_projection_is_the_single_source(self):
         self.assertIn("pragma Singleton", self.projection)
         self.assertIn("BarScreenLayout.resolveScreen(inputs, screen.name)", self.projection)
-        self.assertIn("BarGeometry.exclusiveZone(vertical, axes.barThickness, axes.verticalThickness, BarDefaults.styleBoost(style), axes.edgeMargin)", self.projection)
+        self.assertIn("BarGeometry.screenReservation(vertical, axes.barThickness, axes.verticalThickness, BarDefaults.styleBoost(style), axes.edgeMargin, axes.innerMargin)", self.projection)
         self.assertIn("axes.autoHide === true ? 0 : zone", self.projection)
         self.assertIn("function reservation(screen, edge)", self.projection)
         self.assertIn("function tuckMargins(screen, barId)", self.projection)

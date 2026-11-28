@@ -489,6 +489,7 @@ class VerticalAndMarginContractTest(unittest.TestCase):
         geometry = read_commons_file("BarGeometry.js")
         self.assertIn("function margins(", geometry)
         self.assertIn("function exclusiveZone(", geometry)
+        self.assertIn("function screenReservation(", geometry)
         # The window and the probe must bind the same implementation.
         probe = os.path.join(REPO_ROOT, "shell", "scripts", "dev", "probe-bar.qml")
         with open(probe, "r", encoding="utf-8") as handle:

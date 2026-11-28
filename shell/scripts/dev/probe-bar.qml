@@ -748,7 +748,8 @@ ShellRoot {
                         "vertical": vertical,
                         "tier": tier,
                         "box": BarGeometry.margins(edge, vertical, tier, tier, false, false),
-                        "exclusiveZone": BarGeometry.exclusiveZone(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, boost, tier)
+                        "exclusiveZone": BarGeometry.exclusiveZone(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, boost, tier),
+                        "screenReservation": BarGeometry.screenReservation(vertical, Appearance.sizes.baseBarHeight, Appearance.sizes.baseVerticalBarWidth, boost, tier, 0)
                     });
                 }
             }
@@ -2025,7 +2026,7 @@ ShellRoot {
                 tint: false,
                 edgeMargin: 0,
                 squareCorners: true
-            }, 5)) === 0 && BarGeometry.exclusiveZone(false, 40, 44, 0, 5) === 45;
+            }, 5)) === 0 && BarGeometry.exclusiveZone(false, 40, 44, 0, 5) === 45 && BarGeometry.screenReservation(false, 40, 44, 0, 5, 3) === 48;
 
             const radiusVocabulary = BarDefaults.capsuleFullRadius({
                 capsuleRadius: "pill"

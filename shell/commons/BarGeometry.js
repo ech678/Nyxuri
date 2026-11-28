@@ -16,8 +16,14 @@ function margins(edge, vertical, edgeMargin, sideMargin, autoHide, deadPixel) {
     };
 }
 
-// D4f / D-8: boostExtra comes from geometric derivation (BarDefaults.styleBoost),
-// never from cornerStyle enum branches (Islands -6 and Panel +4 retired).
-function exclusiveZone(vertical, baseBarHeight, baseVerticalBarWidth, boostExtra, edgeMargin) {
-    return (vertical ? baseVerticalBarWidth : baseBarHeight) + (boostExtra || 0) + edgeMargin;
+// PanelWindow.exclusiveZone is additive to margins[edge] in wlr-layer-shell (Niri),
+// so only thickness + boostExtra + innerMargin belongs here (never edgeMargin,
+// which is already in margins[edge] and would otherwise be counted twice).
+function exclusiveZone(vertical, baseBarHeight, baseVerticalBarWidth, boostExtra, innerMargin) {
+    return (vertical ? baseVerticalBarWidth : baseBarHeight) + (boostExtra || 0) + (innerMargin || 0);
+}
+
+// Total band distance from the screen edge (for ScreenBarLayout avoidance & corner tuck).
+function screenReservation(vertical, baseBarHeight, baseVerticalBarWidth, boostExtra, edgeMargin, innerMargin) {
+    return exclusiveZone(vertical, baseBarHeight, baseVerticalBarWidth, boostExtra, innerMargin) + (edgeMargin || 0);
 }

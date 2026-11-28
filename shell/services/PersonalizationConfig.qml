@@ -538,6 +538,7 @@ Singleton {
     // (D4c) is the each-side margin in percent of the screen: 0 keeps full
     // width, a nonzero value centers the bar on the remaining span.
     readonly property int barEdgeMargin: root.activeBarConfig().axes.edgeMargin
+    readonly property int barInnerMargin: root.activeBarConfig().axes.innerMargin
     readonly property int barSideMargin: root.activeBarConfig().axes.sideMargin
     // Full normalized axes view for the D4c consumers (Bar window geometry,
     // BarContent/BarGroup chrome resolve through BarDefaults).
@@ -1778,6 +1779,10 @@ Singleton {
         setBarAxis("edgeMargin", root.normalizedBoundedInt(value, BarDefaults.DEFAULTS.edgeMargin, 0, 48));
     }
 
+    function setBarInnerMargin(value) {
+        setBarAxis("innerMargin", root.normalizedBoundedInt(value, BarDefaults.DEFAULTS.innerMargin, 0, 48));
+    }
+
     function setBarSideMargin(value) {
         setBarAxis("sideMargin", root.clampedBarSentinelInt(value, -1, 0, 96));
     }
@@ -2180,6 +2185,7 @@ Singleton {
             barThickness: root.clampedBarInt(raw.barThickness, 28, 64, d.barThickness),
             verticalThickness: root.clampedBarInt(raw.verticalThickness, 28, 64, d.verticalThickness),
             edgeMargin: root.normalizedBoundedInt(raw.edgeMargin, d.edgeMargin, 0, 48),
+            innerMargin: root.normalizedBoundedInt(raw.innerMargin, d.innerMargin, 0, 48),
             sideMargin: root.clampedBarSentinelInt(raw.sideMargin, -1, 0, 96),
             sideMarginPercent: root.normalizedBoundedInt(raw.sideMarginPercent, 0, 0, 49),
             lengthMode: BarDefaults.LENGTH_MODES.indexOf(raw.lengthMode) !== -1 ? raw.lengthMode : d.lengthMode,

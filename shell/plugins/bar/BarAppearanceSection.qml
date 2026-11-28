@@ -283,6 +283,18 @@ ColumnLayout {
         }
 
         PreferenceSlider {
+            label: I18n.tr("Window edge margin")
+            value: PersonalizationConfig.barInnerMargin
+            valueLabel: Math.round(PersonalizationConfig.barInnerMargin) + " px"
+            from: 0
+            to: 48
+            stepSize: 1
+            modified: PersonalizationConfig.barInnerMargin !== BarDefaults.DEFAULTS.innerMargin
+            onMoved: value => PersonalizationConfig.setBarInnerMargin(Math.round(value))
+            onResetRequested: PersonalizationConfig.setBarInnerMargin(BarDefaults.DEFAULTS.innerMargin)
+        }
+
+        PreferenceSlider {
             visible: root.horizontalBar
             label: I18n.tr("Bar thickness")
             value: PersonalizationConfig.barThickness

@@ -35,10 +35,10 @@ Singleton {
                 return;
             const vertical = axes.position === "left" || axes.position === "right";
             const style = BarDefaults.deriveStyle(axes, Config.options.bar.m3.gapsOut);
-            // The same number the window binds (Bar.qml shownExclusiveZone):
-            // thickness + boost + edgeMargin. autoHide entries slide away,
-            // so they reserve nothing (dux `reserves` lineage).
-            const zone = BarGeometry.exclusiveZone(vertical, axes.barThickness, axes.verticalThickness, BarDefaults.styleBoost(style), axes.edgeMargin);
+            // Total band distance from the screen edge: edgeMargin + thickness +
+            // boost + innerMargin. autoHide entries slide away, so they reserve
+            // nothing (dux `reserves` lineage).
+            const zone = BarGeometry.screenReservation(vertical, axes.barThickness, axes.verticalThickness, BarDefaults.styleBoost(style), axes.edgeMargin, axes.innerMargin);
             inputs.push({
                 id: config.id,
                 edge: axes.position,

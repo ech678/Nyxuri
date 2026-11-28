@@ -38,6 +38,7 @@ var DEFAULTS = {
     barThickness: 36,
     verticalThickness: 36,
     edgeMargin: 5,
+    innerMargin: 0,
     sideMargin: -1,
     // D4c geometry axes (sentinel -1 = derived baseline).
     spacing: -1,

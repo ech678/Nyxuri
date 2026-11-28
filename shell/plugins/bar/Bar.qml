@@ -351,6 +351,7 @@ Scope {
                                     readonly property real thickness: barRoot.vertical ? PersonalizationConfig.resolvedVerticalBarWidth(barRoot.axes) : PersonalizationConfig.resolvedBarHeight(barRoot.axes)
                                     // B9.5/D4f outer margins: edgeMargin 0 = flush, >0 = floating.
                                     readonly property real edgeMargin: barRoot.axes.edgeMargin
+                                    readonly property real innerMargin: barRoot.axes.innerMargin ?? 0
                                     readonly property real sideMargin: barRoot.sideMarginPx
                                     // D4g 批四b corner junction: this entry's tuck insets from the
                                     // shared topology projection (ScreenBarLayout) — a later bar
@@ -368,7 +369,7 @@ Scope {
                                             right: own.right + barRoot.tuckMargins.right
                                         };
                                     }
-                                    readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, barRoot.axes.barThickness, barRoot.axes.verticalThickness, barRoot.styleContext.boostExtra, barRoot.edgeMargin)
+                                    readonly property real shownExclusiveZone: BarGeometry.exclusiveZone(barRoot.vertical, barRoot.axes.barThickness, barRoot.axes.verticalThickness, barRoot.styleContext.boostExtra, barRoot.innerMargin)
                                     // The content is instantiated exactly once, by the active
                                     // orientation branch (B8.6: a second copy stole islandHost and
                                     // doubled every service consumer).
