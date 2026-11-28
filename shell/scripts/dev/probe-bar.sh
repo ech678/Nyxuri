@@ -659,6 +659,58 @@ print(json.dumps({
 PY
 )
 fi
+# D4g 批四: the rail default layout. railDefaults() re-resolves the
+# entry's lanes from the position-aware defaults and reports the store
+# view; the sparse writer drops the lane section, so one dance pins
+# three facts: a rail reads its own default set from storage-absent
+# lanes, the lanes key stays unwritten, and the top flip re-resolves
+# the horizontal set. (Store view, not the rendered lane list — the
+# renderer filters no-item widgets like tray, which would couple this
+# section to the fake SNI publisher's liveness.)
+bar_entry_state() {
+    python3 - "$1" <<'PY' 2>/dev/null || true
+import sys, tomllib
+try:
+    with open(sys.argv[1], "rb") as f:
+        data = tomllib.load(f)
+    configs = (data.get("bar") or {}).get("configs") or []
+    first = configs[0] if configs else {}
+except Exception:
+    first = {}
+print(f"{first.get('position', 'top')}\t{int('lanes' in first)}")
+PY
+}
+d4g_defaults_state=""
+rail_defaults_store=$(ipc railDefaults 2>/dev/null || true)
+if [[ -n ${rail_defaults_store} ]]; then
+    ipc reload >/dev/null 2>&1 || true
+    sleep 0.7
+    rail_defaults_stored=$(bar_entry_state "${tmp}/config/nyxuri/config.toml")
+    ipc edge top >/dev/null 2>&1 || true
+    ipc reload >/dev/null 2>&1 || true
+    sleep 0.8
+    top_defaults_store=$(ipc railDefaults 2>/dev/null || true)
+    top_defaults_stored=$(bar_entry_state "${tmp}/config/nyxuri/config.toml")
+    d4g_defaults_state=$(python3 - "${rail_defaults_store}" "${rail_defaults_stored}" "${top_defaults_store}" "${top_defaults_stored}" <<'PY' 2>/dev/null || true
+import json, sys
+
+def store(raw):
+    try:
+        data = json.loads(raw)
+    except Exception:
+        return {}
+    return {
+        "position": data.get("position"),
+        "lanes": {key: data.get(key) for key in ("left", "middle", "right")},
+    }
+
+print(json.dumps({
+    "rail": {"store": store(sys.argv[1]), "stored": sys.argv[2]},
+    "top": {"store": store(sys.argv[3]), "stored": sys.argv[4]},
+}))
+PY
+)
+fi
 # B9.5 margins ride the same pure geometry the window binds.
 if ipc edge top >/dev/null 2>&1; then
     ipc stylePreset floating >/dev/null 2>&1 || true
@@ -797,7 +849,7 @@ ipc stylePreset floating >/dev/null 2>&1 || true
 ipc scene default >/dev/null 2>&1 || true
 ipc reload >/dev/null 2>&1 || true
 
-python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" "${d4g_catalog_state}" "${d4g_rail_state}" <<'PY'
+python3 - "${layouts}" "${borderless}" "${media_hidden}" "${tmp}/qs.log" "${json_mode}" "${mode}" "${osd_state}" "${keyboard_osd_state}" "${island_off_state}" "${tray_initial}" "${tray_hidden}" "${tray_closed}" "${tray_reset}" "${tray_persisted}" "${tray_skip_reason}" "${system_icons_state}" "${system_icons_fake}" "${system_icons_reset}" "${island_restored_state}" "${island_migration}" "${idle_face_state}" "${idle_face_no_avatar}" "${vertical_file}" "${margins_state}" "${window_file}" "${b96_override}" "${b96_reset}" "${b96_hug_float}" "${b96_hug_plain}" "${b97_baseline}" "${b97_bg_off}" "${b97_divider}" "${b97_util_on}" "${b97_util_off}" "${b97_res_on}" "${b97_res_off}" "${b97_han}" "${b97_roman}" "${b97_screen_named}" "${b97_screen_empty}" "${b97_persisted}" "${d1_island_media_file}" "${d1_weather_on_late}" "${d1_weather_off_late}" "${d1_visualizer_on_late}" "${d1_visualizer_off_late}" "${d1_date_fmt}" "${d1_date_reset}" "${d1_media_geom}" "${d2_immediate_state}" "${d2_settled_state}" "${d2_unhover_state}" "${d4a_entries_spacers}" "${d4a_entries_disabled}" "${d4a_singletons}" "${d4a_migration_state}" "${d4a_persistence_state}" "${d4b_migration_state}" "${d4b_instances_state}" "${d4b_click_vocabulary}" "${d4c_migration_state}" "${d4c_sentinels_state}" "${d4c_roles_state}" "${d4d_behavior_state}" "${d4d_overflow_resolve_state}" "${d4d_overflow_cramped_state}" "${d4d_overflow_reset_state}" "${d4e_store_state}" "${d4e_signature_state}" "${d4e_migration_v6_state}" "${d4e_windows_two_state}" "${d4e_windows_off_state}" "${d4e_windows_clean_state}" "${d4f_style_state}" "${d4g_catalog_state}" "${d4g_rail_state}" "${d4g_defaults_state}" <<'PY'
 import json
 import re
 import sys
@@ -820,7 +872,7 @@ import sys
  d4d_overflow_resolve_state, d4d_overflow_cramped_state,
  d4d_overflow_reset_state, d4e_store_state, d4e_signature_state, d4e_migration_v6_state,
  d4e_windows_two_state, d4e_windows_off_state, d4e_windows_clean_state,
- d4f_style_state, d4g_catalog_state, d4g_rail_state) = sys.argv[1:77]
+ d4f_style_state, d4g_catalog_state, d4g_rail_state, d4g_defaults_state) = sys.argv[1:78]
 
 
 def load_tsv(path):
@@ -1750,12 +1802,40 @@ d4g_rail_ok = bool(
     and abs(_d4g_osd_island.get("height", 0) - 76) <= 0.01
 )
 
+# 批四: the rail default layout. Storage omits the lanes key (sparse
+# write against the orientation-aware fallback), the rail set resolves
+# from that absence, and the top flip re-resolves the horizontal set.
+d4g_defaults = {}
+if d4g_defaults_state.strip():
+    try:
+        d4g_defaults = json.loads(d4g_defaults_state)
+    except ValueError:
+        d4g_defaults = {}
+_d4g_rail_defaults = ((d4g_defaults.get("rail") or {}).get("store") or {}).get("lanes") or {}
+_d4g_top_defaults = ((d4g_defaults.get("top") or {}).get("store") or {}).get("lanes") or {}
+_d4g_rail_defaults_position = ((d4g_defaults.get("rail") or {}).get("store") or {}).get("position")
+_d4g_top_defaults_position = ((d4g_defaults.get("top") or {}).get("store") or {}).get("position")
+_d4g_rail_defaults_stored = (d4g_defaults.get("rail") or {}).get("stored") or ""
+_d4g_top_defaults_stored = (d4g_defaults.get("top") or {}).get("stored") or ""
+d4g_defaults_ok = bool(
+    _d4g_rail_defaults_position == "left"
+    and _d4g_rail_defaults.get("left") == ["launcherButton", "workspaces"]
+    and _d4g_rail_defaults.get("middle") == ["island"]
+    and _d4g_rail_defaults.get("right") == ["tray", "systemIcons", "powerButton"]
+    and _d4g_rail_defaults_stored == "left\t0"
+    and _d4g_top_defaults_position == "top"
+    and _d4g_top_defaults.get("left") == ["launcherButton", "workspaces", "activeWindow"]
+    and _d4g_top_defaults.get("middle") == ["island"]
+    and _d4g_top_defaults.get("right") == ["tray", "quickSettings", "systemIcons", "powerButton"]
+    and _d4g_top_defaults_stored == "top\t0"
+)
+
 ok = (len(layouts) == 6 and all(entry.get("ok") for entry in layouts) and not hits
       and borderless_ok and media_ok and osd_ok and keyboard_osd_ok and island_off_ok
       and island_restored_ok and island_migration_ok and idle_face_ok
       and avatar_optional_ok
       and tray_ok and peripheral_ok and vertical_ok and margin_ok and window_ok
-      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok and d4g_ok and d4g_rail_ok)
+      and b96_ok and b97_ok and d1_ok and d2_ok and d4a_ok and d4b_ok and d4c_ok and d4d_ok and d4e_ok and d4f_ok and d4g_ok and d4g_rail_ok and d4g_defaults_ok)
 report = {
     "ok": ok,
     "mode": mode,
@@ -2027,15 +2107,19 @@ report = {
         "style": d4f_style,
     },
     "d4g": {
-        "ok": d4g_ok and d4g_rail_ok,
+        "ok": d4g_ok and d4g_rail_ok and d4g_defaults_ok,
         "catalog": d4g_catalog,
         "rail": {
             "ok": d4g_rail_ok,
             "idle": _d4g_idle_face,
             "osd": _d4g_osd_face,
         },
-    },
-    "b96": {
+        "defaults": {
+            "ok": d4g_defaults_ok,
+            "rail": d4g_defaults.get("rail") or {},
+            "top": d4g_defaults.get("top") or {},
+        },
+    },    "b96": {
         "ok": b96_ok,
         "override": {
             "ok": override_ok,

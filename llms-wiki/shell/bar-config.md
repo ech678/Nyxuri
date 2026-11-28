@@ -410,8 +410,8 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   按「镜像面朝屏幕附着边」逐角轴分支（行：top/bottom，轨：left/right）。
   边缘滚动条在轨上零延展（轨向滚动动作归 D4h）。
 - 批次：批一单宿主并回（本节）→ 批二部件能力目录（本节批二段）→ 批三
-  clock/systemMonitor 竖向语法 + 竖向岛 → 批四竖置默认布局 + 避让审计
-  （`shell.qml` 遗留全局 `bar.vertical` 消费一并收）。
+  clock/systemMonitor 竖向语法 + 竖向岛 → 批四a 竖置默认布局 + 仲裁收口（本节批四段，
+  已落地）→ 批四b 避让让位基建 + 横竖转角接合（待开始）。
 - **批二（部件能力目录，2026-11-28）**：设置面据此对轨禁用并说明，引擎零消费。
   - `ui/BarWidgetCatalog.qml` 每条目声明 `orientations`（横/竖支持）；竖向可用的
     再加 `verticalMode`，词表闭合 D-9 三语法（`stack` 沿轨重排/`rotate` ±90°/
@@ -460,6 +460,38 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
     （default 场景 middle=[island]、idle 紧凑胶囊 36×132 沿轨居中、`ipc osd
     volume` 触发 OSD 轨面 36×76）；会话 probe exit=0 全绿零 logErrors。
     实机项归作者：轨上岛四面观感与手感、clock 堆叠轨宽适配实观。
+- **批四a（轨默认布局 + 仲裁收口，2026-11-28）**：
+  - **轨默认集**（D-9，作者拍板裁剪版）：`defaultRailLayout*` 独立成表——
+    起点（left zone）`[launcherButton, workspaces]`、middle `[island]`、
+    终点（right zone）`[tray, systemIcons, powerButton]`。activeWindow 不进轨
+    默认（悬停弹层半边未建，裸图标无信息量），quickSettings 让位 SystemIcons
+    的 hover 展开面。横排三表原样保留。
+  - **单入口解析**：`defaultBarLayoutsFor(position)` 是「缺 lane 读默认」的唯一
+    入口——load normalize（`normalizeConfigLanes` 增 `position` 参）、lane 复位
+    （`resetBarLanes` 传条目 `axes.position`）、sparse 写入比较三方同源，不漂移。
+  - **翻边活体语义**：`setBarPosition` 先判 `barLanesMatchOrientationDefaults`
+    （lanes 等于**当前方向**默认 = 未定制），翻边后未定制条目随新方向重解析
+    （top↔rail 活体换默认集），定制过的随人。新建 bar 默认仍 top。
+  - **sparse 方向感知**（坑修复）：`sparseBarConfigEntry` 的 lane 比较基线改
+    `defaultBarLayoutsFor(truth.axes.position)`——原实现拿横排 fallback 比较，
+    零定制轨条目会整段落盘，破最小化写入。
+  - **落盘合并根因修复**（批四踩响的既有潜伏 bug）：`updateSections` 按键合并
+    覆盖，而 `toJson` 对全默认段 `delete json.bar`——段「非默认→变默认」的那次
+    保存清不掉 `rawConfig` 里上一轮的旧段，debounce 落盘写回瞬态（翻边
+    top→rail→top 实测复现）。修法：`toJson` 保留空段对象，`ConfigService.saveNow`
+    落盘前统一剔除空段——文件契约不变（全默认 `[bar]` 仍整段消失）。
+  - **桥视图退役**：`Config.options.bar.bottom`/`.vertical` 零消费者退役
+    （`SystemIconSlot` tooltip 改读注入 `barAxes`，对齐 UtilButton 先例）；
+    probe 舞台改读 `PersonalizationConfig.barPosition`。
+  - **岛仲裁收口**：`shell.qml` popup:notification 仲裁删竖排豁免——批三轨面
+    岛已落地，`islandInLayout` 即岛独占槽（轨上 DiNotifs 走图标紧凑面）。
+  - **probe `d4g.defaults` 节**：store 视图断言轨默认集/横排集双向读回 +
+    toml 稀疏快照（`left\t0`/`top\t0`，lanes 键零写入）。
+  - 机器证据：`test_d4g_bar_config.py` RailDefaultLayoutTest（轨默认表/单入口/
+    sparse 方向感知/翻边重解析/仲裁无方向门/桥零残留）；tests/shell 全量
+    827 例绿；会话 probe exit=0 全绿零 logErrors。遗留补账：批三岛轨钉
+    （test_bar_runtime ×6）、D4f schema 钉（stamp 6→7）、D4f 词典清账
+    （死键 ×4 + 缺失文案 ×13）一并修复。实机项归作者：翻边手感与轨默认观感。
 
 ## 证据
 

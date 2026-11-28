@@ -230,8 +230,15 @@ class MinimalWriteTest(unittest.TestCase):
         self.assertIn("return entry.widgetId;", body)
 
     def test_all_default_bar_section_disappears(self):
-        self.assertIn("if (json.bar && Object.keys(json.bar).length === 0)", self.pc)
-        self.assertIn("delete json.bar", self.pc)
+        # D4g 批四 fix: toJson keeps the section object (possibly `{}`) so
+        # updateSections' merge-overwrite actually clears a section that
+        # became all-default; the file contract lives at the boundary —
+        # saveNow drops emptied sections before stringify.
+        self.assertNotIn("delete json.bar", self.pc,
+                         "the key delete lost the section-clearing race with the merge")
+        config_service = read(os.path.join(SERVICES_DIR, "ConfigService.qml"))
+        self.assertIn("function saveNow", config_service)
+        self.assertIn("Object.keys(value).length === 0", config_service)
 
     def test_config_version_written(self):
         self.assertIn('"configVersion": ConfigMigrations.CURRENT_VERSION', self.pc)

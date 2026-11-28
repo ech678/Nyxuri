@@ -66,10 +66,13 @@ class MultiBarStoreTest(unittest.TestCase):
     def test_normalize_threads_shared_singleton_bucket(self):
         body = self.fn("normalizeBarConfigs")
         self.assertIn("const usedSingletons = [];", body)
-        self.assertIn("root.normalizeConfigLanes(rawLanes, usedSingletons, id)", body)
+        # D4g 批四: the lane defaults are orientation-aware, so the load
+        # normalize threads the entry's resolved position through.
+        self.assertIn("root.normalizeConfigLanes(rawLanes, usedSingletons, id, root.normalizedEdgePosition(bar.position))", body)
         lanes = self.fn("normalizeConfigLanes")
         self.assertIn("const usedSingletons = sharedSingletons || [];", lanes)
         self.assertIn("root.normalizeLaneEntries(raw, zone, usedSingletons, scope)", lanes)
+        self.assertIn("const defaults = root.defaultBarLayoutsFor(position);", lanes)
 
     def test_entry_enabled_flag(self):
         body = self.fn("normalizeBarConfigs")

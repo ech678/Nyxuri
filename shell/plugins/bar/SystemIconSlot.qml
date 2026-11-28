@@ -41,6 +41,10 @@ Item {
     property color contentColor: Appearance.colors.colOnLayer1
     property bool contentColorOverridden: false
     property var widgetBar: null
+    // D4g 批四: the tooltip opens away from the bar this slot lives on —
+    // read the injected axes, not the selected-bar bridge view (same
+    // fallback shape as isMaterial above, UtilButton's anchor precedent).
+    readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes
     property bool isMaterial: BarStyle.isTinted(root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes)
     default property alias content: contentHost.data
 
@@ -206,6 +210,6 @@ Item {
         text: root.toolTipText
         extraVisibleCondition: root.toolTipText.length > 0 && mouseArea.containsMouse
         alternativeVisibleCondition: extraVisibleCondition
-        anchorEdges: Config.options?.bar?.bottom ?? false ? Edges.Top : Edges.Bottom
+        anchorEdges: root.barAxes.position === "bottom" ? Edges.Top : Edges.Bottom
     }
 }

@@ -243,7 +243,7 @@ import os
 from tests.utils import TempEnv
 
 CONFIG_SERVICE = SERVICES / 'ConfigService.qml'
-STAMP = '# nyxuri-config-schema: 6'
+STAMP = '# nyxuri-config-schema: 7'
 
 
 def config_src():

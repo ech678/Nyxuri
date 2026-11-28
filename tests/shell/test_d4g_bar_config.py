@@ -1,4 +1,4 @@
-"""D4g batch two contract tests: the bar widget rail capability catalog.
+"""D4g bar contract tests: the rail capability catalog and the rail defaults.
 
 Pins the D4g 批二 contract (shell/ROADMAP.md, D4g row), corrected by 批三:
 - every catalog entry declares `orientations`; a vertical-capable entry
@@ -16,7 +16,12 @@ Pins the D4g 批二 contract (shell/ROADMAP.md, D4g row), corrected by 批三:
   page shows the capability note) — while the engine consumes none of it;
 - 批三: the island mounts on the rail as the compact face growing along
   the track (the old rail-only island drop is retired) and the clock's
-  rail face is the caelestia stack (TextMetrics optical matching).
+  rail face is the caelestia stack (TextMetrics optical matching);
+- 批四: a rail carries its own default lane set (D-9) resolved through
+  one orientation-aware helper; the sparse writer compares against each
+  entry's orientation defaults; a flip re-resolves stock lanes; the
+  selected-bar `bar.vertical`/`bar.bottom` bridge views retire and the
+  island notification-slot arbitration loses its vertical exemption.
 """
 
 from __future__ import annotations
@@ -282,6 +287,99 @@ class BilingualCopyTest(unittest.TestCase):
         zh = read(os.path.join(SHELL, "commons", "i18n", "zh_CN.toml"))
         for text in self.STRINGS:
             self.assertIn(f'"{text}"', zh, f"zh_CN.toml must provide a translation for {text!r}")
+
+
+class RailDefaultLayoutTest(unittest.TestCase):
+    """D4g batch four: a rail carries its own default lane set (D-9).
+
+    - the rail defaults are the trimmed set (no activeWindow — its rail
+      face is a bare icon until the hover-popup half exists; quickSettings
+      yields to SystemIcons' expanded hover face);
+    - "missing lane" resolves through one helper so the load normalize,
+      the live flip and the sparse writer cannot drift apart;
+    - the sparse writer compares each entry against THAT entry's
+      orientation defaults (a zero-touch rail bar stays lane-less on
+      disk — the minimal write survives the orientation split);
+    - a flip re-resolves stock lanes live; customized lanes follow the
+      user;
+    - the selected-bar bridge views (`bar.vertical`/`bar.bottom`) are
+      retired with zero residue, and the island notification-slot
+      arbitration no longer reads them (批三 landed the rail island
+      faces, so the vertical exemption lost its reason).
+    """
+
+    def setUp(self):
+        self.store = read(os.path.join(SERVICES_DIR, "PersonalizationConfig.qml"))
+        self.host = read(os.path.join(SHELL, "shell.qml"))
+        self.bridge = read(os.path.join(SERVICES_DIR, "Config.qml"))
+        self.probe = read(os.path.join(SHELL, "scripts", "dev", "probe-bar.qml"))
+        self.slot = read(os.path.join(BAR_DIR, "SystemIconSlot.qml"))
+
+    def test_rail_default_tables_are_pinned(self):
+        self.assertIn('readonly property var defaultRailLayoutLeft: ["launcherButton", "workspaces"]', self.store)
+        self.assertIn('readonly property var defaultRailLayoutMiddle: ["island"]', self.store)
+        self.assertIn('readonly property var defaultRailLayoutRight: ["tray", "systemIcons", "powerButton"]', self.store)
+        # The horizontal set stays the shipped B3-1 lanes.
+        self.assertIn('readonly property var defaultBarLayoutLeft: ["launcherButton", "workspaces", "activeWindow"]', self.store)
+        self.assertIn('readonly property var defaultBarLayoutMiddle: ["island"]', self.store)
+        self.assertIn('readonly property var defaultBarLayoutRight: ["tray", "quickSettings", "systemIcons", "powerButton"]', self.store)
+
+    def test_one_orientation_defaults_helper(self):
+        self.assertIn("function defaultBarLayoutsFor(position)", self.store)
+        self.assertIn('if (position === "left" || position === "right")', self.store)
+
+    def test_missing_lanes_resolve_orientation_aware(self):
+        self.assertIn("function normalizeConfigLanes(rawLanes, sharedSingletons, barId, position)", self.store)
+        self.assertIn("const defaults = root.defaultBarLayoutsFor(position);", self.store)
+        # Every normalizeConfigLanes caller passes a position: the factory
+        # entry, the load normalize and the lane reset.
+        self.assertIn("root.normalizeConfigLanes({}, undefined, undefined, BarDefaults.DEFAULTS.position)", self.store)
+        self.assertIn("root.normalizeConfigLanes(rawLanes, usedSingletons, id, root.normalizedEdgePosition(bar.position))", self.store)
+        self.assertIn("root.normalizeConfigLanes({}, usedSingletons, config.id, config.axes.position)", self.store)
+
+    def test_sparse_writer_compares_against_entry_orientation(self):
+        self.assertIn("const laneDefaults = root.defaultBarLayoutsFor(truth.axes.position);", self.store)
+        self.assertNotIn("const dflt = fallback.lanes[zone].map(root.serializeBarEntry);", self.store,
+                         "the horizontal fallback must not leak back into the lane compare")
+
+    def test_position_flip_re_resolves_stock_lanes(self):
+        self.assertIn("function barLanesMatchOrientationDefaults()", self.store)
+        self.assertIn("const stock = root.barLanesMatchOrientationDefaults();", self.store)
+        self.assertIn("if (changed && stock)\n            root.resetBarLanes();", self.store)
+
+    def test_island_arbitration_has_no_orientation_gate(self):
+        self.assertIn(
+            'if (unit.kind === "popup:notification" && StateProjection.isEnabled("bar") && PersonalizationConfig.islandInLayout)',
+            self.host,
+        )
+        self.assertNotIn("bar.vertical", self.host)
+
+    def test_selected_bar_bridge_views_are_retired(self):
+        self.assertNotIn("readonly property bool bottom:", self.bridge)
+        self.assertNotIn("readonly property bool vertical:", self.bridge)
+        # Zero residue across the shell tree (the probe stage reads the
+        # staged bar's own axes position now).
+        for root_dir, dirs, files in os.walk(SHELL):
+            if "vendor" in root_dir.split(os.sep):
+                continue
+            for name in files:
+                if not name.endswith((".qml", ".js")):
+                    continue
+                with open(os.path.join(root_dir, name), "r", encoding="utf-8") as f:
+                    content = f.read()
+                self.assertNotIn("options?.bar?.vertical", content, f"{name}")
+                self.assertNotIn("options.bar.vertical", content, f"{name}")
+                self.assertNotIn("options?.bar?.bottom", content, f"{name}")
+                self.assertNotIn("options.bar.bottom", content, f"{name}")
+
+    def test_tooltip_reads_the_injected_bar_axes(self):
+        self.assertIn("readonly property var barAxes: root.widgetBar ? root.widgetBar.axes : PersonalizationConfig.barAxes", self.slot)
+        self.assertIn('anchorEdges: root.barAxes.position === "bottom" ? Edges.Top : Edges.Bottom', self.slot)
+
+    def test_probe_stage_reads_the_staged_bar_position(self):
+        self.assertIn('PersonalizationConfig.barPosition === "left" || PersonalizationConfig.barPosition === "right"', self.probe)
+        self.assertIn("PersonalizationConfig.defaultBarLayoutsFor(PersonalizationConfig.barPosition)", self.probe)
+        self.assertIn("function railDefaults(): string", self.probe)
 
 
 if __name__ == "__main__":

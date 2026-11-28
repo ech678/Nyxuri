@@ -647,6 +647,31 @@ Singleton {
     // B3-1: the island is a first-class middle widget, not a reserved gap.
     readonly property var defaultBarLayoutMiddle: ["island"]
     readonly property var defaultBarLayoutRight: ["tray", "quickSettings", "systemIcons", "powerButton"]
+    // D4g 批四 (D-9): a rail is not a rotated bar, so it carries its own
+    // default lane set. Zone names stay storage-named (left = track start,
+    // middle = centered, right = track end). activeWindow drops until its
+    // hover-popup half exists (the bare rail icon carries no data) and
+    // quickSettings yields to SystemIcons' expanded hover face.
+    readonly property var defaultRailLayoutLeft: ["launcherButton", "workspaces"]
+    readonly property var defaultRailLayoutMiddle: ["island"]
+    readonly property var defaultRailLayoutRight: ["tray", "systemIcons", "powerButton"]
+
+    // The lane defaults a bar of this position reads when storage omits
+    // them. Every "missing lane" consumer goes through here so the load
+    // normalize, the live flip and the sparse writer cannot drift apart.
+    function defaultBarLayoutsFor(position) {
+        if (position === "left" || position === "right")
+            return {
+                left: root.defaultRailLayoutLeft,
+                middle: root.defaultRailLayoutMiddle,
+                right: root.defaultRailLayoutRight
+            };
+        return {
+            left: root.defaultBarLayoutLeft,
+            middle: root.defaultBarLayoutMiddle,
+            right: root.defaultBarLayoutRight
+        };
+    }
     property var barConfigs: root.defaultBarConfigs()
 
     // D4e: which entry the settings face edits (dux SettingsUiState
@@ -1513,8 +1538,29 @@ Singleton {
         });
     }
 
+    // D4g 批四: lanes that equal the CURRENT orientation's defaults are
+    // "not customized" — a position flip re-resolves them from the
+    // incoming orientation's defaults (top<->rail swaps the lane set
+    // live; a customized bar keeps its lanes).
+    function barLanesMatchOrientationDefaults() {
+        const config = root.activeBarConfig();
+        if (!config)
+            return false;
+        const defaults = root.defaultBarLayoutsFor(config.axes.position);
+        const usedSingletons = [];
+        return ["left", "middle", "right"].every(zone => {
+            const mine = config.lanes[zone].map(root.serializeBarEntry);
+            const stock = root.normalizeLaneEntries(defaults[zone], zone, usedSingletons, config.id).map(root.serializeBarEntry);
+            return JSON.stringify(mine) === JSON.stringify(stock);
+        });
+    }
+
     function setBarPosition(value) {
-        setBarAxis("position", normalizedEdgePosition(value));
+        const stock = root.barLanesMatchOrientationDefaults();
+        const changed = root.setBarAxis("position", normalizedEdgePosition(value));
+        if (changed && stock)
+            root.resetBarLanes();
+        return changed;
     }
 
     function setBarBackplate(value) {
@@ -1783,7 +1829,7 @@ Singleton {
     function resetBarLanes() {
         return root.withBarConfigs((config, all) => {
             const usedSingletons = root.singletonIdsInUse(all, config, undefined);
-            const next = root.normalizeConfigLanes({}, usedSingletons, config.id);
+            const next = root.normalizeConfigLanes({}, usedSingletons, config.id, config.axes.position);
             if (JSON.stringify(next) === JSON.stringify(config.lanes))
                 return false;
             config.lanes = next;
@@ -1875,7 +1921,7 @@ Singleton {
                 id: "default",
                 name: "Bar",
                 axes: root.normalizeBarAxes({}),
-                lanes: root.normalizeConfigLanes({})
+                lanes: root.normalizeConfigLanes({}, undefined, undefined, BarDefaults.DEFAULTS.position)
             }
         ];
     }
@@ -1916,7 +1962,7 @@ Singleton {
                 name: typeof bar.name === "string" && bar.name !== "" ? bar.name : "Bar",
                 enabled: bar.enabled !== false,
                 axes: root.normalizeBarAxes(bar),
-                lanes: root.normalizeConfigLanes(rawLanes, usedSingletons, id)
+                lanes: root.normalizeConfigLanes(rawLanes, usedSingletons, id, root.normalizedEdgePosition(bar.position))
             });
         }
         return out.length > 0 ? out : root.defaultBarConfigs();
@@ -1990,17 +2036,14 @@ Singleton {
     // across every bar); sharedSingletons carries the cross-bar singleton
     // bucket (load passes one array down all entries so the first island
     // wins; a solo caller passes nothing and gets a fresh scope).
-    function normalizeConfigLanes(rawLanes, sharedSingletons, barId) {
+    function normalizeConfigLanes(rawLanes, sharedSingletons, barId, position) {
         const usedSingletons = sharedSingletons || [];
         const scope = barId !== undefined && barId !== "" ? barId : "default";
+        const defaults = root.defaultBarLayoutsFor(position);
         const lanes = {};
         ["left", "middle", "right"].forEach(zone => {
-            // Missing lane -> the default lane; explicit empty stays empty.
-            const defaults = {
-                left: root.defaultBarLayoutLeft,
-                middle: root.defaultBarLayoutMiddle,
-                right: root.defaultBarLayoutRight
-            };
+            // Missing lane -> the orientation's default lane (D4g 批四); an
+            // explicitly empty lane stays empty.
             const raw = rawLanes && Array.isArray(rawLanes[zone]) ? rawLanes[zone] : defaults[zone];
             lanes[zone] = root.normalizeLaneEntries(raw, zone, usedSingletons, scope);
         });
@@ -2078,10 +2121,15 @@ Singleton {
     // With multiple bars every entry persists (its id alone is a deviation;
     // dropping a pristine sibling would delete that bar on reload).
     function sparseBarConfigEntry(truth, fallback, keepPristine) {
+        // Lane defaults are orientation-aware (D4g 批四), so the compare
+        // asks for THIS entry's defaults: comparing a rail entry against
+        // the horizontal fallback would persist a zero-touch rail bar's
+        // whole lane set and break the minimal write.
+        const laneDefaults = root.defaultBarLayoutsFor(truth.axes.position);
         const lanes = {};
         ["left", "middle", "right"].forEach(zone => {
             const mine = truth.lanes[zone].map(root.serializeBarEntry);
-            const dflt = fallback.lanes[zone].map(root.serializeBarEntry);
+            const dflt = root.normalizeLaneEntries(laneDefaults[zone], zone, [], "sparse-default").map(root.serializeBarEntry);
             if (JSON.stringify(mine) !== JSON.stringify(dflt))
                 lanes[zone] = mine;
         });
@@ -3052,9 +3100,11 @@ Singleton {
             "configVersion": ConfigMigrations.CURRENT_VERSION
         };
         // Minimal write: an all-default [bar] disappears entirely instead of
-        // serializing as a bare empty table header.
-        if (json.bar && Object.keys(json.bar).length === 0)
-            delete json.bar;
+        // serializing as a bare empty table header. The section still ships
+        // as `{}` here (D4g fix): updateSections merges by key, so deleting
+        // the key outright would let a stale previous section survive in
+        // rawConfig and re-enter the file on the debounced write. The empty
+        // object is dropped at the file boundary (ConfigService.saveNow).
         return json;
     }
 

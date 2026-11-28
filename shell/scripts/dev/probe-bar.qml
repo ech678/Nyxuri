@@ -27,7 +27,9 @@ ShellRoot {
 
     // The harness stages a 2560-wide horizontal bar or a 1440-tall vertical
     // one, so lane geometry is evaluated against a realistic screen axis.
-    readonly property bool probeVertical: Config.options.bar.vertical
+    // D4g 批四: read the staged bar's own axes position — the global bridge
+    // view retired with the per-entry orientation truth.
+    readonly property bool probeVertical: PersonalizationConfig.barPosition === "left" || PersonalizationConfig.barPosition === "right"
     property int probeWidth: probeVertical ? Appearance.sizes.verticalBarWidth : 2560
     property real probeHeight: probeVertical ? 1440 : Appearance.sizes.barHeight
     readonly property string probeShell: String(Quickshell.env("NYXURI_PROBE_SHELL") || "")
@@ -539,6 +541,20 @@ ShellRoot {
             return String(PersonalizationConfig.barPosition);
         }
 
+        // D4g 批四: re-resolve the active entry's lanes from the
+        // position-aware defaults. The sparse writer then drops the lane
+        // section entirely (equal-to-default = no write), so the harness can
+        // pin "storage omits lanes -> the rail set" end to end.
+        function railDefaults(): string {
+            PersonalizationConfig.resetBarLanes();
+            return JSON.stringify({
+                "position": PersonalizationConfig.barPosition,
+                "left": Array.from(PersonalizationConfig.barLayoutLeft),
+                "middle": Array.from(PersonalizationConfig.barLayoutMiddle),
+                "right": Array.from(PersonalizationConfig.barLayoutRight)
+            });
+        }
+
         // Layout scenes: "mediaOnly" is the self-hiding-widget contract (an
         // empty lane must collapse to zero instead of keeping capsule
         // padding); "default" restores the shipped three-lane layout.
@@ -560,10 +576,11 @@ ShellRoot {
             } else if (name === "divisorLeft") {
                 PersonalizationConfig.setBarLayouts(["divisor"], [], []);
             } else {
-                const left = PersonalizationConfig.defaultBarLayoutLeft.slice();
-                const middle = PersonalizationConfig.defaultBarLayoutMiddle.slice();
-                const right = PersonalizationConfig.defaultBarLayoutRight.slice();
-                PersonalizationConfig.setBarLayouts(left, middle, right);
+                // D4g 批四: the shipped default restores the orientation's
+                // own lane set — a rail restores the rail defaults, not the
+                // rotated horizontal ones.
+                const defaults = PersonalizationConfig.defaultBarLayoutsFor(PersonalizationConfig.barPosition);
+                PersonalizationConfig.setBarLayouts(defaults.left.slice(), defaults.middle.slice(), defaults.right.slice());
             }
             return JSON.stringify({
                 "left": Array.from(PersonalizationConfig.barLayoutLeft),
