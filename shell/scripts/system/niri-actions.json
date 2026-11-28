@@ -1377,69 +1377,6 @@
     "method": "toggle"
   },
   {
-    "id": "nyxuri:island:cancelRecord",
-    "category": "nyxuri",
-    "name": "Island: cancel record",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"cancelRecord\"",
-    "parameters": false,
-    "target": "island",
-    "method": "cancelRecord"
-  },
-  {
-    "id": "nyxuri:island:closeAllOthers",
-    "category": "nyxuri",
-    "name": "Island: close all others",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"closeAllOthers\"",
-    "parameters": false,
-    "target": "island",
-    "method": "closeAllOthers"
-  },
-  {
-    "id": "nyxuri:island:currentStyle",
-    "category": "nyxuri",
-    "name": "Island: current style",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"currentStyle\"",
-    "parameters": false,
-    "target": "island",
-    "method": "currentStyle"
-  },
-  {
-    "id": "nyxuri:island:dashboard",
-    "category": "nyxuri",
-    "name": "Island: dashboard",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"dashboard\"",
-    "parameters": false,
-    "target": "island",
-    "method": "dashboard"
-  },
-  {
-    "id": "nyxuri:island:hub",
-    "category": "nyxuri",
-    "name": "Island: hub",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"hub\"",
-    "parameters": false,
-    "target": "island",
-    "method": "hub"
-  },
-  {
-    "id": "nyxuri:island:lyrics",
-    "category": "nyxuri",
-    "name": "Island: lyrics",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"lyrics\"",
-    "parameters": false,
-    "target": "island",
-    "method": "lyrics"
-  },
-  {
-    "id": "nyxuri:island:tools",
-    "category": "nyxuri",
-    "name": "Island: tools",
-    "expression": "spawn \"nyxuri-shell\" \"--ipc\" \"island\" \"tools\"",
-    "parameters": false,
-    "target": "island",
-    "method": "tools"
-  },
-  {
     "id": "nyxuri:sidebar:open",
     "category": "nyxuri",
     "name": "Sidebar: open",

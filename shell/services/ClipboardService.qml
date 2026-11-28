@@ -41,7 +41,7 @@ Singleton {
     property var detailsById: ({})
     property var error: null
     property var lastActionError: null
-    property string _watchdogKind: ""
+    property var _watchdogKinds: []
     property int lastActionExitCode: -1
     property string lastActionStderr: ""
     property int _historyGeneration: 0
@@ -246,15 +246,18 @@ Singleton {
     }
 
     function startProcessWatchdog(kind) {
-        root._watchdogKind = kind;
-        processWatchdog.restart();
+        const next = root._watchdogKinds.filter(entry => entry.kind !== kind);
+        next.push({
+                      "kind": kind,
+                      "deadline": Date.now() + 10000
+                  });
+        root._watchdogKinds = next;
     }
 
     function stopProcessWatchdog(kind) {
-        if (root._watchdogKind === kind) {
-            root._watchdogKind = "";
-            processWatchdog.stop();
-        }
+        if (root._watchdogKinds.every(entry => entry.kind !== kind))
+            return;
+        root._watchdogKinds = root._watchdogKinds.filter(entry => entry.kind !== kind);
     }
 
     function requestHistoryConfig(value) {
@@ -607,45 +610,54 @@ Singleton {
 
     Timer {
         id: processWatchdog
-        interval: 10000
-        repeat: false
+        interval: 250
+        repeat: true
+        running: root._watchdogKinds.length > 0
         onTriggered: {
-            const kind = root._watchdogKind;
-            root._watchdogKind = "";
-            if (kind === "config") {
-                configProcess.running = false;
-                root._configOutput = "";
-                root._configExitCode = -1;
-                root._configExited = true;
-                root._configStdoutFinished = true;
-                root.finalizeConfigIfReady();
-            } else if (kind === "list") {
-                listProcess.running = false;
-                root._listOutput = "";
-                root._listExitCode = -1;
-                root._listExited = true;
-                root._listStdoutFinished = true;
-                root.finalizeListIfReady();
-            } else if (kind === "action") {
-                actionProcess.running = false;
-                root._actionOutput = "";
-                root._actionExitCode = -1;
-                root._actionExited = true;
-                root._actionStdoutFinished = true;
-                root.finalizeActionIfReady();
-            } else if (kind === "inspect") {
-                inspectProcess.running = false;
-                root._inspectOutput = "";
-                root._inspectExitCode = -1;
-                root._inspectExited = true;
-                root._inspectStdoutFinished = true;
-                root.finalizeInspectIfReady();
-            }
+            const now = Date.now();
+            const expired = root._watchdogKinds.filter(entry => entry.deadline <= now);
+            if (expired.length === 0)
+                return;
+            root._watchdogKinds = root._watchdogKinds.filter(entry => entry.deadline > now);
+            for (let i = 0; i < expired.length; i += 1)
+                root.expireProcessWatchdog(expired[i].kind);
+        }
+    }
+
+    function expireProcessWatchdog(kind) {
+        if (kind === "config") {
+            configProcess.running = false;
+            root._configOutput = "";
+            root._configExitCode = -1;
+            root._configExited = true;
+            root._configStdoutFinished = true;
+            root.finalizeConfigIfReady();
+        } else if (kind === "list") {
+            listProcess.running = false;
+            root._listOutput = "";
+            root._listExitCode = -1;
+            root._listExited = true;
+            root._listStdoutFinished = true;
+            root.finalizeListIfReady();
+        } else if (kind === "action") {
+            actionProcess.running = false;
+            root._actionOutput = "";
+            root._actionExitCode = -1;
+            root._actionExited = true;
+            root._actionStdoutFinished = true;
+            root.finalizeActionIfReady();
+        } else if (kind === "inspect") {
+            inspectProcess.running = false;
+            root._inspectOutput = "";
+            root._inspectExitCode = -1;
+            root._inspectExited = true;
+            root._inspectStdoutFinished = true;
+            root.finalizeInspectIfReady();
         }
     }
 
     Component.onDestruction: {
-        processWatchdog.stop();
+        root._watchdogKinds = [];
         if (configProcess)
             configProcess.running = false;
         if (listProcess)

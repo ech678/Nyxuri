@@ -255,6 +255,102 @@ def _walk_rels(root: Path) -> Iterator[Tuple[str, Path]]:
             yield p.relative_to(root).as_posix(), p
 
 
+def _swap_journal_dir() -> Path:
+    return get_env().state_dir / "swap-journal"
+
+
+def _swap_journal_file(dest: Path) -> Path:
+    key = hashlib.sha256(str(dest).encode("utf-8")).hexdigest()[:16]
+    return _swap_journal_dir() / f"{key}.json"
+
+
+def _swap_journal_begin(dest: Path, old_dest: Path, tmp_new: Path) -> None:
+    """Record the two-rename swap window so a killed run can be repaired.
+
+    Without this record an ``x.old.<pid>`` directory is indistinguishable
+    from a user folder that merely looks like one, so recovery only ever
+    touches swaps that were actually in flight.
+    """
+    import json
+
+    record = {"dest": str(dest), "old": str(old_dest), "new": str(tmp_new)}
+    try:
+        journal = _swap_journal_file(dest)
+        journal.parent.mkdir(parents=True, exist_ok=True)
+        journal.write_text(json.dumps(record), encoding="utf-8")
+    except OSError as exc:
+        log_msg("WARN", f"could not journal swap for {dest}: {exc}")
+
+
+def _swap_journal_end(dest: Path) -> None:
+    try:
+        _swap_journal_file(dest).unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def _park_orphan(orphan: Path) -> None:
+    target = get_env().state_dir / "recovered" / orphan.name
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists() or target.is_symlink():
+            remove_path(target)
+        shutil.move(str(orphan), str(target))
+        log_msg("WARN", f"parked stale swap leftover at {target}")
+    except OSError as exc:
+        log_msg("WARN", f"could not park stale swap leftover {orphan}: {exc}")
+
+
+def recover_interrupted_swaps() -> List[str]:
+    """Repair swaps a killed run left half-done (crash-window recovery).
+
+    The swap renames dest aside, then renames the staged tree in. A SIGKILL
+    or power loss between those two renames leaves the living area missing
+    with its contents parked in ``<name>.old.<pid>``. Only journaled swaps
+    are repaired: an orphan whose living area is gone is renamed back into
+    place, one whose living area exists is parked in the state dir instead of
+    deleted, and any staged ``.new`` tree from that swap is discarded.
+    """
+    import json
+
+    recovered: List[str] = []
+    try:
+        journals = sorted(_swap_journal_dir().glob("*.json"))
+    except OSError:
+        return recovered
+    for journal in journals:
+        try:
+            record = json.loads(journal.read_text(encoding="utf-8"))
+            dest = Path(record["dest"])
+            old_dest = Path(record["old"])
+            tmp_new = Path(record["new"])
+        except (OSError, ValueError, KeyError, TypeError):
+            try:
+                journal.unlink(missing_ok=True)
+            except OSError:
+                pass
+            continue
+        base = dest.name
+        if dest.exists() or dest.is_symlink():
+            if old_dest.exists() or old_dest.is_symlink():
+                _park_orphan(old_dest)
+            recovered.append(base)
+        elif old_dest.exists() or old_dest.is_symlink():
+            try:
+                old_dest.rename(dest)
+                log_msg("WARN", f"restored living area from interrupted swap: {dest}")
+                recovered.append(base)
+            except OSError as exc:
+                log_msg("WARN", f"could not restore orphaned living area {old_dest}: {exc}")
+        if tmp_new.exists() or tmp_new.is_symlink():
+            remove_path(tmp_new)
+        try:
+            journal.unlink(missing_ok=True)
+        except OSError:
+            pass
+    return recovered
+
+
 def atomic_replace_item(
     src: Path, dest: Path, preserved_log: Optional[List[str]] = None,
     test_mode: bool = False, preserve: Optional[List[str]] = None,
@@ -302,6 +398,9 @@ def atomic_replace_item(
         register_temp_path(tmp_file)
         old_dest = None
         try:
+            if dest.is_dir() and not dest.is_symlink():
+                log_msg("ERROR", f"refusing to replace a directory with a single file: {dest}")
+                return False
             dest_parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, tmp_file)
             if dest.exists() or dest.is_symlink():
@@ -339,9 +438,13 @@ def atomic_replace_item(
                     remove_path(tmp_file)
                     return True
                 old_dest = dest.with_name(f"{dest.name}.old.{pid}")
-                dest.rename(old_dest)
-                tmp_file.rename(dest)
-                remove_path(old_dest)
+                _swap_journal_begin(dest, old_dest, tmp_file)
+                try:
+                    dest.rename(old_dest)
+                    tmp_file.rename(dest)
+                    remove_path(old_dest)
+                finally:
+                    _swap_journal_end(dest)
             else:
                 tmp_file.rename(dest)
             return True
@@ -352,6 +455,8 @@ def atomic_replace_item(
                     old_dest.rename(dest)
                 except Exception:
                     pass
+            if not isinstance(e, Exception):
+                raise
             log_msg("ERROR", f"Atomic replace failed for {dest}: {e}")
             return False
 
@@ -548,6 +653,7 @@ def atomic_replace_item(
 
         if dest.exists() or dest.is_symlink():
             old_dest = dest.with_name(f"{dest.name}.old.{pid}")
+            _swap_journal_begin(dest, old_dest, tmp_new)
             dest.rename(old_dest)
             try:
                 tmp_new.rename(dest)
@@ -555,6 +661,8 @@ def atomic_replace_item(
             except Exception:
                 old_dest.rename(dest)
                 raise
+            finally:
+                _swap_journal_end(dest)
             return True
         else:
             tmp_new.rename(dest)
@@ -566,5 +674,7 @@ def atomic_replace_item(
                 old_dest.rename(dest)
             except OSError:
                 pass
+        if not isinstance(e, Exception):
+            raise
         log_msg("ERROR", f"Atomic replace failed for directory {dest}: {e}")
         return False

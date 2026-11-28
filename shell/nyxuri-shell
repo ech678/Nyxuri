@@ -247,7 +247,7 @@ if [ -n "$ACTION" ]; then
             ;;
         check-ready)
             if res=$(qs -p "${SHELL_DIR}" ipc call shell isReady 2>/dev/null); then
-                if [ "${res}" = "true" ]; then
+                if [ "$(printf '%s\n' "${res}" | tail -n1)" = "true" ]; then
                     exit 0
                 fi
                 exit 1

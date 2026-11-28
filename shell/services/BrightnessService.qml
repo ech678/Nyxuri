@@ -11,6 +11,7 @@ Singleton {
 
     property var ddcMonitors: []
     property var pendingDdcMonitors: []
+    property bool ddcRescanPending: false
     property real fallbackBrightnessValue: 0.5
     property var monitors: []
     readonly property string focusedScreenName: CompositorDriver.currentOutput
@@ -164,9 +165,21 @@ Singleton {
     }
 
     function rescanDdcMonitors() {
-        if (ddcDetectProcess.running)
-            ddcDetectProcess.running = false;
+        ddcDetectProcess.settled = true;
+        root.ddcRescanPending = false;
         pendingDdcMonitors = [];
+        if (ddcDetectProcess.running) {
+            root.ddcRescanPending = true;
+            ddcDetectProcess.running = false;
+            return;
+        }
+        root.startDdcDetection();
+    }
+
+    function startDdcDetection() {
+        root.ddcRescanPending = false;
+        pendingDdcMonitors = [];
+        ddcDetectProcess.settled = false;
         ddcDetectProcess.running = true;
     }
 
@@ -204,17 +217,33 @@ Singleton {
         id: ddcDetectProcess
 
         command: ["ddcutil", "detect", "--brief"]
+        property bool settled: false
 
         stdout: SplitParser {
             splitMarker: "\n\n"
             onRead: data => root.parseDdcBlock(data)
         }
 
-        onExited: {
-            root.ddcMonitors = root.pendingDdcMonitors;
-            root.pendingDdcMonitors = [];
-            root.initializeMonitor(0);
+        function finishDetection() {
+            if (ddcDetectProcess.running)
+                return;
+            if (!ddcDetectProcess.settled) {
+                ddcDetectProcess.settled = true;
+                root.ddcMonitors = root.pendingDdcMonitors;
+                root.pendingDdcMonitors = [];
+                root.initializeMonitor(0);
+            }
+            if (root.ddcRescanPending)
+                root.startDdcDetection();
         }
+
+        onRunningChanged: {
+            if (ddcDetectProcess.running)
+                return;
+            Qt.callLater(ddcDetectProcess.finishDetection);
+        }
+
+        onExited: ddcDetectProcess.finishDetection()
     }
 
     Process {

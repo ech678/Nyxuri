@@ -46,6 +46,7 @@ FloatingWindow {
     property string pathDraft: ""
     property bool _completionHandled: true
     property bool _folderModelAttached: true
+    property bool destroying: false
 
     readonly property string homeDir: StandardPaths.writableLocation(StandardPaths.HomeLocation)
     readonly property string desktopDir: StandardPaths.writableLocation(StandardPaths.DesktopLocation)
@@ -85,7 +86,7 @@ FloatingWindow {
         if (targetScreen)
             screen = targetScreen;
     }
-    onCurrentPathChanged: Qt.callLater(refreshBreadcrumbs)
+    onCurrentPathChanged: Qt.callLater(root.refreshBreadcrumbs)
     onVisibleChanged: {
         if (visible)
             Qt.callLater(fileGrid.refreshLayout);
@@ -107,6 +108,7 @@ FloatingWindow {
     }
 
     Component.onDestruction: {
+        root.destroying = true;
         ShellStartupService.unregisterQmlResource("FilePickerWindow", "window", root);
     }
 
@@ -181,11 +183,17 @@ FloatingWindow {
     }
 
     function refreshBreadcrumbs() {
-        const items = buildBreadcrumbItems(currentPath);
+        if (root.destroying)
+            return;
+        const items = root.buildBreadcrumbItems(currentPath);
         breadcrumbModel.clear();
         for (const item of items)
             breadcrumbModel.append(item);
-        Qt.callLater(() => breadcrumbFlick.revealCurrent());
+        Qt.callLater(() => {
+            if (root.destroying || !breadcrumbFlick)
+                return;
+            breadcrumbFlick.revealCurrent();
+        });
     }
 
     function beginPathEditing() {

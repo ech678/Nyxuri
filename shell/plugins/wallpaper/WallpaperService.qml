@@ -21,6 +21,7 @@ Singleton {
     property bool pendingCycleAutomatic: false
     property string pendingWallpaperPath: ""
     property string pendingWallpaperScreen: ""
+    property string previousWallpaperPath: ""
     property bool scanRequested: false
     property var scanResults: []
     property var desktopErrors: ({})
@@ -182,8 +183,24 @@ Singleton {
         return values.length > 0 ? next[values[values.length - 1]] : "";
     }
 
-    function reportDesktopError(screenName, message) {
+    function reportDesktopError(screenName, message, source) {
         root.lastDesktopError = root.updateErrorMap("desktopErrors", screenName, message);
+        const failed = String(source || "");
+        const persisted = root.wallpaperForScreen(screenName);
+        if (failed === "" || persisted === "" || failed !== persisted)
+            return;
+        const fallback = root.previousWallpaperPath;
+        if (fallback === "" || fallback === failed)
+            return;
+        LogService.warn("wallpaper", "restoring previous wallpaper after load failure: " + fallback);
+        root.previousWallpaperPath = "";
+        root.currentWallpaper = fallback;
+        if (PersonalizationConfig.perMonitorWallpaper && screenName)
+            PersonalizationConfig.setMonitorWallpaper(screenName, fallback);
+        else if (PersonalizationConfig.perModeWallpaper)
+            PersonalizationConfig.setWallpaperPathForMode(UiPreferences.darkMode ? "dark" : "light", fallback);
+        else
+            PersonalizationConfig.setWallpaperPath(fallback);
     }
 
     function clearDesktopError(screenName) {
@@ -239,9 +256,11 @@ Singleton {
 
         root.scanRequested = false;
         root.scanResults = [];
-        scanProcess.command = ["find", PersonalizationConfig.wallpaperFolder, "-type", "f", "(", "-iname", "*.jpg",
+        const folder = PersonalizationConfig.wallpaperFolder;
+        const scanRoot = folder.charAt(0) === "-" ? "./" + folder : folder;
+        scanProcess.command = ["find", scanRoot, "-type", "f", "(", "-iname", "*.jpg",
                                "-o", "-iname", "*.jpeg", "-o", "-iname", "*.png", "-o", "-iname", "*.webp",
-                               "-o", "-iname", "*.bmp", "-o", "-iname", "*.gif", ")", "-print"];
+                               "-o", "-iname", "*.bmp", "-o", "-iname", "*.gif", ")", "-print0"];
         scanProcess.running = false;
         scanProcess.running = true;
     }
@@ -257,6 +276,10 @@ Singleton {
     function setWallpaper(path, screenName) {
         if (!WallpaperSource.supported(path, PersonalizationConfig.desktopWallpaperBackend))
             return false;
+
+        const outgoing = root.wallpaperForScreen(screenName);
+        if (outgoing !== "" && outgoing !== path)
+            root.previousWallpaperPath = outgoing;
 
         if (PersonalizationConfig.perMonitorWallpaper && screenName)
             PersonalizationConfig.setMonitorWallpaper(screenName, path);
@@ -302,7 +325,7 @@ Singleton {
     }
 
     function _setWallpaperFolder(path) {
-        PersonalizationConfig.setWallpaperFolder(path || Paths.dataHome + "/wallpapers");
+        PersonalizationConfig.setWallpaperFolder(path || PersonalizationConfig.defaultWallpaperFolder);
         root.scan();
         return true;
     }
@@ -677,11 +700,10 @@ Singleton {
         onRunningChanged: if (running)
                               root.scanning = true
         stdout: SplitParser {
-            splitMarker: "\n"
+            splitMarker: "\u0000"
             onRead: file => {
-                const path = file.trim();
-                if (path !== "")
-                    root.scanResults.push(path);
+                if (file !== "")
+                    root.scanResults.push(file);
             }
         }
         onExited: {
@@ -711,6 +733,9 @@ Singleton {
                 root.pendingCycleAction = "";
                 if (!root.pendingCycleAutomatic || !WallpaperPaletteSession.desktopActive)
                     root.applyCycle(action);
+                root.pendingCycleAutomatic = false;
+            } else if (root.wallpapers.length === 0) {
+                root.pendingCycleAction = "";
                 root.pendingCycleAutomatic = false;
             }
         }

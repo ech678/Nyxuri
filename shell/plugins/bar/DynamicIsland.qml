@@ -108,7 +108,7 @@ Item {
         return "UNKNOWN_METHOD";
     }
 
-    readonly property var activePlayer: MediaService.primaryPlayer ?? null
+    readonly property var activePlayer: MediaService.active ?? null
     readonly property bool hasMedia: root.activePlayer !== null && ((root.activePlayer.trackTitle ?? "") !== "" || root.activePlayer.isPlaying)
     // popupList is sorted newest-first (rebuildDerivedIndexes); end4's island
     // assumed an ascending mother list, so [length - 1] surfaced the oldest

@@ -67,6 +67,23 @@ NexusPageBase {
             }
         }
 
+        InlineStatusBanner {
+            Layout.fillWidth: true
+            Layout.topMargin: 6
+            visible: PluginSettings.saveError !== "" || PluginSettings.degraded
+            tone: "error"
+            message: PluginSettings.saveError !== "" ? I18n.tr("Plugin settings could not be saved") : I18n.tr(
+                                                           "The plugin settings file is unreadable; changes are not being saved")
+            StyledToolTip {
+                extraVisibleCondition: schemaSettingsErrorHover.hovered
+                text: PluginSettings.saveError !== "" ? PluginSettings.saveError : I18n.tr(
+                                                            "The plugin settings file is unreadable; changes are not being saved")
+            }
+            HoverHandler {
+                id: schemaSettingsErrorHover
+            }
+        }
+
         // Row atoms weld into one connected group per page: first/last bend
         // the corners, everything between stays flush.
         Component {

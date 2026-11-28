@@ -30,6 +30,12 @@ FloatingWindow {
     property string pendingPage: ""
     readonly property string currentRouteId: dashboardLoader.item ? dashboardLoader.item.currentRouteId : ""
 
+    function knowsPage(pageId) {
+        if (dashboardLoader.item && typeof dashboardLoader.item.knowsPage === "function")
+            return dashboardLoader.item.knowsPage(pageId);
+        return typeof SpotlightCatalog.route === "function" && SpotlightCatalog.route(String(pageId ?? "")) !== null;
+    }
+
     function openPage(pageId) {
         if (dashboardLoader.item)
             return dashboardLoader.item.openPage(pageId);

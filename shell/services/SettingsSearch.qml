@@ -80,6 +80,11 @@ Singleton {
     function trySearch() {
         if (!searchTarget || !searchWindow || !searchWindow.visible)
             return;
+        if (typeof searchWindow.advanceSearchTarget !== "function") {
+            cancelSearch();
+            reportSearchError(I18n.tr("This setting is currently unavailable"));
+            return;
+        }
         applyingSearch = true;
         const state = searchWindow.advanceSearchTarget(searchTarget, searchSerial);
         applyingSearch = false;

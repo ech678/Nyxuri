@@ -90,6 +90,14 @@ Item {
             }
         }
 
+        InlineStatusBanner {
+            Layout.fillWidth: true
+            Layout.topMargin: 6
+            visible: TodoService.saveError !== ""
+            tone: "error"
+            message: I18n.tr("Tasks could not be saved; changes will be lost on restart")
+        }
+
         SwipeView {
             id: swipeView
 

@@ -1,4 +1,5 @@
 pragma Singleton
+import QtCore
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -152,12 +153,27 @@ Singleton {
     readonly property bool storeReady: ConfigService.storeReady
     property bool loading: false
     property bool loaded: false
+    property var pendingTree: null
+    property var baselineTree: null
     // Set when the version chain migrated the parsed file (D4a); the load
     // completion path saves once so the stamp and the reshaped keys land.
     property bool configVersionDirty: false
     readonly property bool ready: root.storeReady && root.loaded && !root.loading
     property string bannerSource: ""
-    property string wallpaperFolder: Paths.dataHome + "/wallpapers"
+    readonly property string defaultWallpaperFolder: {
+        let pictures = String(StandardPaths.writableLocation(StandardPaths.PicturesLocation) || "").trim();
+        if (pictures.startsWith("file://")) {
+            try {
+                pictures = decodeURIComponent(pictures.substring(7));
+            } catch (error) {
+                pictures = pictures.substring(7);
+            }
+        }
+        if (pictures !== "/" && pictures.endsWith("/"))
+            pictures = pictures.replace(/\/+$/, "");
+        return pictures.startsWith("/") ? pictures + "/Wallpapers" : Paths.dataHome + "/wallpapers";
+    }
+    property string wallpaperFolder: root.defaultWallpaperFolder
     property string wallpaperPath: ""
     property string wallpaperPathLight: ""
     property string wallpaperPathDark: ""
@@ -1077,7 +1093,7 @@ Singleton {
     }
 
     function setAutoCycleInterval(value) {
-        setValue("autoCycleInterval", Math.max(5, Math.round(Number(value) || 300)));
+        setValue("autoCycleInterval", root.normalizedBoundedInt(value, 300, 5, 1440));
     }
 
     function setAutoCycleTime(value) {
@@ -2915,6 +2931,9 @@ Singleton {
         };
         if (sparseConfigs)
             section.configs = sparseConfigs;
+        const quickToggles = ConfigService.getSection("bar.quickToggles", null);
+        if (Array.isArray(quickToggles) && quickToggles.length > 0)
+            section.quickToggles = quickToggles;
         return section;
     }
 
@@ -3030,7 +3049,7 @@ Singleton {
         const fonts = configSection(theme.fonts);
         const horizontalClock = configSection(island.horizontalClock);
         root.bannerSource = typeof wallpaper.bannerSource === "string" ? wallpaper.bannerSource : "";
-        root.wallpaperFolder = typeof wallpaper.folder === "string" && wallpaper.folder !== "" ? wallpaper.folder : Paths.dataHome + "/wallpapers";
+        root.wallpaperFolder = typeof wallpaper.folder === "string" && wallpaper.folder !== "" ? wallpaper.folder : root.defaultWallpaperFolder;
         const wallpaperPath = typeof wallpaper.path === "string" ? wallpaper.path : "";
         root.wallpaperPath = wallpaperPath === Paths.currentWallpaper ? "" : wallpaperPath;
         root.wallpaperPathLight = typeof wallpaper.pathLight === "string" ? wallpaper.pathLight : "";
@@ -3044,7 +3063,7 @@ Singleton {
         root.desktopWallpaperBackend = "quickshell";
         root.autoCycleEnabled = !!autoCycle.enabled;
         root.autoCycleMode = autoCycle.mode === "time" ? "time" : "interval";
-        root.autoCycleInterval = Math.max(5, Math.round(Number(autoCycle.interval) || 300));
+        root.autoCycleInterval = root.normalizedBoundedInt(autoCycle.interval, 300, 5, 1440);
         const validTime = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/.test(autoCycle.time || "");
         root.autoCycleTime = validTime ? autoCycle.time : "06:00";
 
@@ -3207,41 +3226,73 @@ Singleton {
     }
 
     function save() {
-        if (!root.storeReady || root.loading)
+        if (!root.storeReady || root.loading) {
+            root.pendingTree = root.toJson();
             return;
+        }
 
+        root.pendingTree = null;
         ConfigService.updateSections(root.toJson());
+    }
+
+    function mergeDirty(target, baseline, pending) {
+        if (!pending || typeof pending !== "object")
+            return target;
+        const base = baseline && typeof baseline === "object" ? baseline : {};
+        const source = target && typeof target === "object" ? target : {};
+        const names = {};
+        for (const name in source)
+            names[name] = true;
+        for (const name in pending)
+            names[name] = true;
+        const merged = {};
+        for (const name in names) {
+            const pendingValue = pending[name];
+            const baseValue = base[name];
+            const targetValue = source[name];
+            if (pendingValue && typeof pendingValue === "object" && !Array.isArray(pendingValue) && baseValue
+                    && typeof baseValue === "object" && !Array.isArray(baseValue) && targetValue
+                    && typeof targetValue === "object" && !Array.isArray(targetValue)) {
+                merged[name] = root.mergeDirty(targetValue, baseValue, pendingValue);
+            } else if (pendingValue !== undefined
+                       && JSON.stringify(pendingValue) !== JSON.stringify(baseValue)) {
+                merged[name] = pendingValue;
+            } else if (targetValue !== undefined) {
+                merged[name] = targetValue;
+            }
+        }
+        return merged;
+    }
+
+    function finishLoad() {
+        const pending = root.pendingTree;
+        const baseline = root.baselineTree;
+        root.pendingTree = null;
+        root.baselineTree = null;
+        root.loading = true;
+        if (pending)
+            root.loadFromObject(root.mergeDirty(ConfigService.rawConfig, baseline, pending));
+        else
+            root.loadFromObject(ConfigService.rawConfig);
+        root.loading = false;
+        root.loaded = true;
+        if (root.configVersionDirty || pending) {
+            root.configVersionDirty = false;
+            root.save();
+        }
+        root.settingsLoaded();
     }
 
     Connections {
         target: ConfigService
         function onConfigLoaded() {
-            root.loading = true;
-            root.loadFromObject(ConfigService.rawConfig);
-            root.loading = false;
-            root.loaded = true;
-            // The version chain reshaped something: persist the migrated
-            // shape (and the configVersion stamp) once, right after the
-            // load that triggered it.
-            if (root.configVersionDirty) {
-                root.configVersionDirty = false;
-                root.save();
-            }
-            root.settingsLoaded();
+            root.finishLoad();
         }
     }
 
     Component.onCompleted: {
-        if (ConfigService.storeReady) {
-            root.loading = true;
-            root.loadFromObject(ConfigService.rawConfig);
-            root.loading = false;
-            root.loaded = true;
-            if (root.configVersionDirty) {
-                root.configVersionDirty = false;
-                root.save();
-            }
-            root.settingsLoaded();
-        }
+        root.baselineTree = root.toJson();
+        if (ConfigService.storeReady)
+            root.finishLoad();
     }
 }

@@ -486,7 +486,8 @@ Item {
                             slot.lastPlace = slot.place;
                     }
                     Component.onCompleted: Qt.callLater(() => {
-                        slot.ready = true;
+                        if (slot)
+                            slot.ready = true;
                     })
 
                     x: slot.shown ? slot.shown.col * (slot.colW + root.gap) : 0

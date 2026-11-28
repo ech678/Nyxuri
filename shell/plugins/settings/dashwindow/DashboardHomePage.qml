@@ -100,14 +100,21 @@ Item {
         }
     ]
 
-    readonly property real cpuTemperature: Format.isNumber(SystemMonitorService.cpu.packageTemperatureCelsius) ? SystemMonitorService.cpu.packageTemperatureCelsius : SystemMonitorService.cpu.temperatureCelsius
+    readonly property real cpuTemperature: {
+        const packageTemp = SystemMonitorService.cpu ? SystemMonitorService.cpu.packageTemperatureCelsius : undefined;
+        if (Format.isNumber(packageTemp))
+            return packageTemp;
+        const plainTemp = SystemMonitorService.cpu ? SystemMonitorService.cpu.temperatureCelsius : undefined;
+        return Format.isNumber(plainTemp) ? plainTemp : 0;
+    }
 
     // sysmon network is a per-interface map; sum it into one up/down rate.
     readonly property var net: SystemMonitorService.network || ({})
-    readonly property real netDownBytes: (root.net.interfaces || []).reduce(function (sum, iface) {
+    readonly property var netInterfaces: Array.isArray(root.net.interfaces) ? root.net.interfaces : []
+    readonly property real netDownBytes: root.netInterfaces.reduce(function (sum, iface) {
         return sum + (Format.isNumber(iface.downloadBytesPerSecond) ? iface.downloadBytesPerSecond : 0);
     }, 0)
-    readonly property real netUpBytes: (root.net.interfaces || []).reduce(function (sum, iface) {
+    readonly property real netUpBytes: root.netInterfaces.reduce(function (sum, iface) {
         return sum + (Format.isNumber(iface.uploadBytesPerSecond) ? iface.uploadBytesPerSecond : 0);
     }, 0)
 

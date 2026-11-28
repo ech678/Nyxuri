@@ -17,9 +17,21 @@ QtObject {
         const path = urlStr.replace(/^file:\/\//, "");
         const parts = path.split("/").filter(Boolean);
         const basename = parts.length > 0 ? parts[parts.length - 1] : "";
+        let name = basename;
+        try {
+            name = decodeURIComponent(basename);
+        } catch (error) {
+            name = basename;
+        }
+        let localPath = path;
+        try {
+            localPath = decodeURIComponent(path);
+        } catch (error) {
+            localPath = path;
+        }
         const isFolder = !basename.includes(".") || urlStr.endsWith("/");
         return {
-            name: decodeURIComponent(basename),
+            name: name,
             available: true,
             isFolder: isFolder,
             isDirectory: isFolder,
@@ -27,6 +39,7 @@ QtObject {
             icon: isFolder ? "folder" : "text-x-generic",
             mime: isFolder ? "inode/directory" : "application/octet-stream",
             mimeType: isFolder ? "inode/directory" : "application/octet-stream",
+            path: localPath,
             url: urlStr
         };
     }

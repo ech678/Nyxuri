@@ -7,6 +7,7 @@ Manages enabled plugin records, form slots, active shell choice, and third-party
 import fcntl
 import json
 import os
+import sys
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,10 +28,11 @@ def store_path() -> Path:
 
 
 def _read_raw() -> dict[str, Any]:
+    path = store_path()
     try:
-        data = json.loads(store_path().read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(data, dict):
-            return {}
+            raise ValueError(f"state.json top level is {type(data).__name__}, not an object")
         # Clean legacy ghost keys if present. update_state() writes back from
         # this dict, so an in-memory drop is also the physical cleanup on the
         # engine's next ledger write.
@@ -43,7 +45,29 @@ def _read_raw() -> dict[str, Any]:
             # the islandEnabled config gate by the shell's config migration.
             plugins.pop("shell.keystone", None)
         return data
-    except (OSError, ValueError, TypeError):
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError, TypeError) as exc:
+        try:
+            if path.is_file():
+                raw = path.read_bytes()
+                preserved = None
+                for candidate in sorted(path.parent.glob(f"{path.name}.corrupt-*")):
+                    try:
+                        if candidate.is_file() and candidate.read_bytes() == raw:
+                            preserved = candidate
+                            break
+                    except OSError:
+                        continue
+                if preserved is None:
+                    stamp = int(datetime.now(timezone.utc).timestamp())
+                    preserved = path.with_name(f"{path.name}.corrupt-{stamp}")
+                    preserved.write_bytes(raw)
+                sys.stderr.write(
+                    f"[!] state.json unreadable ({exc}); preserved at {preserved}\n"
+                )
+        except OSError:
+            pass
         return {}
 
 
@@ -67,8 +91,25 @@ def _store_lock(path: Path):
 
 def _write_locked(path: Path, data: dict[str, Any]) -> None:
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(tmp, path)
+    payload = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+    try:
+        with tmp.open("w", encoding="utf-8") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+        dir_fd = os.open(path.parent, os.O_DIRECTORY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+    except BaseException:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise
 
 
 def read_state() -> dict[str, Any]:

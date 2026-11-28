@@ -180,8 +180,14 @@ Singleton {
             return false;
         copyGeneration = generation;
         copier.command = ["wl-copy", "--", value];
+        copier.settled = false;
         copier.running = true;
         return true;
+    }
+    function reportCopyResult(succeeded) {
+        if (!root.active || root.copyGeneration !== root.generation)
+            return;
+        root.feedback = succeeded ? I18n.tr("Copied") : I18n.tr("Could not copy the result");
     }
     onActiveChanged: invalidate()
     onToolChanged: {
@@ -223,12 +229,34 @@ Singleton {
             root.exited = true;
             root.finish();
         }
+        onRunningChanged: {
+            if (worker.running || root.exited)
+                return;
+            Qt.callLater(() => {
+                if (worker.running || root.exited)
+                    return;
+                root.exited = true;
+                root.collected = true;
+                root.finish();
+            });
+        }
     }
     Process {
         id: copier
+        property bool settled: true
         onExited: code => {
-            if (root.active && root.copyGeneration === root.generation)
-                root.feedback = code === 0 ? I18n.tr("Copied") : I18n.tr("Could not copy the result");
+            copier.settled = true;
+            root.reportCopyResult(code === 0);
+        }
+        onRunningChanged: {
+            if (copier.running || copier.settled)
+                return;
+            Qt.callLater(() => {
+                if (copier.running || copier.settled)
+                    return;
+                copier.settled = true;
+                root.reportCopyResult(false);
+            });
         }
     }
 

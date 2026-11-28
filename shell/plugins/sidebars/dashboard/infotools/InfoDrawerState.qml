@@ -198,6 +198,8 @@ Singleton {
 
     Component.onDestruction: {
         saveTimer.stop();
+        if (root.pendingSave)
+            root.save();
         if (ensureStateDir)
             ensureStateDir.running = false;
     }

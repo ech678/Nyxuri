@@ -66,8 +66,8 @@ Item {
     readonly property color playInk: ColorUtils.ensureReadable(root.isPlaying ? M3Palette.primaryForeground : M3Palette.surfaceForeground, root.playContainer, 4.5)
     // end4 hover semantics: playing mixes toward the hover layer (0.87),
     // paused jumps to the primary-container hover pair.
-    readonly property color playHover: root.isPlaying ? ColorUtils.mix(M3Palette.primary, Appearance.colors.colLayer1Hover, 0.87) : ColorUtils.mix(M3Palette.primaryContainer, M3Palette.onPrimaryContainer, 0.9)
-    readonly property color playActive: root.isPlaying ? ColorUtils.mix(M3Palette.primary, Appearance.colors.colLayer1Active, 0.7) : ColorUtils.mix(M3Palette.primaryContainer, M3Palette.onPrimaryContainer, 0.78)
+    readonly property color playHover: root.isPlaying ? ColorUtils.mix(M3Palette.primary, Appearance.colors.colLayer1Hover, 0.87) : M3Palette.primaryContainerHover
+    readonly property color playActive: root.isPlaying ? ColorUtils.mix(M3Palette.primary, Appearance.colors.colLayer1Active, 0.7) : M3Palette.primaryContainerActive
     readonly property color transparentHover: ColorUtils.applyAlpha(root.mediaInk, 0.12)
     readonly property color transparentActive: ColorUtils.applyAlpha(root.mediaInk, 0.22)
 

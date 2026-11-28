@@ -232,6 +232,14 @@ Singleton {
             root.statusExited = true;
             root.finishStatus();
         }
+        onRunningChanged: {
+            if (running || root.statusExited)
+                return;
+            root.statusExitCode = -1;
+            root.statusExited = true;
+            root.statusFinished = true;
+            root.finishStatus();
+        }
     }
     Process {
         id: searchProcess
@@ -247,6 +255,14 @@ Singleton {
             root.searchExited = true;
             root.finishSearch();
         }
+        onRunningChanged: {
+            if (running || root.searchExited)
+                return;
+            root.searchExitCode = -1;
+            root.searchExited = true;
+            root.searchFinished = true;
+            root.finishSearch();
+        }
     }
     Process {
         id: actionProcess
@@ -260,6 +276,14 @@ Singleton {
         onExited: code => {
             root.actionExitCode = code;
             root.actionExited = true;
+            root.finishAction();
+        }
+        onRunningChanged: {
+            if (running || root.actionExited)
+                return;
+            root.actionExitCode = -1;
+            root.actionExited = true;
+            root.actionFinished = true;
             root.finishAction();
         }
     }

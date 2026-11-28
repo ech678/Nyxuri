@@ -27,8 +27,24 @@ Singleton {
             required property string filePath
             command: [Paths.stableKey, "file", action, filePath, "--format", "json"]
             running: true
+            property bool settled: false
             stdout: StdioCollector {
                 id: output
+            }
+            function complete(response) {
+                if (request.settled)
+                    return;
+                request.settled = true;
+                root.finished(request.action, request.filePath, response);
+                request.destroy();
+            }
+            onRunningChanged: {
+                if (request.running || request.settled)
+                    return;
+                Qt.callLater(() => {
+                    if (!request.settled)
+                        request.complete(null);
+                });
             }
             onExited: exitCode => {
                 let response = null;
@@ -46,8 +62,7 @@ Singleton {
                                                                                                            === -1)))
                         response = null;
                 } catch (error) {}
-                root.finished(action, filePath, response);
-                request.destroy();
+                request.complete(response);
             }
         }
     }

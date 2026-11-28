@@ -112,18 +112,16 @@ Item {
                 id: hover
             }
         }
+    }
 
-        // BarGroup's default property is items-only (gridLayout.children);
-        // handlers ride the same z-above wrapper the group itself uses.
-        Item {
-            anchors.fill: parent
-            z: 1
+    Item {
+        anchors.fill: parent
+        z: 1
 
-            TapHandler {
-                acceptedButtons: Qt.LeftButton
-                gesturePolicy: TapHandler.ReleaseWithinBounds
-                onTapped: root.toggle()
-            }
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            gesturePolicy: TapHandler.ReleaseWithinBounds
+            onTapped: root.toggle()
         }
     }
 

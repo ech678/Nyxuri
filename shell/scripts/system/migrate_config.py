@@ -9,6 +9,7 @@ config.toml renames (B1: [keystone] → [island] with the ledger verdict).
 
 import argparse
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -36,6 +37,21 @@ def load_json_safely(path: Path) -> dict | list | None:
     except Exception as e:
         sys.stderr.write(f"[migrate_config] Warning reading {path.name}: {e}\n")
         return None
+
+
+def as_float(value, fallback: float) -> float:
+    try:
+        result = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return fallback
+    return result if math.isfinite(result) else fallback
+
+
+def as_int(value, fallback: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError):
+        return fallback
 
 
 def merge_legacy_configs(config_dir: Path) -> dict:
@@ -95,17 +111,17 @@ def merge_legacy_configs(config_dir: Path) -> dict:
     dc_data = load_json_safely(config_dir / "display-color.json")
     if isinstance(dc_data, dict):
         merged["display"] = {
-            "gamma": float(dc_data.get("gamma", 1.0)),
-            "contrast": float(dc_data.get("contrast", 1.0)),
-            "dimming": float(dc_data.get("dimming", 1.0)),
+            "gamma": as_float(dc_data.get("gamma"), 1.0),
+            "contrast": as_float(dc_data.get("contrast"), 1.0),
+            "dimming": as_float(dc_data.get("dimming"), 1.0),
             "nightEnabled": bool(dc_data.get("nightEnabled", False)),
-            "nightTemperature": int(dc_data.get("nightTemperature", 5500)),
-            "dayTemperature": int(dc_data.get("dayTemperature", 6500)),
+            "nightTemperature": as_int(dc_data.get("nightTemperature"), 5500),
+            "dayTemperature": as_int(dc_data.get("dayTemperature"), 6500),
             "useIP": bool(dc_data.get("useIP", False)),
             "mode": str(dc_data.get("mode", "fixed")),
-            "start": int(dc_data.get("start", 1200)),
-            "end": int(dc_data.get("end", 420)),
-            "transition": int(dc_data.get("transition", 30)),
+            "start": as_int(dc_data.get("start"), 1200),
+            "end": as_int(dc_data.get("end"), 420),
+            "transition": as_int(dc_data.get("transition"), 30),
             "latitude": dc_data.get("latitude"),
             "longitude": dc_data.get("longitude"),
         }
@@ -116,17 +132,17 @@ def merge_legacy_configs(config_dir: Path) -> dict:
         merged["idle"] = {
             "policyEnabled": bool(idle_data.get("policyEnabled", True)),
             "dimEnabled": bool(idle_data.get("dimEnabled", False)),
-            "dimTimeout": float(idle_data.get("dimTimeout", 300)),
-            "dimFraction": float(idle_data.get("dimFraction", 0.35)),
+            "dimTimeout": as_float(idle_data.get("dimTimeout"), 300),
+            "dimFraction": as_float(idle_data.get("dimFraction"), 0.35),
             "dimRespectInhibitors": bool(idle_data.get("dimRespectInhibitors", True)),
             "lockEnabled": bool(idle_data.get("lockEnabled", True)),
-            "lockTimeout": float(idle_data.get("lockTimeout", 600)),
+            "lockTimeout": as_float(idle_data.get("lockTimeout"), 600),
             "lockRespectInhibitors": bool(idle_data.get("lockRespectInhibitors", True)),
             "displayOffEnabled": bool(idle_data.get("displayOffEnabled", True)),
-            "displayOffTimeout": float(idle_data.get("displayOffTimeout", 900)),
+            "displayOffTimeout": as_float(idle_data.get("displayOffTimeout"), 900),
             "displayOffRespectInhibitors": bool(idle_data.get("displayOffRespectInhibitors", True)),
             "suspendEnabled": bool(idle_data.get("suspendEnabled", False)),
-            "suspendTimeout": float(idle_data.get("suspendTimeout", 1800)),
+            "suspendTimeout": as_float(idle_data.get("suspendTimeout"), 1800),
             "suspendRespectInhibitors": bool(idle_data.get("suspendRespectInhibitors", True)),
         }
 
@@ -140,7 +156,10 @@ def merge_legacy_configs(config_dir: Path) -> dict:
             "systemMonitorNetworkInterface", "storageCapacityDiskDevice",
             "systemMonitorIntervalMs", "controlPlaneResourceSampling", "useTwelveHourClock",
             "sidebarClockStyle", "drawerGridLayout", "systemCards", "recordingVideoDirectory",
-            "recordingGifDirectory", "recordingMicrophoneDirectory", "recordingSystemAudioDirectory"
+            "recordingGifDirectory", "recordingMicrophoneDirectory", "recordingSystemAudioDirectory",
+            "sidebarCookieSides", "sidebarCookieConstantlyRotate", "sidebarCookieHourMarks",
+            "sidebarCookieTimeIndicators", "sidebarCookieDialStyle", "sidebarCookieHourHandStyle",
+            "sidebarCookieMinuteHandStyle", "sidebarCookieSecondHandStyle", "sidebarCookieDateStyle"
         )
         merged["preferences"] = {k: uip_data[k] for k in pref_keys if k in uip_data}
 

@@ -14,6 +14,7 @@ Singleton {
 
     readonly property bool storeReady: ConfigService.storeReady
     property var toggles: defaultToggles()
+    property bool _writing: false
 
     function defaultToggles() {
         return [
@@ -116,17 +117,21 @@ Singleton {
     function save() {
         if (!root.storeReady)
             return;
-
-        ConfigService.updateSection("bar.quickToggles", root.toggles);
+        if (root._writing)
+            return;
+        root._writing = true;
+        try {
+            ConfigService.updateSection("bar.quickToggles", root.toggles);
+        } finally {
+            root._writing = false;
+        }
     }
 
     function loadFromConfigStore() {
+        if (root._writing)
+            return;
         const qtData = ConfigService.getSection("bar.quickToggles", null);
-        if (qtData)
-            root.toggles = root.normalizeToggles(qtData);
-        else
-            root.toggles = root.defaultToggles();
-        root.refreshBindings();
+        root.toggles = qtData ? root.normalizeToggles(qtData) : root.defaultToggles();
     }
 
     Connections {

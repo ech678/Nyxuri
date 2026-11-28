@@ -16,6 +16,7 @@ Singleton {
     property bool storeReady: false
     property bool savePending: false
     property bool loading: false
+    property bool degraded: false
     property string lastError: ""
 
     signal configLoaded
@@ -65,6 +66,8 @@ Singleton {
     }
 
     function requestSave() {
+        if (root.degraded)
+            return;
         if (!root.storeReady || root.loading) {
             root.savePending = true;
             return;
@@ -73,6 +76,10 @@ Singleton {
     }
 
     function saveNow() {
+        if (root.degraded) {
+            root.savePending = false;
+            return;
+        }
         if (!root.storeReady || root.loading) {
             root.savePending = true;
             return;
@@ -112,7 +119,10 @@ Singleton {
         stdout: StdioCollector {
             id: migrationStdout
         }
-        onExited: {
+        onExited: exitCode => {
+            if (exitCode !== 0)
+                console.warn("[ConfigService] legacy config migration failed (exit " + exitCode
+                             + "); legacy settings were not absorbed");
             // Stamp the file once so the next launch takes the fast path.
             root.savePending = true;
             root.storeReady = true;
@@ -156,11 +166,16 @@ Singleton {
             root.loading = true;
             try {
                 const text = configFile.text().trim();
-                root.rawConfig = Toml.parse(text || "{}");
+                root.rawConfig = text === "" ? {} : Toml.parse(text);
                 root.lastError = "";
+                root.degraded = false;
             } catch (error) {
                 root.lastError = String(error);
+                root.loading = false;
+                root.savePending = false;
+                root.degraded = true;
                 console.warn("[ConfigService] parse error; leaving existing config untouched:", error);
+                return;
             }
             root.loading = false;
             root.configLoaded();
@@ -172,7 +187,7 @@ Singleton {
                 // If legacy absorption produced data, use it; otherwise empty object
                 let absorbed = {};
                 try {
-                    const raw = migrationStdout.value ? migrationStdout.value.trim() : "";
+                    const raw = migrationStdout.text ? migrationStdout.text.trim() : "";
                     if (raw && raw.length > 2)
                         absorbed = JSON.parse(raw);
                 } catch (e) {

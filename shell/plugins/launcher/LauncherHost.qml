@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.services
+import "../../commons/SpotlightCommands.js" as Commands
 
 Scope {
     id: root
@@ -58,8 +59,11 @@ Scope {
     }
 
     function runCommand(name: string): string {
+        const commandEntry = typeof Commands !== "undefined" ? Commands.exact(String(name || "")) : null;
+        if (typeof Commands !== "undefined" && (!commandEntry || commandEntry.kind === "override"))
+            return "INVALID_COMMAND";
         if (!root.active) {
-            root.initialCommand = name || "";
+            root.initialCommand = name;
             root.initialMode = "";
             root.active = true;
             return "EXECUTED";
@@ -68,7 +72,17 @@ Scope {
     }
 
     function normalizedMode(mode: string): string {
-        return launcherItem ? launcherItem.normalizedMode(mode) : (mode || "");
+        const requested = String(mode || "").toLowerCase();
+        return requested === "search" || requested === "apps" || requested === "wallpapers" || requested
+                === "clipboard" || requested === "files" || requested === "commands" ? requested : "";
+    }
+
+    function openMode(mode: string): string {
+        const localMode = root.normalizedMode(mode || "");
+        if (localMode === "")
+            return "INVALID_MODE";
+        root.openSpotlight(localMode);
+        return localMode.toUpperCase();
     }
 
     // Unit-owned IPC surface (unit-model.md §6): the launcher's spotlight
@@ -123,11 +137,7 @@ Scope {
         }
 
         function openMode(mode: string): string {
-            if (root.normalizedMode(mode || "") === "")
-                return "INVALID_MODE";
-
-            root.openSpotlight(mode);
-            return String(mode).toUpperCase();
+            return root.openMode(mode);
         }
     }
 

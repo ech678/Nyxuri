@@ -118,6 +118,7 @@ Singleton {
         property color m3surfaceDim: "#0f1416"
         property color m3surfaceTint: "#88d0ec"
         property color m3surfaceVariant: "#40484c"
+        property color m3success: root.effectiveMatugenMode === "dark" ? "#7fdc93" : "#2e7d32"
         property color m3tertiary: "#c3c3eb"
         property color m3tertiaryContainer: "#434465"
         property color m3tertiaryFixed: "#e1e0ff"

@@ -71,6 +71,7 @@ Item {
     }
 
     signal loadFailed(string source, string message)
+    signal contentReady(string source)
 
     function isColorSource(path) {
         return !WallpaperSource.isImage(path);
@@ -163,6 +164,7 @@ Item {
         if (root.nextSource === "" || !root.nextViewport.ready)
             return;
         root.lastError = "";
+        root.contentReady(root.nextSource);
         if (root.nextIsImmediate) {
             root.setImmediate(root.nextSource);
             return;
@@ -173,6 +175,7 @@ Item {
     function requestWallpaper(path, immediate) {
         const requested = path || "";
         root.lastError = "";
+        root.contentReady(requested);
         if (requested === "") {
             root.setImmediate("");
             return;

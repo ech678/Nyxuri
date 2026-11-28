@@ -43,7 +43,8 @@ Singleton {
         printErrors: false
         onLoaded: {
             try {
-                root.schemePreviews = JSON.parse(previewsFile.text());
+                const parsed = JSON.parse(previewsFile.text());
+                root.schemePreviews = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : ({});
             } catch (e) {
                 root.schemePreviews = ({});
             }
@@ -59,6 +60,7 @@ Singleton {
     property var tokenColors: ({})
     property string activeMode: PersonalizationConfig.themeMode === "light" ? "light" : "dark"
     property string mirrorError: ""
+    property string paletteError: ""
     property var renderErrors: ({})
     property string mirrorPath: Paths.xdgConfigHome + "/noctalia/palettes/nyxuri.json"
 
@@ -69,15 +71,18 @@ Singleton {
         watchChanges: true
         printErrors: false
         onLoaded: {
+            root.paletteError = "";
             try {
                 root.applyPaletteModes(JSON.parse(modesFile.text()));
             } catch (e) {
                 console.warn("Unable to apply palette modes:", e);
+                root.paletteError = String(e);
                 root.tokenColors = {};
             }
         }
         onFileChanged: modesFile.reload()
         onLoadFailed: error => {
+            root.paletteError = FileViewError.toString(error);
             root.tokenColors = {};
         }
     }
@@ -440,7 +445,13 @@ Singleton {
         id: stepWatchdog
 
         interval: 10000
-        onTriggered: root.renderFailed(root.watchStepLabel + " timed out after 10 seconds")
+        onTriggered: {
+            const message = root.watchStepLabel + " timed out after 10 seconds";
+            if (root.hookProcess)
+                root.finishHook(true, message);
+            else
+                root.renderFailed(message);
+        }
     }
 
     function watchStep(step) {
@@ -504,11 +515,12 @@ Singleton {
                 if (exitCode !== 0)
                     throw new Error(listError.text.trim() || I18n.tr("Unable to read template"));
                 const result = JSON.parse(listOutput.text);
-                if (result.schemaVersion !== 1 || !Array.isArray(result.templates))
+                if (!result || typeof result !== "object" || result.schemaVersion !== 1 || !Array.isArray(
+                            result.templates))
                     throw new Error(I18n.tr("Invalid template data"));
                 if (JSON.stringify(result.templates) !== JSON.stringify(root.templates))
                     root.templates = result.templates;
-                root.error = result.errors.join("\n");
+                root.error = Array.isArray(result.errors) ? result.errors.join("\n") : "";
                 root.ready = true;
                 PersonalizationConfig.discoverMatugenTemplates(root.templates);
                 // The palette-modes FileView usually loads before this listing

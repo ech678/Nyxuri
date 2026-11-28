@@ -70,6 +70,14 @@ ${SystemIdentityService.quickshellVersion}` : "…"
             }
         }
 
+        InlineStatusBanner {
+            Layout.fillWidth: true
+            Layout.topMargin: NexusStyle.spacing.small
+            visible: !SystemIdentityService.ready && SystemIdentityService.errorMessage !== ""
+            tone: "error"
+            message: SystemIdentityService.errorMessage
+        }
+
         // System
         PreferenceHeader {
             Layout.topMargin: NexusStyle.spacing.medium

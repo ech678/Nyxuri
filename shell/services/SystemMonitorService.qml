@@ -165,8 +165,10 @@ Singleton {
             root._stopStream();
         else if (root._streamProcess.running)
             root._prepareReplacement();
-        else
+        else if (root.reconnectAttempt < root.maximumReconnectAttempts)
             root._startStream();
+        else
+            root.state = "error";
     }
 
     // Module changes must not reset the counter baselines of visible cards.
@@ -843,6 +845,10 @@ Singleton {
         preload: false
         printErrors: false
         onLoaded: root._readSwapMeminfo(text())
+        onLoadFailed: {
+            root.swapTotalBytes = 0;
+            root.swapUsedBytes = 0;
+        }
     }
 
     Component.onCompleted: {

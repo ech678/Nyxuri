@@ -308,7 +308,8 @@ Scope {
                                     property bool rightSidebarHold: false
                                     property bool mediaControlsHold: false
                                     property bool controlPanelHold: false
-                                    readonly property bool interactionHold: contextMenuHold || leftSidebarHold || rightSidebarHold || mediaControlsHold || controlPanelHold
+                                    property bool styleEditorHold: false
+                                    readonly property bool interactionHold: contextMenuHold || leftSidebarHold || rightSidebarHold || mediaControlsHold || controlPanelHold || styleEditorHold
                                     readonly property bool pointerShow: !overviewOwnsEdge && hoverRegion.containsMouse && !barRoot.gapEnterSuppressed
                                     property bool mustShow: pointerShow || superShow || interactionHold
                                     property bool reservationActive: false
@@ -538,6 +539,9 @@ Scope {
                                                 barRoot.controlPanelHold = false;
                                             else if (barRoot.pointerShow)
                                                 barRoot.controlPanelHold = true;
+                                        }
+                                        function onBarStyleEditorOpenChanged(): void {
+                                            barRoot.styleEditorHold = GlobalStates.barStyleEditorOpen;
                                         }
                                     }
 

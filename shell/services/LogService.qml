@@ -114,7 +114,7 @@ Singleton {
             // The previous session's log must be rotated out BEFORE the
             // first write of this one, or the mv races the fresh file.
             if (root._firstFlush)
-                ensureDir.running = true;
+                root._settlePreviousSession();
             else
                 root._write();
         }

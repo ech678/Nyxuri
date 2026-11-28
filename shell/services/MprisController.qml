@@ -8,7 +8,7 @@ import qs.services
 Singleton {
     id: root
 
-    readonly property var activePlayer: MediaService.active ?? MediaService.primaryPlayer ?? null
+    readonly property var activePlayer: MediaService.active ?? null
     readonly property var players: MediaService.list
 
     function artUrlOf(player) {

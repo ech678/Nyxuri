@@ -20,6 +20,9 @@ from typing import Optional, Tuple
 
 from nyxuri.state.store import active_shell, custom_shell_bin, set_shell
 
+READY_TIMEOUT_COLD = 60.0
+READY_TIMEOUT_WARM = 20.0
+
 
 def normalize_shell_name(name: str) -> str:
     """Normalize shell slot names, accepting aliases 'custom' and 'nyxuri'."""
@@ -33,7 +36,7 @@ def normalize_shell_name(name: str) -> str:
 
 def find_default_custom_bin() -> str:
     """Discover default nyxuri-shell binary from repo or PATH."""
-    repo_root = Path(__file__).resolve().parent.parent
+    repo_root = Path(__file__).resolve().parent.parent.parent
     local_script = repo_root / "shell" / "nyxuri-shell"
     if local_script.is_file() and os.access(local_script, os.X_OK):
         return str(local_script)
@@ -158,7 +161,7 @@ def probe_running_shells() -> "list[Tuple[str, int]]":
 
     def nyxuri_shell_dirs() -> "set[Path]":
         dirs: "set[Path]" = set()
-        for raw in (resolve_custom_bin(), str(Path(__file__).resolve().parent.parent / "shell")):
+        for raw in (resolve_custom_bin(), str(Path(__file__).resolve().parent.parent.parent / "shell")):
             if not raw:
                 continue
             path = Path(raw)
@@ -356,7 +359,7 @@ def wait_shell_ready(shell_name: str, proc: subprocess.Popen, bin_path: str, tim
 
         if norm == "nyxuri-shell":
             try:
-                res = subprocess.run([bin_path, "--check-ready"], timeout=0.5, capture_output=True, check=False)
+                res = subprocess.run([bin_path, "--check-ready"], timeout=5.0, capture_output=True, check=False)
                 if res.returncode == 0:
                     return True
             except Exception:
@@ -714,7 +717,7 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
         return False, f"Failed to spawn target shell: {e}"
 
     # Bounded readiness probe
-    is_ready = wait_shell_ready(target, new_proc, target_bin, timeout=4.0)
+    is_ready = wait_shell_ready(target, new_proc, target_bin, timeout=READY_TIMEOUT_COLD)
     if not is_ready:
         # Target failed to report ready or crashed: cleanup the whole field —
         # this spawn AND any residue from earlier switches — so the rollback
@@ -734,11 +737,11 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
         if current_name != "none" and old_bin:
             try:
                 restore_proc = spawn_shell(current_name, old_bin)
-                restored = wait_shell_ready(current_name, restore_proc, old_bin, timeout=4.0)
+                restored = wait_shell_ready(current_name, restore_proc, old_bin, timeout=READY_TIMEOUT_WARM)
             except Exception:
                 pass
 
-        fail_msg = f"Target shell {target} failed readiness probe within 4.0s."
+        fail_msg = f"Target shell {target} failed readiness probe within {READY_TIMEOUT_COLD:.1f}s."
         if restored:
             handoff_theme_state(current_name, captured_mode, captured_wallpaper)
             fail_msg += f" Successfully recovered and rolled back to {current_name}."
@@ -752,7 +755,7 @@ def hot_switch_shell(target: str, custom_bin_override: Optional[str] = None) -> 
     return True, f"Successfully switched to {target} (PID: {new_proc.pid})"
 
 
-def restart_shell(timeout: float = 4.0) -> Tuple[bool, str]:
+def restart_shell(timeout: float = READY_TIMEOUT_COLD) -> Tuple[bool, str]:
     """Hard-restart the desktop shell that is currently running.
 
     Deliberately narrower than hot_switch_shell(): this verb never rewrites
@@ -813,8 +816,20 @@ def restart_shell(timeout: float = 4.0) -> Tuple[bool, str]:
 
 # --- Shell Event Bridge ---
 
-def _shell_ipc_dir() -> Optional[Path]:
+def _shell_ipc_dir(pid: Optional[int] = None) -> Optional[Path]:
     """The shell config dir a Quickshell IPC call must target (marker: shell.qml)."""
+    if pid is not None:
+        try:
+            raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+        except OSError:
+            raw = b""
+        parts = [part.decode("utf-8", "replace") for part in raw.split(b"\0") if part]
+        for index, part in enumerate(parts):
+            if part != "-p" or index + 1 >= len(parts):
+                continue
+            candidate = Path(parts[index + 1])
+            if (candidate / "shell.qml").is_file():
+                return candidate
     bin_path = resolve_custom_bin()
     if not bin_path:
         return None
@@ -825,6 +840,17 @@ def _shell_ipc_dir() -> Optional[Path]:
     for candidate in (resolved.parent, resolved.parent.parent):
         if (candidate / "shell.qml").is_file():
             return candidate
+    return None
+
+
+def running_shell_dir() -> Optional[Path]:
+    """Resolve the shell tree of a live nyxuri-shell process, if any."""
+    for name, pid in probe_running_shells():
+        if name != "nyxuri-shell":
+            continue
+        found = _shell_ipc_dir(pid)
+        if found is not None:
+            return found
     return None
 
 
@@ -839,7 +865,9 @@ def notify_plugin_changed(plugin_id: str, state: str) -> None:
     running = [pid for name, pid in probe_running_shells() if name == "nyxuri-shell"]
     if not running:
         return
-    shell_dir = _shell_ipc_dir()
+    shell_dir = running_shell_dir()
+    if shell_dir is None:
+        shell_dir = _shell_ipc_dir()
     if shell_dir is None:
         log_msg("WARN", f"plugin-changed for {plugin_id}: shell dir not resolvable")
         return

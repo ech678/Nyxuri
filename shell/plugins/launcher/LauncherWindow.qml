@@ -497,7 +497,7 @@ PanelWindow {
         if (!activation)
             return;
         if (activation.provider === "map") {
-            ActionGateway.requestSettingsOpen("language");
+            ActionGateway.requestSettingsOpen("language-region.section.region-weather-location");
         } else if (activation.provider === "settings-open")
             ActionGateway.requestSettingsOpen();
         else if (activation.provider === "settings")

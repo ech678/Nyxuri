@@ -380,6 +380,10 @@ en = "{Colors.BOLD_GREEN}[✓]{Colors.RESET} Removed: {0}"
 zh = "{Colors.DARK_GRAY}[!]{Colors.RESET} 不存在，跳过: {0}"
 en = "{Colors.DARK_GRAY}[!]{Colors.RESET} Not present, skipped: {0}"
 
+[uninstall_skip_unmanaged]
+zh = "{Colors.DARK_GRAY}[!]{Colors.RESET} 非 Nyxuri 管理，保留原样: {0}"
+en = "{Colors.DARK_GRAY}[!]{Colors.RESET} Not managed by Nyxuri, left untouched: {0}"
+
 [uninstall_failed]
 zh = "{Colors.BOLD_RED}[✗]{Colors.RESET} 失败: {0}"
 en = "{Colors.BOLD_RED}[✗]{Colors.RESET} Failed: {0}"
@@ -953,6 +957,14 @@ en = "{0}: missing declared packages: {1}"
 zh = "{0}: 被已启用的依赖方阻断: {1}"
 en = "{0}: blocked by enabled dependents: {1}"
 
+[cli_step_invalid_form]
+zh = "{0}: 形态名不合法: {1}"
+en = "{0}: invalid form name: {1}"
+
+[cli_step_form_not_found]
+zh = "{0}: 没有名为 '{1}' 的形态（{CLI_CMD} use {0} list 查看）"
+en = "{0}: no such form '{1}' (see `{CLI_CMD} use {0} list`)"
+
 [cli_step_archived]
 zh = "收存 {0} 个自定义文件"
 en = "archived {0} custom file(s) to the Archive"
@@ -964,6 +976,10 @@ en = "foreign file(s) left untouched: {0}"
 [cli_step_packages_left]
 zh = "包保留在系统: {0}"
 en = "package(s) kept on the system: {0}"
+
+[cli_step_drift_archived]
+zh = "已归档 {0} 个你改动过的文件"
+en = "{0} edited file(s) archived to drift"
 
 [cli_list_header]
 zh = "{Colors.BOLD}插件                          状态          形态{Colors.RESET}"
@@ -1020,6 +1036,10 @@ en = "Updated"
 [cli_detail_never_switched]
 zh = "从未开关：实机白纸，无记录"
 en = "Never switched: white paper, no records"
+
+[cli_detail_manifest_unreadable]
+zh = "manifest 无法读取，declared 信息不可用: {0}"
+en = "manifest unreadable, declarations unavailable: {0}"
 
 [cli_detail_audit]
 zh = "状态"
@@ -1323,6 +1343,10 @@ en = "  {Colors.BOLD_RED}[✗]{Colors.RESET} Failed to apply form '{1}' to {0}"
 [preset_not_found]
 zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} {0} 没有名为 '{1}' 的形态"
 en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} No form '{1}' for {0}"
+
+[preset_axis_unsupported]
+zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} {0} 是单文件或共享生活区插件，形态轴不适用"
+en = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} {0} is a single-file or merge plugin; form axes do not apply"
 
 [preset_name_reserved]
 zh = "  {Colors.BOLD_YELLOW}[!]{Colors.RESET} 形态名 '{0}' 是保留字（default = 回默认）"

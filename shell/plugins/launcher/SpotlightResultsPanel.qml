@@ -566,7 +566,7 @@ Item {
                             id: wallpaperImage
 
                             anchors.fill: parent
-                            source: wallpaperDelegate.entry.preview
+                            source: wallpaperDelegate.entry.preview || ""
                             sourceSize.width: Math.ceil(previewFrame.width * 2)
                             sourceSize.height: Math.ceil(previewFrame.height * 2)
                             asynchronous: true
@@ -631,7 +631,7 @@ Item {
                         anchors.leftMargin: 8
                         anchors.rightMargin: 8
                         height: root.style.wallpaperLabelHeight
-                        text: wallpaperDelegate.entry.title
+                        text: wallpaperDelegate.entry.title || ""
                         color: wallpaperDelegate.index === root.selectedIndex
                                ? root.style.selectedContentColor : Appearance.colors.colOnSurface
                         font.family: Fonts.ui
@@ -651,7 +651,7 @@ Item {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     acceptedButtons: Qt.LeftButton
-                    Accessible.name: wallpaperDelegate.entry.title
+                    Accessible.name: wallpaperDelegate.entry.title || ""
                     Accessible.role: Accessible.ListItem
                     onClicked: {
                         root.selectionRequested(wallpaperDelegate.index);

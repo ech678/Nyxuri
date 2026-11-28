@@ -19,6 +19,7 @@ Singleton {
     property var ipLocation: null
     property bool locationAttempted: false
     property var _consumers: ({})
+    property int _appliedScheduledTemperature: -1
     property var schedule: Schedule.evaluate(preferences, Date.now())
     readonly property bool available: true
     readonly property var outputs: []
@@ -132,6 +133,21 @@ Singleton {
         schedule = Schedule.evaluate(effective, Date.now());
         deadline.interval = Math.max(100, Math.min(2147483647, schedule.wake - Date.now()));
         deadline.restart();
+        applyScheduledTemperature();
+    }
+
+    function applyScheduledTemperature() {
+        if (!ready || !preferences.nightEnabled || preferences.mode === "fixed") {
+            root._appliedScheduledTemperature = -1;
+            return;
+        }
+        const target = Math.round(schedule.temperature / 50) * 50;
+        if (target === root._appliedScheduledTemperature)
+            return;
+        root._appliedScheduledTemperature = target;
+        eyecareTempProc.command = [Paths.xdgConfigHome + "/niri/scripts/toggle-eyecare.sh", "set-temp",
+                                   String(target)];
+        eyecareTempProc.running = true;
     }
 
     function setConsumer(owner, active) {
@@ -163,17 +179,24 @@ Singleton {
     Process {
         id: effectsCheckProc
         command: ["readlink", Paths.xdgConfigHome + "/niri/effects.kdl"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const target = (this.text || "").trim();
-                const isOn = target.indexOf("effects_eyecare.kdl") >= 0;
-                if (root.ready && root.preferences.nightEnabled !== isOn) {
-                    root.preferences = Schedule.normalize(Object.assign({}, root.preferences, {
-                                                                            nightEnabled: isOn
-                                                                        }));
-                    root.evaluate();
-                }
+        property string linkTarget: ""
+        onRunningChanged: {
+            if (running)
+                effectsCheckProc.linkTarget = "";
+        }
+        onExited: exitCode => {
+            if (exitCode !== 0 || effectsCheckProc.linkTarget === "")
+                return;
+            const isOn = effectsCheckProc.linkTarget.indexOf("effects_eyecare.kdl") >= 0;
+            if (root.ready && root.preferences.nightEnabled !== isOn) {
+                root.preferences = Schedule.normalize(Object.assign({}, root.preferences, {
+                                                                        nightEnabled: isOn
+                                                                    }));
+                root.evaluate();
             }
+        }
+        stdout: StdioCollector {
+            onStreamFinished: effectsCheckProc.linkTarget = (this.text || "").trim()
         }
     }
 

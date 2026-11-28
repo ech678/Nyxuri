@@ -80,7 +80,16 @@ def _write_ini(path: Path, key: str, value: str) -> None:
     parser = configparser.ConfigParser(interpolation=None)
     parser.optionxform = str
     if path.is_file():
-        parser.read(path, encoding="utf-8")
+        try:
+            parser.read(path, encoding="utf-8")
+        except (configparser.Error, UnicodeDecodeError) as exc:
+            print(f"[!] settings.ini unreadable ({exc}); rewriting from scratch: {path}", file=sys.stderr)
+            try:
+                shutil.copy2(path, path.with_suffix(path.suffix + ".bak"))
+            except OSError:
+                pass
+            parser = configparser.ConfigParser(interpolation=None)
+            parser.optionxform = str
     if not parser.has_section("Settings"):
         parser.add_section("Settings")
     parser.set("Settings", key, value)
@@ -118,11 +127,17 @@ def _noctalia_toggle() -> "str | None":
 
 
 def _nyxuri_shell_dir() -> Path | None:
-    """Resolve the running Nyxuri Shell tree from its recorded binary."""
+    """Resolve the running Nyxuri Shell tree from a live process or its binary."""
     try:
-        from nyxuri.system.shell import resolve_custom_bin
+        from nyxuri.system.shell import resolve_custom_bin, running_shell_dir
     except Exception:
         return None
+    try:
+        live = running_shell_dir()
+    except Exception:
+        live = None
+    if live is not None:
+        return Path(live)
     try:
         resolved = resolve_custom_bin()
     except Exception:

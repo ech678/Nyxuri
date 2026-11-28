@@ -60,6 +60,8 @@ Singleton {
     property bool preferencesReady: false
     property bool _systemThemePollingRequested: false
     property bool savePending: false
+    property var pendingExport: null
+    property var baselineExport: null
     property bool systemThemeWriteQueued: false
     property bool requestedDarkMode: false
     property bool startupAligned: false
@@ -503,12 +505,25 @@ Singleton {
     }
 
     function save() {
+        const snapshot = root.exportPreferences();
         if (!root.storeReady) {
             root.savePending = true;
+            root.pendingExport = snapshot;
             return;
         }
         root.savePending = false;
-        ConfigService.updateSection("preferences", root.exportPreferences());
+        root.pendingExport = null;
+        ConfigService.updateSection("preferences", snapshot);
+    }
+
+    function mergeDirty(target, baseline, pending) {
+        const merged = Object.assign({}, target && typeof target === "object" ? target : {});
+        const base = baseline && typeof baseline === "object" ? baseline : {};
+        for (const key in pending) {
+            if (JSON.stringify(pending[key]) !== JSON.stringify(base[key]))
+                merged[key] = pending[key];
+        }
+        return merged;
     }
 
     function loadFromObject(parsed) {
@@ -562,10 +577,19 @@ Singleton {
 
     function loadFromConfigStore() {
         const prefData = ConfigService.getSection("preferences", null);
-        if (prefData)
-            root.loadFromObject(prefData);
-        else
-            root.loadFromObject({});
+        const loaded = prefData && typeof prefData === "object" ? prefData : {};
+        if (root.pendingExport) {
+            const pending = root.pendingExport;
+            const baseline = root.baselineExport;
+            root.pendingExport = null;
+            root.baselineExport = null;
+            root.savePending = false;
+            root.loadFromObject(root.mergeDirty(loaded, baseline, pending));
+            root.preferencesReady = true;
+            root.save();
+            return;
+        }
+        root.loadFromObject(loaded);
         root.preferencesReady = true;
     }
 
@@ -581,6 +605,7 @@ Singleton {
     }
 
     Component.onCompleted: {
+        root.baselineExport = root.exportPreferences();
         if (ConfigService.storeReady)
             root.loadFromConfigStore();
     }
@@ -615,6 +640,11 @@ Singleton {
                 root.darkMode = prefersDark;
                 root.systemThemeModeObserved(prefersDark ? "dark" : "light");
             }
+        }
+        onExited: exitCode => {
+            if (exitCode === 0)
+                return;
+            root.systemThemeLastError = I18n.tr("Unable to sync the system color scheme");
         }
     }
 

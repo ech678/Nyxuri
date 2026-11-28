@@ -12,7 +12,7 @@ Item {
     property date now: new Date()
     readonly property bool authenticating: context.authRevealed
     readonly property bool busy: context.unlockInProgress
-    readonly property real uiScale: Math.min(1, (width - 48) / 360, height / 720)
+    readonly property real uiScale: Math.max(0, Math.min(1, (width - 48) / 360, height / 720))
     readonly property real contentWidth: 360 * uiScale
     readonly property real avatarSize: 240 * uiScale
     readonly property real fieldHeight: 64 * uiScale

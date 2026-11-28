@@ -107,10 +107,16 @@ common_args=(--mode "$mode" --type "$scheme" --json hex -q)
 # the log by way of a pipe that strips the JSON payload.
 if [[ -n "$image_path" ]]; then
     matugen --source-color-index 0 image "$image_path" "${common_args[@]}" \
-        > "$runtime_dir/raw.json" 2> "$runtime_dir/log"
+        > "$runtime_dir/raw.json" 2> "$runtime_dir/log" || matugen_status=$?
 else
     matugen color hex "$source_color" "${common_args[@]}" \
-        > "$runtime_dir/raw.json" 2> "$runtime_dir/log"
+        > "$runtime_dir/raw.json" 2> "$runtime_dir/log" || matugen_status=$?
+fi
+
+if [[ ${matugen_status:-0} -ne 0 ]]; then
+    printf 'matugen exited with status %s\n' "$matugen_status" >&2
+    tail -c 2000 -- "$runtime_dir/log" >&2 || true
+    exit 1
 fi
 
 # Keep only the leading JSON object. matugen emits the palette first and hook

@@ -314,6 +314,7 @@ Singleton {
     property Process localPluginWatcher: Process {
         property bool watcherStarted: false
         property int watcherRestartAttempts: 0
+        property bool watcherUnavailableReported: false
         command: ["inotifywait", "-m", "-r", "-q", "-e", "close_write,create,delete,move", "--format", "%w%f",
             registry.pluginsDir]
         stdout: SplitParser {
@@ -337,6 +338,16 @@ Singleton {
             } else {
                 console.warn("PluginRegistry: plugin watcher unavailable (exit " + exitCode + ")");
             }
+        }
+        onRunningChanged: {
+            if (running || watcherStarted || watcherUnavailableReported)
+                return;
+            Qt.callLater(() => {
+                if (running || watcherStarted || watcherUnavailableReported)
+                    return;
+                watcherUnavailableReported = true;
+                console.warn("PluginRegistry: plugin watcher could not be started; third-party manifest changes are not watched");
+            });
         }
     }
 

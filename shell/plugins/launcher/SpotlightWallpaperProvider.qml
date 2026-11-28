@@ -43,16 +43,16 @@ Item {
         if (!wp || !StateProjection.isEnabled("wallpaper")) {
             root.filteredPaths = [];
             root.loadedCount = 0;
-            root.results = [];
             wallpaperResultModel.clear();
+            root.results = [];
             return;
         }
         const basenameFn = (wp && wp.basename) ? wp.basename : (p => p.split("/").pop());
         const next = LocalSearch.wallpaperPaths(wp.wallpapers || [], query, basenameFn);
         root.filteredPaths = next;
         root.loadedCount = 0;
-        root.results = [];
         wallpaperResultModel.clear();
+        root.results = [];
         root.loadMore(root.pageSize);
     }
 

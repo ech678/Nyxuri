@@ -1359,6 +1359,12 @@ def format_steps(steps) -> List[str]:
             key, arg = "cli_step_missing_packages", head.split(": ", 1)[1]
         elif head.startswith("blocked-by-enabled-dependents: "):
             key, arg = "cli_step_blocked", head.split(": ", 1)[1]
+        elif head.startswith("invalid-form: "):
+            key, arg = "cli_step_invalid_form", head.split(": ", 1)[1]
+            color, mark = Colors.BOLD_RED, "[✗]"
+        elif head.startswith("form-not-found: "):
+            key, arg = "cli_step_form_not_found", head.split(": ", 1)[1]
+            color, mark = Colors.BOLD_RED, "[✗]"
         else:
             key, color, mark = "cli_step_failed", Colors.BOLD_RED, "[✗]"
         notes = []
@@ -1369,6 +1375,8 @@ def format_steps(steps) -> List[str]:
                 notes.append(msg("cli_step_foreign", part.split(": ", 1)[1]))
             elif part.startswith("packages-left: "):
                 notes.append(msg("cli_step_packages_left", part.split(": ", 1)[1]))
+            elif part.startswith("drift-archived: "):
+                notes.append(msg("cli_step_drift_archived", part.split(": ", 1)[1]))
         line = msg(key, step.plugin, arg) if arg else msg(key, step.plugin)
         if notes:
             line += " (" + "; ".join(notes) + ")"

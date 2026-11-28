@@ -259,6 +259,12 @@ Singleton {
         id: fetchKeyboardLayoutsProcess
 
         command: ["niri", "msg", "-j", "keyboard-layouts"]
+        onRunningChanged: {
+            if (running)
+                fetchKeyboardLayoutsWatchdog.restart();
+            else
+                fetchKeyboardLayoutsWatchdog.stop();
+        }
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -268,6 +274,19 @@ Singleton {
                     // The event stream still carries later changes.
                 }
             }
+        }
+    }
+
+    Timer {
+        id: fetchKeyboardLayoutsWatchdog
+        interval: 5000
+        repeat: false
+        onTriggered: {
+            if (!fetchKeyboardLayoutsProcess.running)
+                return;
+            console.warn("NiriDriver: keyboard-layouts query timed out");
+            fetchKeyboardLayoutsProcess.running = false;
+            root.fetchKeyboardLayouts();
         }
     }
 

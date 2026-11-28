@@ -46,6 +46,10 @@ Singleton {
                 console.warn("[I18nService] Failed to parse TOML translations for", root.language, e);
             }
         }
+        onLoadFailed: error => {
+            root.lastError = "cannot read " + tomlFileView.path + ": " + error;
+            console.warn("[I18nService] " + root.lastError);
+        }
     }
 
     function normalizeLanguage(lang) {

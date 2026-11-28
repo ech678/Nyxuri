@@ -284,7 +284,7 @@ def build_tasks(sizes, flat_roots):
         if not live:
             continue
         if key == "cache":
-            fn = lambda live=live: [fence_clear(r, exclude={"nv"}) for r in live]
+            fn = lambda live=live: [fence_clear(r, exclude={"nv", CLI_CMD}) for r in live]
         else:
             fn = lambda live=live: [fence_clear(r) for r in live]
         add(key, label, target, group_size(live), False, fn)

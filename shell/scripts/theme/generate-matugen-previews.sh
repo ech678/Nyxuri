@@ -51,9 +51,7 @@ work=$(mktemp -d "$runtime_home/previews.XXXXXX")
 cleanup() { rm -rf -- "$work"; }
 trap cleanup EXIT
 
-previews="$work/previews.json"
-printf '{\n' > "$previews"
-first=true
+accepted=()
 
 # matugen scheme values; the Noctalia-facing names map 1:1 for the m3-* family
 # (see the scheme contract in the P4 ledger).
@@ -71,20 +69,22 @@ for scheme in scheme-tonal-spot scheme-content scheme-expressive scheme-fidelity
     if ! jq -e '.colors | (type == "object" and (keys | length == 50))' "$work/$scheme.json" >/dev/null 2>&1; then
         continue
     fi
-
-    if [[ "$first" == true ]]; then
-        first=false
-    else
-        printf ',\n' >> "$previews"
+    reduced="$work/$scheme.reduced.json"
+    if ! jq -c --arg id "$scheme" '{($id): (.colors | with_entries(.value = .value.default.color))}' \
+            "$work/$scheme.json" > "$reduced" 2>/dev/null; then
+        continue
     fi
-    jq -c --arg id "$scheme" '{($id): (.colors | with_entries(.value = .value.default.color))}' "$work/$scheme.json" >> "$previews" \
-        || { first=true; printf '\n' >> "$previews"; }
+    accepted+=("$reduced")
 done
 
-printf '\n}\n' >> "$previews"
-if ! jq -e . "$previews" >/dev/null 2>&1; then
+if [[ ${#accepted[@]} -eq 0 ]]; then
     exit 0
 fi
 mkdir -p -- "$generated_home/nyxuri"
-jq -S . "$previews" > "$generated_home/nyxuri/.scheme-previews.tmp" \
-    && mv -f -- "$generated_home/nyxuri/.scheme-previews.tmp" "$generated_home/nyxuri/scheme-previews.json"
+target="$generated_home/nyxuri/scheme-previews.json"
+staged="$generated_home/nyxuri/.scheme-previews.tmp"
+if jq -S -s 'add' "${accepted[@]}" > "$staged" 2>/dev/null; then
+    mv -f -- "$staged" "$target"
+else
+    rm -f -- "$staged"
+fi

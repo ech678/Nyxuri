@@ -20,14 +20,27 @@ Scope {
     readonly property var activeWindow: root.dashboardStyle ? dashboardLoader.item : controlCenterLoader.item
     property bool _inOpen: false
 
+    function pageKnown(pageId) {
+        const wanted = String(pageId || "");
+        if (wanted === "")
+            return true;
+        if (typeof SpotlightCatalog.route === "function" && SpotlightCatalog.route(wanted) !== null)
+            return true;
+        if (typeof SpotlightCatalog.setting === "function" && SpotlightCatalog.setting(wanted) !== null)
+            return true;
+        if (root.activeWindow && typeof root.activeWindow.knowsPage === "function")
+            return root.activeWindow.knowsPage(wanted);
+        return typeof SpotlightCatalog.route !== "function";
+    }
+
     function open(pageId) {
         if (root._inOpen)
             return false;
         root._inOpen = true;
         try {
             if (root.active && root.activeWindow) {
-                SettingsBackend.open(pageId || "");
-                return true;
+                const result = SettingsBackend.open(pageId || "");
+                return result !== false;
             }
             root.pendingPage = pageId || "";
             root.pendingSearchId = "";
@@ -54,10 +67,8 @@ Scope {
         if (root.active) {
             root.close();
             return false;
-        } else {
-            root.open(pageId);
-            return true;
         }
+        return root.open(pageId);
     }
 
     function openSearch(searchId) {
@@ -140,6 +151,8 @@ Scope {
         target: "control-center"
 
         function open(pageId: string): string {
+            if (!root.pageKnown(pageId))
+                return "UNKNOWN_PAGE";
             return ActionGateway.requestSettingsOpen(pageId || "") ? "OK" : "UNAVAILABLE";
         }
 
@@ -148,6 +161,8 @@ Scope {
         }
 
         function toggle(pageId: string): string {
+            if (!root.pageKnown(pageId))
+                return "UNKNOWN_PAGE";
             return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
         }
     }
@@ -156,6 +171,8 @@ Scope {
         target: "settings"
 
         function open(pageId: string): string {
+            if (!root.pageKnown(pageId))
+                return "UNKNOWN_PAGE";
             return ActionGateway.requestSettingsOpen(pageId || "") ? "OK" : "UNAVAILABLE";
         }
 
@@ -164,6 +181,8 @@ Scope {
         }
 
         function toggle(pageId: string): string {
+            if (!root.pageKnown(pageId))
+                return "UNKNOWN_PAGE";
             return ActionGateway.requestSettingsToggle(pageId || "") ? "OPENING" : "CLOSING";
         }
     }

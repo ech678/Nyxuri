@@ -21,6 +21,7 @@ from nyxuri.ui.tui import read_key, responsive_hint, show_logo, raw_input_mode, 
 from nyxuri.deploy.atomic import (
     CarryPolicy,
     atomic_replace_item,
+    recover_interrupted_swaps,
 )
 from nyxuri.deploy.manifest import (
     ModuleManifest,
@@ -78,7 +79,9 @@ def config_item_src(item: str) -> Path:
     from nyxuri.system.env import get_env
     src = _item_src(item)
     m = load_manifest(src)
-    return src / m.target if m.target else src
+    if not m.target:
+        return src
+    return src / m.target.replace("\\", "/").rstrip("/").rsplit("/", 1)[-1]
 
 def _phase_atomic_deployment(
     items_to_deploy: List[str],
@@ -100,6 +103,7 @@ def _phase_atomic_deployment(
     env = get_env()
     config_dir = env.config_dir
     config_dir.mkdir(parents=True, exist_ok=True)
+    recover_interrupted_swaps()
 
     failed_items: List[str] = []
     for item in items_to_deploy:
@@ -114,8 +118,15 @@ def _phase_atomic_deployment(
             # Single-file plugin (§4 target exception): one file inside the
             # plugin dir lands at ~/.config/<target>. Form axes are
             # directory affordances and do not apply.
-            src = _item_src(item) / manifest.target
-            dest = config_dir / manifest.target
+            payload_rel = manifest.target.replace("\\", "/").rstrip("/").rsplit("/", 1)[-1]
+            src = _item_src(item) / payload_rel
+            try:
+                dest = living_path(manifest, config_dir)
+            except ValueError as exc:
+                failed_items.append(item)
+                print(msg("log_deploy_config_failed", item), file=sys.stderr)
+                log_msg("ERROR", f"Refused unsafe target for plugin '{item}': {exc}")
+                continue
             if not src.is_file():
                 failed_items.append(item)
                 print(msg("log_deploy_config_failed", item), file=sys.stderr)
@@ -183,7 +194,7 @@ def _phase_atomic_deployment(
 
         # Executable permissions — manifest chmod globs, relative to app dir
         for pattern in manifest.chmod:
-            if not pattern or os.path.isabs(pattern):
+            if not pattern or os.path.isabs(pattern) or ".." in pattern.replace("\\", "/").split("/"):
                 continue
             for p in dest.glob(pattern):
                 if p.is_file():
@@ -202,7 +213,8 @@ def _phase_atomic_deployment(
         else:
             disp_dest = str(dest)
         print(msg("log_deploy_config_item", disp_dest))
-        log_msg("INFO", f"Deployed config {dest.relative_to(config_dir).as_posix()} (plugin {item})")
+        log_rel = dest.relative_to(config_dir).as_posix() if dest.is_relative_to(config_dir) else str(dest)
+        log_msg("INFO", f"Deployed config {log_rel} (plugin {item})")
 
     return failed_items
 
@@ -234,7 +246,7 @@ def merge_deploy_plugin(item: str, manifest: ModuleManifest) -> Optional[List[st
             shutil.copy2(path, target, follow_symlinks=False)
             laid.append(rel.as_posix())
         for pattern in manifest.chmod:
-            if not pattern or os.path.isabs(pattern):
+            if not pattern or os.path.isabs(pattern) or ".." in pattern.replace("\\", "/").split("/"):
                 continue
             for p in dest.glob(pattern):
                 if p.is_file():

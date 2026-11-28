@@ -19,6 +19,8 @@ Singleton {
     property var values: ({})
     property bool storeReady: false
     property bool savePending: false
+    property bool degraded: false
+    property string saveError: ""
 
     readonly property string filePath: Paths.configHome + "/plugin-settings.json"
 
@@ -65,13 +67,16 @@ Singleton {
     }
 
     function save() {
+        if (root.degraded) {
+            root.savePending = false;
+            return;
+        }
         if (!root.storeReady) {
             root.savePending = true;
             return;
         }
         root.savePending = false;
         storeFile.setText(JSON.stringify(root.values, null, 2) + "\n");
-        storeFile.save();
     }
 
     FileView {
@@ -86,20 +91,36 @@ Singleton {
         onLoaded: {
             try {
                 const parsed = JSON.parse(storeFile.text().trim() || "{}");
-                if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+                if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
                     root.values = parsed;
+                    root.degraded = false;
+                } else {
+                    root.degraded = true;
+                }
             } catch (error) {
-                console.warn("[PluginSettings] cannot parse " + root.filePath + ": " + error);
+                root.degraded = true;
+                console.warn("[PluginSettings] cannot parse " + root.filePath + "; refusing to overwrite it:",
+                             error);
             }
             root.storeReady = true;
-            if (root.savePending)
+            if (root.savePending && !root.degraded)
                 root.save();
         }
         onLoadFailed: error => {
-            // A missing file is the pristine case, not an error.
+            if (error === FileViewError.FileNotFound)
+                root.degraded = false;
+            else {
+                root.degraded = true;
+                console.warn("[PluginSettings] cannot read " + root.filePath + "; refusing to overwrite it:", error);
+            }
             root.storeReady = true;
-            if (root.savePending)
+            if (root.savePending && !root.degraded)
                 root.save();
+        }
+        onSaved: root.saveError = ""
+        onSaveFailed: error => {
+            root.saveError = FileViewError.toString(error);
+            console.warn("[PluginSettings] cannot write " + root.filePath + ":", root.saveError);
         }
     }
 

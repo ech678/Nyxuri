@@ -41,6 +41,10 @@ Singleton {
         const record = root._units[unitId];
         if (!record)
             return true;
+        if (typeof record === "string")
+            return record !== "disabled";
+        if (typeof record !== "object" || Array.isArray(record))
+            return true;
         return record.state === "enabled";
     }
 

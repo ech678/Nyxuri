@@ -115,6 +115,17 @@ Item {
                 root._reportFailure(I18n.tr("Lyric fetcher produced no output"));
             }
         }
+
+        onRunningChanged: {
+            if (fetchProcess.running || root._settled)
+                return;
+            Qt.callLater(() => {
+                if (root._settled || fetchProcess.running)
+                    return;
+                timeoutTimer.stop();
+                root._reportFailure(I18n.tr("Lyrics unavailable"));
+            });
+        }
     }
 
     // Turns the collected stdout into a payload and reports it.

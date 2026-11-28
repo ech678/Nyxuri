@@ -74,10 +74,14 @@ Rectangle {
     }
 
     function forecastModel() {
-        const count = Math.min(root.forecastCount, WeatherService.hourlyForecast.count());
+        const model = WeatherService.hourlyForecast;
+        if (!model)
+            return [];
+        const count = Math.min(root.forecastCount, typeof model.count === "function" ? model.count() : Number(
+                                   model.length || 0));
         const items = [];
         for (let i = 0; i < count; i += 1)
-            items.push(WeatherService.hourlyForecast.get(i));
+            items.push(typeof model.get === "function" ? model.get(i) : model[i]);
         return items;
     }
 

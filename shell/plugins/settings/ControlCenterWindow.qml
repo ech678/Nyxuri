@@ -6,6 +6,7 @@ import QtQuick.Window
 import Quickshell
 import Quickshell.Wayland
 import qs.commons
+import qs.commons.i18n
 import qs.services
 import qs.ui
 
@@ -52,6 +53,8 @@ FloatingWindow {
     readonly property bool pageRendersTitle: pageLoader.item && pageLoader.item.rendersPageTitle === true
 
     function prepareSearchTarget(entry, serial) {
+        if (!entry || !entry.path || entry.path.length === 0)
+            return;
         searchRequestSerial = serial;
         root.openPage(entry.path[0]);
         root.advanceSearchTarget(entry, serial);
@@ -60,7 +63,7 @@ FloatingWindow {
     function advanceSearchTarget(entry, serial) {
         if (searchRequestSerial !== serial)
             return "cancelled";
-        if (pages[currentPage].id !== entry.path[0])
+        if (!entry || !entry.path || !pages || !pages[currentPage] || pages[currentPage].id !== entry.path[0])
             return "cancelled";
         if (!pageLoader.ready || !pageLoader.item)
             return "loading";
@@ -127,6 +130,25 @@ FloatingWindow {
         return Qt.resolvedUrl("SchemaSettingsPage.qml");
     }
 
+    function knowsPage(pageId) {
+        if (!pageId)
+            return false;
+        for (let index = 0; index < pages.length; ++index) {
+            const p = pages[index];
+            if (p.id === pageId || (p.aliases && p.aliases.includes(pageId)))
+                return true;
+        }
+        const targetRoute = SpotlightCatalog.route(pageId) || SpotlightCatalog.setting(pageId);
+        if (!targetRoute || !targetRoute.path || targetRoute.path.length === 0)
+            return pageId === "general";
+        const topId = targetRoute.path[0];
+        for (let index = 0; index < pages.length; ++index) {
+            if (pages[index].id === topId)
+                return true;
+        }
+        return false;
+    }
+
     function openPage(pageId) {
         if (!pageId)
             return false;
@@ -139,7 +161,7 @@ FloatingWindow {
             }
         }
 
-        const targetRoute = SpotlightCatalog.route(pageId);
+        const targetRoute = SpotlightCatalog.route(pageId) || SpotlightCatalog.setting(pageId);
         if (targetRoute && targetRoute.path && targetRoute.path.length > 0) {
             const topId = targetRoute.path[0];
             for (let index = 0; index < pages.length; ++index) {
@@ -148,7 +170,8 @@ FloatingWindow {
                     // B1 tab merge: a dotted route (bar.island, bar.island-clock)
                     // addresses a subpage — push it through the section hook
                     // so IPC opens land on the subpage, not just the tab.
-                    if (targetRoute.path.length > 1 && typeof targetRoute.path[1] === "string") {
+                    if (!targetRoute.anchor && targetRoute.path.length > 1
+                            && typeof targetRoute.path[1] === "string") {
                         root.pendingPageSection = targetRoute.path[1];
                         root.applyPendingPageSection();
                     }
@@ -329,15 +352,34 @@ FloatingWindow {
             anchors.topMargin: NexusStyle.frameBand + NexusStyle.chromeInset
             anchors.bottomMargin: NexusStyle.frameBand + NexusStyle.chromeInset
 
-            InlineStatusBanner {
+            ColumnLayout {
                 z: 200
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.margins: Metrics.spacingM
-                visible: SettingsSearch.searchError !== ""
-                tone: "error"
-                message: SettingsSearch.searchError
+                spacing: Metrics.spacingS
+
+                InlineStatusBanner {
+                    Layout.fillWidth: true
+                    visible: SettingsSearch.searchError !== ""
+                    tone: "error"
+                    message: SettingsSearch.searchError
+                }
+
+                InlineStatusBanner {
+                    Layout.fillWidth: true
+                    visible: ConfigService.degraded
+                    tone: "error"
+                    message: I18n.tr("The configuration file could not be read; settings are running on defaults and changes are not being saved")
+                    StyledToolTip {
+                        extraVisibleCondition: configErrorHover.hovered
+                        text: ConfigService.lastError
+                    }
+                    HoverHandler {
+                        id: configErrorHover
+                    }
+                }
             }
 
             ColumnLayout {

@@ -102,13 +102,13 @@ Item {
             UtilButton {
                 toolTipText: Translation.tr("On-screen keyboard")
                 iconText: "keyboard"
-                onClicked: GlobalStates.oskOpen = !GlobalStates.oskOpen
+                onClicked: GlobalActions.runById("toggle-osk", "")
             }
         }
         Component {
             id: legacyKeyboard
             CircleUtilButton {
-                onClicked: GlobalStates.oskOpen = !GlobalStates.oskOpen
+                onClicked: GlobalActions.runById("toggle-osk", "")
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0
@@ -129,13 +129,13 @@ Item {
             UtilButton {
                 toolTipText: Translation.tr("Choose wallpaper")
                 iconText: "imagesmode"
-                onClicked: GlobalStates.wallpaperSelectorOpen = !GlobalStates.wallpaperSelectorOpen
+                onClicked: ActionGateway.requestSettingsOpen("wallpaper")
             }
         }
         Component {
             id: legacyWallpaper
             CircleUtilButton {
-                onClicked: GlobalStates.wallpaperSelectorOpen = !GlobalStates.wallpaperSelectorOpen
+                onClicked: ActionGateway.requestSettingsOpen("wallpaper")
                 MaterialSymbol {
                     horizontalAlignment: Qt.AlignHCenter
                     fill: 0

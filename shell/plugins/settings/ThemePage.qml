@@ -287,6 +287,20 @@ NexusPageBase {
             }
         }
 
+        InlineStatusBanner {
+            Layout.fillWidth: true
+            visible: UiPreferences.systemThemeLastError !== ""
+            tone: "error"
+            message: I18n.tr("Unable to sync the system color scheme")
+            StyledToolTip {
+                extraVisibleCondition: systemThemeErrorHover.hovered
+                text: UiPreferences.systemThemeLastError
+            }
+            HoverHandler {
+                id: systemThemeErrorHover
+            }
+        }
+
         // Settings panel style
         PreferenceHeader {
             text: I18n.tr("Settings panel style")
@@ -674,6 +688,20 @@ NexusPageBase {
             }
         }
 
+        InlineStatusBanner {
+            Layout.fillWidth: true
+            visible: TemplateService.paletteError !== ""
+            tone: "error"
+            message: I18n.tr("Unable to read the generated palette")
+            StyledToolTip {
+                extraVisibleCondition: paletteErrorHover.hovered
+                text: TemplateService.paletteError
+            }
+            HoverHandler {
+                id: paletteErrorHover
+            }
+        }
+
         ConnectedRect {
             id: templateCard
 
@@ -739,11 +767,14 @@ NexusPageBase {
 
                         required property var modelData
 
+                        readonly property string renderError: String(TemplateService.renderErrors[modelData.id] || "")
+
                         Layout.fillWidth: true
-                        iconName: modelData.valid ? modelData.icon : "error"
+                        iconName: (modelData.valid && renderError === "") ? modelData.icon : "error"
                         title: modelData.title
-                        supportingText: !modelData.valid ? modelData.error : modelData.origin === "user" ? I18n.tr("User templates") :
-                                                                                                           ""
+                        supportingText: renderError !== "" ? renderError : !modelData.valid ? modelData.error : modelData.origin === "user" ? I18n.tr(
+                                                                                                                        "User templates") :
+                                                                                                                                  ""
 
                         trailing: Item {
                             implicitWidth: templateRowActions.implicitWidth

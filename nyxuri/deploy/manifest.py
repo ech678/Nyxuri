@@ -542,8 +542,13 @@ def living_path(m: ModuleManifest, config_dir: Path) -> Path:
     """
     if m.target.startswith(_XDG_PREFIX):
         return _resolve_xdg_target(m.target)
+    if m.target.startswith("~/"):
+        from nyxuri.system.env import assert_contained
+
+        home = get_env().home
+        return assert_contained(Path(os.path.expanduser(m.target)), home)
     if m.target.startswith(("~", "/")):
-        return Path(os.path.expanduser(m.target))
+        raise ValueError(f"unsupported absolute target '{m.target}'")
     raw = m.target or (f"nyxuri/plugins/{m.id}" if m.origin == "third-party" else m.id)
     parts = [p for p in raw.replace("\\", "/").split("/") if p]
     from nyxuri.system.env import is_safe_leaf_name, assert_contained
@@ -647,7 +652,17 @@ def load_manifest(
 
     deployable = ("config" in kinds) and _is_deployable(app_src)
     target_str = str(data.get("target", ""))
-    if target_str and not target_str.startswith(_XDG_PREFIX) and not target_str.startswith(("~", "/")):
+    if target_str.startswith(_XDG_PREFIX):
+        pass
+    elif target_str.startswith("~"):
+        if not target_str.startswith("~/"):
+            raise ValueError(f"target must be '~/<path>', not '{target_str}'")
+        parts = [part for part in target_str[2:].replace("\\", "/").split("/") if part]
+        if not parts or not all(is_safe_leaf_name(part) for part in parts):
+            raise ValueError(f"unsafe target path in manifest: '{target_str}'")
+    elif target_str.startswith("/"):
+        raise ValueError(f"absolute target is not allowed in a manifest: '{target_str}'")
+    elif target_str:
         parts = [part for part in target_str.replace("\\", "/").split("/") if part]
         if not parts or not all(is_safe_leaf_name(part) for part in parts):
             raise ValueError(f"unsafe target path in manifest: '{target_str}'")

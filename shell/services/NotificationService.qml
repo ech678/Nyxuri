@@ -22,6 +22,7 @@ Singleton {
     readonly property bool hasNotifs: popupList.length > 0
 
     property bool historyReady: false
+    property bool historyDegraded: false
     property var pendingSavedFiles: []
     property int unread: 0
     property int idOffset: 0
@@ -70,6 +71,39 @@ Singleton {
             function onClosed(reason) {
                 root.handleNativeClosed(wrapper.notificationId, reason);
             }
+
+            function onBodyChanged() {
+                wrapper.body = wrapper.notification.body || "";
+                root.saveNotifications();
+            }
+
+            function onSummaryChanged() {
+                wrapper.summary = wrapper.notification.summary || wrapper.notification.appName
+                        || I18n.tr("Notification");
+                root.saveNotifications();
+            }
+
+            function onAppNameChanged() {
+                wrapper.appName = wrapper.notification.appName || wrapper.notification.desktopEntry
+                        || I18n.tr("System");
+                root.saveNotifications();
+            }
+
+            function onAppIconChanged() {
+                wrapper.appIcon = wrapper.notification.appIcon || "";
+            }
+
+            function onDesktopEntryChanged() {
+                wrapper.desktopEntry = wrapper.notification.desktopEntry || "";
+            }
+
+            function onImageChanged() {
+                wrapper.image = wrapper.notification.image || "";
+            }
+
+            function onUrgencyChanged() {
+                wrapper.urgency = wrapper.notification.urgency;
+            }
         }
 
         onNotificationChanged: {
@@ -108,6 +142,12 @@ Singleton {
 
     onInitDone: {
         root.historyReady = true;
+        root.flushPendingSavedFiles();
+    }
+
+    function flushPendingSavedFiles() {
+        if (root.pendingSavedFiles.length === 0)
+            return;
         const pending = root.pendingSavedFiles;
         root.pendingSavedFiles = [];
         pending.forEach(item => root.fileSaved(item.title, item.path));
@@ -128,7 +168,7 @@ Singleton {
     function fileSaved(title, path) {
         if (typeof path !== "string" || !path.startsWith("/") || path.indexOf("\u0000") !== -1)
             return;
-        if (!root.historyReady) {
+        if (!root.historyReady && !root.historyDegraded) {
             root.pendingSavedFiles = [...root.pendingSavedFiles,
                                       {
                                           title,
@@ -255,18 +295,37 @@ Singleton {
 
         onLoaded: {
             try {
+                const live = root.list.filter(notif => notif && notif.notification !== null);
                 const fileContents = notifFileView.text();
                 const loaded = JSON.parse(fileContents && fileContents.trim() !== "" ? fileContents : "[]");
                 if (!Array.isArray(loaded)) {
-                    root.list = [];
+                    root.historyDegraded = true;
+                    root.list = live;
                     root.initDone();
+                    root.flushPendingSavedFiles();
                     return;
                 }
 
+                const entries = loaded.filter(notif => notif !== null && typeof notif === "object");
                 let maxId = 0;
-                root.list = loaded.map(notif => {
-                    const notificationId = Number(notif.notificationId || notif.id || 0);
-                    maxId = Math.max(maxId, notificationId);
+                const storedIds = entries.map(notif => {
+                    const rawId = Number(notif.notificationId || notif.id || 0);
+                    const parsed = Number.isFinite(rawId) && rawId > 0 ? Math.floor(rawId) : 0;
+                    if (parsed > maxId)
+                        maxId = parsed;
+                    return parsed;
+                });
+                const usedIds = new Set();
+                for (const notif of live) {
+                    usedIds.add(notif.notificationId);
+                    if (notif.notificationId > maxId)
+                        maxId = notif.notificationId;
+                }
+                const restored = entries.map((notif, index) => {
+                    let notificationId = storedIds[index];
+                    if (notificationId === 0 || usedIds.has(notificationId))
+                        notificationId = ++maxId;
+                    usedIds.add(notificationId);
                     return notifComponent.createObject(root, {
                                                            "notificationId": notificationId,
                                                            "localKind": notif.localKind === "file-saved"
@@ -289,26 +348,32 @@ Singleton {
                                                                       ?? NotificationUrgency.Normal
                                                        });
                 });
+                root.list = restored.concat(live);
                 root.idOffset = maxId;
+                root.historyDegraded = false;
                 root.trimHistory();
                 root.saveNotifications();
                 root.initDone();
             } catch (error) {
                 console.warn("NotificationService failed to load history:", error);
-                root.list = [];
+                root.historyDegraded = true;
+                root.list = live;
                 root.idOffset = 0;
                 root.initDone();
+                root.flushPendingSavedFiles();
             }
         }
 
         onLoadFailed: error => {
             if (error === FileViewError.FileNotFound) {
-                root.list = [];
+                root.historyDegraded = false;
                 root.saveNotifications();
                 root.initDone();
             } else {
                 console.warn("NotificationService failed to load notification file; leaving the existing file untouched:", error);
+                root.historyDegraded = true;
                 root.initDone();
+                root.flushPendingSavedFiles();
             }
         }
 
@@ -431,11 +496,11 @@ Singleton {
             "filePath": notif.filePath,
             "appIcon": root.durableHistorySource(notif.appIcon),
             "appName": notif.appName,
-            "body": notif.body,
+            "body": String(notif.body === undefined || notif.body === null ? "" : notif.body).slice(0, 65536),
             "desktopEntry": notif.desktopEntry,
             "image": root.durableHistorySource(notif.image),
             "receivedAt": notif.receivedAt,
-            "summary": notif.summary,
+            "summary": String(notif.summary === undefined || notif.summary === null ? "" : notif.summary).slice(0, 65536),
             "urgency": notif.urgency
         };
     }
@@ -654,6 +719,7 @@ Singleton {
 
     Component.onDestruction: {
         saveDebounce.stop();
+        notifFileView.setText(root.stringifyList(root.list));
         if (ensureStoreDir)
             ensureStoreDir.running = false;
         root.list.forEach(notif => root.stopPopupTimer(notif));

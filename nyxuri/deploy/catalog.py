@@ -83,14 +83,20 @@ def load_plugin(plugin_id: str) -> ModuleManifest:
 
 
 def dependency_graph() -> dict[str, list[str]]:
-    return {uid: load_plugin(uid).dependencies for uid in plugin_ids()}
+    graph: dict[str, list[str]] = {}
+    for uid in plugin_ids():
+        try:
+            graph[uid] = load_plugin(uid).dependencies
+        except (ValueError, OSError, KeyError):
+            continue
+    return graph
 
 
 def resolve_order(graph: dict[str, list[str]]) -> list[str]:
     """Return plugin ids in dependency-safe enable order (Kahn's algorithm)."""
     in_degree = {u: 0 for u in graph}
     for u, deps in graph.items():
-        for d in deps:
+        for d in dict.fromkeys(deps):
             if d in in_degree:
                 in_degree[u] += 1
 

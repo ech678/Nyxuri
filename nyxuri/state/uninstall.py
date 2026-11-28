@@ -176,11 +176,15 @@ def uninstall_nyxuri(mode: str = "") -> bool:
                     suffix += 1
         for item in items:
             p = config_item_dest(item)
-            if p.exists() or p.is_symlink():
-                if archive_dir is not None:
-                    copy_path(p, archive_dir / item)
-                remove_path(p)
-                print(msg("log_remove_item", item))
+            if not (p.exists() or p.is_symlink()):
+                continue
+            if store.get_plugin(item) is None and archive_dir is None:
+                print(msg("uninstall_skip_unmanaged", item))
+                continue
+            if archive_dir is not None:
+                copy_path(p, archive_dir / item)
+            remove_path(p)
+            print(msg("log_remove_item", item))
         if archive_dir is not None:
             print(msg("uninstall_archived", str(archive_dir)))
 

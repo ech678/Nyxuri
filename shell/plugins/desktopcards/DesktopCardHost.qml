@@ -51,8 +51,8 @@ Variants {
         // Read the cache from a binding.  sceneFor() mutates the cache, so
         // calling it from this binding creates a self-invalidating binding
         // loop and can leave the canvas with a null/one-pixel scene.
-        readonly property var scene: (ActionGateway.wallpaperHost && ActionGateway.wallpaperHost.scenes)
-                ? (ActionGateway.wallpaperHost.scenes[window.screenKey] || null) : null
+        readonly property var scene: (ActionGateway.sceneHost && ActionGateway.sceneHost.scenes)
+                ? (ActionGateway.sceneHost.scenes[window.screenKey] || null) : null
         readonly property var screenNames: cardCanvas.screenNames
         readonly property var desktopIds: {
             // Read the state property directly so this binding is
@@ -276,8 +276,8 @@ Variants {
             window.scheduleDesktopLayout("mode-changed");
         }
         Component.onCompleted: {
-            if (ActionGateway.wallpaperHost && ActionGateway.wallpaperHost.sceneFor)
-                ActionGateway.wallpaperHost.sceneFor(window.screenKey);
+            if (ActionGateway.sceneHost && ActionGateway.sceneHost.sceneFor)
+                ActionGateway.sceneHost.sceneFor(window.screenKey);
             DesktopPresentationService.registerHost(window.screenKey, viewport);
             Qt.callLater(function () {
                 window.lastLayoutMode = window.layoutMode;

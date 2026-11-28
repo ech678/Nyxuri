@@ -116,6 +116,7 @@ Scope {
     }
 
     onActiveChanged: {
+        GlobalStates.screenLocked = root.active;
         SystemIdentityService.setUptimeConsumer("lock-screen", root.active);
         SystemMonitorService.setConsumerModules("lock-screen", root.active ? ["cpu", "memory", "disk"] : []);
     }
@@ -127,6 +128,7 @@ Scope {
     Component.onDestruction: {
         preLockCapture.cancel();
         preLockCapture.clear();
+        GlobalStates.screenLocked = false;
         SystemIdentityService.setUptimeConsumer("lock-screen", false);
         SystemMonitorService.clearConsumer("lock-screen");
         if (ActionGateway.sessionLocker === root)
@@ -136,11 +138,11 @@ Scope {
     IpcHandler {
         target: "lock"
 
-        function open() {
+        function open(): string {
             return root.open();
         }
 
-        function isLocked() {
+        function isLocked(): bool {
             return root.isLocked();
         }
     }
@@ -190,6 +192,12 @@ Scope {
 
             internalContext.unlockInProgress = true;
             pam.start();
+            if (!pam.active) {
+                internalContext.unlockInProgress = false;
+                internalContext.currentText = "";
+                internalContext.showFailure = true;
+                internalContext.unlockFailed();
+            }
         }
 
         function finishUnlock() {

@@ -449,11 +449,23 @@ def use_form(app: str, axis: Optional[str], value: str,
     if not axis:
         from nyxuri.deploy.templates import _phase_render_templates
         from nyxuri.deploy.atomic import atomic_replace_item
-        from nyxuri.deploy.manifest import load_manifest_for
+        from nyxuri.deploy.manifest import load_manifest_for, living_path
 
         env = get_env()
-        dest = _safe_child(env.config_dir, app)
-        if not _is_deployable_app(app) or not _is_safe_component(value) or dest is None:
+        if not _is_deployable_app(app) or not _is_safe_component(value):
+            return False
+        try:
+            whole_manifest = load_manifest_for(app)
+        except Exception as e:
+            log_msg("WARN", f"Failed to load manifest for {app}: {e}")
+            return False
+        if whole_manifest.target or whole_manifest.merge:
+            log_msg("WARN", f"{app}: form axes do not apply to a single-file or merge plugin")
+            return False
+        try:
+            dest = living_path(whole_manifest, env.config_dir)
+        except ValueError as e:
+            log_msg("ERROR", f"{app}: refused form switch — {e}")
             return False
         src = _find_form_src(app, value)
         if src is None:
@@ -731,9 +743,17 @@ def apply_form(app: str, name: str) -> bool:
     and renders the result, including the preserved-file section.
     """
     from nyxuri.deploy.forms import _find_form_src
+    from nyxuri.deploy.manifest import load_manifest_for
 
     if not _is_deployable_app(app) or not _is_safe_component(name):
         print(msg("preset_not_found", app, name))
+        return False
+    try:
+        whole_manifest = load_manifest_for(app)
+    except Exception:
+        whole_manifest = None
+    if whole_manifest is not None and (whole_manifest.target or whole_manifest.merge):
+        print(msg("preset_axis_unsupported", app))
         return False
     if _find_form_src(app, name) is None:
         print(msg("preset_not_found", app, name))

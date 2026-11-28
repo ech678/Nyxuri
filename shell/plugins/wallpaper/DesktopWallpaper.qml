@@ -100,8 +100,9 @@ Variants {
                 textureHeight: Math.min(Math.max(1, Math.round(root.height)), 8192)
 
                 onLoadFailed: (source, message) => {
-                    WallpaperService.reportDesktopError(modelData.name, message);
+                    WallpaperService.reportDesktopError(modelData.name, message, source);
                 }
+                onContentReady: WallpaperService.clearDesktopError(modelData.name)
             }
 
             Component.onCompleted: WallpaperSceneService.sceneFor(root.screenKey)

@@ -100,6 +100,7 @@ Singleton {
             return;
 
         root._initializationStarted = true;
+        identityProcess.started = false;
         identityProcess.command = [root.commandName, "sysmon", "system", "--format", "json"];
         identityProcess.running = true;
     }
@@ -182,6 +183,12 @@ Singleton {
 
     Process {
         id: identityProcess
+
+        property bool started: false
+
+        onStarted: identityProcess.started = true
+        onRunningChanged: if (!running && !started && !root.ready)
+                              root.errorMessage = I18n.tr("Unable to read system identity")
 
         onExited: (exitCode, exitStatus) => {
             if (exitCode === 0)

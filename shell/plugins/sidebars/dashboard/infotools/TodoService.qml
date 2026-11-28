@@ -14,6 +14,7 @@ Singleton {
 
     property bool storeReady: false
     property bool ready: false
+    property string saveError: ""
     property var list: []
 
     function normalizeList(value) {
@@ -94,6 +95,8 @@ Singleton {
         id: todoFile
 
         path: root.filePath
+        blockWrites: true
+        atomicWrites: true
 
         onLoaded: {
         try {
@@ -121,7 +124,11 @@ Singleton {
         root.save();
     }
 
-        onSaveFailed: error => console.warn("TodoService failed to save:", error)
+        onSaved: root.saveError = ""
+        onSaveFailed: error => {
+        root.saveError = FileViewError.toString(error);
+        console.warn("TodoService failed to save:", root.saveError);
+    }
     }
 
         Component.onDestruction: {

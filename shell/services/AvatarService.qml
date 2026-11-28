@@ -27,6 +27,7 @@ Singleton {
 
         pendingSource = source;
         busy = true;
+        copyProcess.finished = false;
         copyProcess.command = ["cp", "--", source, avatarPath];
         copyProcess.running = true;
     }
@@ -34,7 +35,15 @@ Singleton {
     Process {
         id: copyProcess
 
-        onExited: exitCode => {
+        property bool finished: false
+
+        onRunningChanged: if (!running && !finished)
+                              Qt.callLater(copyProcess.finish)
+
+        function finish(exitCode) {
+            if (copyProcess.finished)
+                return;
+            copyProcess.finished = true;
             root.busy = false;
             if (exitCode === 0) {
                 root.revision += 1;
@@ -49,6 +58,8 @@ Singleton {
             }
             root.pendingSource = "";
         }
+
+        onExited: exitCode => copyProcess.finish(exitCode)
     }
 
     Component.onDestruction: {

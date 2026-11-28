@@ -134,14 +134,37 @@ Item {
             homeLoader.item.closeChildWindows();
     }
 
+    function knowsPage(pageId) {
+        const wanted = root.pageAliases[pageId] ?? pageId;
+        if (root.pageNames.findIndex(page => page.id === wanted) >= 0)
+            return true;
+        const route = typeof SpotlightCatalog.route === "function" ? SpotlightCatalog.route(pageId) : null;
+        if (!route || !route.path || route.path.length === 0)
+            return false;
+        const topId = root.pageAliases[route.path[0]] ?? String(route.path[0]);
+        return root.pageNames.findIndex(page => page.id === topId) >= 0;
+    }
+
     function openPage(pageId) {
         const wanted = root.pageAliases[pageId] ?? pageId;
         const index = root.pageNames.findIndex(page => page.id === wanted);
-        if (index < 0)
+        if (index >= 0) {
+            if (index !== root.currentPage) {
+                root.pendingPage = index;
+                root.currentPage = index;
+            }
+            return true;
+        }
+        const route = typeof SpotlightCatalog.route === "function" ? SpotlightCatalog.route(pageId) : null;
+        if (!route || !route.path || route.path.length === 0)
             return false;
-        if (index !== root.currentPage) {
-            root.pendingPage = index;
-            root.currentPage = index;
+        const topId = root.pageAliases[route.path[0]] ?? String(route.path[0]);
+        const topIndex = root.pageNames.findIndex(page => page.id === topId);
+        if (topIndex < 0)
+            return false;
+        if (topIndex !== root.currentPage) {
+            root.pendingPage = topIndex;
+            root.currentPage = topIndex;
         }
         return true;
     }

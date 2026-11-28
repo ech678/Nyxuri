@@ -38,6 +38,8 @@ STATE_SYNCED = "Synced"
 STATE_DRIFTED = "Drifted"
 STATE_GHOST = "Ghost"
 
+_DRIFT_DIRNAME = ".drift"
+
 EventSink = Callable[[str, str], None]
 _event_sink: Optional[EventSink] = None
 
@@ -206,9 +208,13 @@ def resnapshot_plugins(plugin_ids: List[str],
 
 def _hash_file(path: Path) -> str:
     digest = hashlib.sha256()
-    with open(path, "rb") as fh:
-        for chunk in iter(lambda: fh.read(65536), b""):
-            digest.update(chunk)
+    try:
+        with open(path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(65536), b""):
+                digest.update(chunk)
+    except OSError as exc:
+        log_msg("WARN", f"cannot hash {path}: {exc}")
+        return ""
     return digest.hexdigest()
 
 
@@ -278,8 +284,12 @@ def _enable_closure(plugin_id: str) -> List[str]:
         if cur in wanted:
             continue
         wanted.add(cur)
-        stack.extend(graph.get(cur, ()))
-    sub = {u: [d for d in graph[u] if d in wanted] for u in wanted}
+        for dep in graph.get(cur, ()):
+            if dep not in graph:
+                log_msg("WARN", f"'{cur}' declares undeclared dependency '{dep}' — ignored")
+                continue
+            stack.append(dep)
+    sub = {u: [d for d in graph.get(u, ()) if d in wanted] for u in wanted if u in graph}
     return resolve_order(sub)
 
 
@@ -359,7 +369,17 @@ def plan_off(plugin_id: str) -> List[str]:
 def _move_into_vault(src: Path, dst: Path) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists() or dst.is_symlink():
-        remove_path(dst)
+        from datetime import datetime, timezone
+
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+        aside = get_env().state_dir / "recovered" / "vault" / stamp / dst.name
+        try:
+            aside.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(dst), str(aside))
+            log_msg("WARN", f"superseded vault entry archived at {aside}")
+        except OSError as exc:
+            log_msg("WARN", f"cannot park previous vault entry {dst}: {exc}")
+            remove_path(dst)
     shutil.move(str(src), str(dst))
 
 
@@ -414,6 +434,8 @@ def _vault_restore(plugin_id: str, dest: Path) -> int:
     count = 0
     dest.mkdir(parents=True, exist_ok=True)
     for entry in sorted(vault.iterdir()):
+        if entry.name == _DRIFT_DIRNAME:
+            continue
         target = dest / entry.name
         if target.exists() or target.is_symlink():
             remove_path(target)
@@ -438,8 +460,30 @@ def _prune_empty_dirs(root: Path) -> None:
             pass
 
 
+def _archive_drift(plugin_id: str, dest: Path, rel: str) -> None:
+    """Move a user-modified managed file into the drift archive before the wipe.
+
+    ``off`` must not silently destroy edits the user made to engine-laid
+    files: a managed file whose current hash differs from the recorded
+    baseline is the user's content now, so it is preserved under
+    ``<vault>/.drift/<stamp>/<rel>`` instead of being unlinked. The stamp
+    keeps successive edit→off cycles from overwriting each other's archive.
+    """
+    src = dest / rel
+    if not (src.exists() or src.is_symlink()):
+        return
+    from datetime import datetime, timezone
+
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+    try:
+        _move_into_vault(src, vault_dir(plugin_id) / _DRIFT_DIRNAME / stamp / rel)
+    except OSError as exc:
+        log_msg("WARN", f"cannot archive drifted file {rel} for {plugin_id}: {exc}")
+
+
 def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
-               manifest: ModuleManifest) -> List[str]:
+               manifest: ModuleManifest,
+               drifted_out: Optional[List[str]] = None) -> List[str]:
     """Remove the plugin's managed files; return foreign survivors, if any.
 
     White-paper rule (plugin-model.md §1.2): a disabled plugin leaves nothing
@@ -459,8 +503,15 @@ def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
         # Single-file plugin (target=): the file is the whole living area.
         # A file outside the managed snapshot is user-owned (carried at
         # deploy, or dropped in) — never eaten (#139).
-        if dest.name not in set((rec or {}).get("files") or {}):
+        baselines = (rec or {}).get("files") or {}
+        expected = baselines.get(dest.name)
+        if not expected:
             return [dest.name]
+        if dest.is_file() and _hash_file(dest) != expected:
+            _archive_drift(plugin_id, dest.parent, dest.name)
+            if drifted_out is not None:
+                drifted_out.append(dest.name)
+            return []
         remove_path(dest)
         return []
     if manifest.merge:
@@ -513,14 +564,23 @@ def _wipe_plugin(plugin_id: str, dest: Path, rec: Optional[dict],
         for p in dest.rglob("*")
         if p.is_file() or p.is_symlink()
     }
+    baselines = rec["files"] if isinstance(rec.get("files"), dict) else {}
+    drifted: List[str] = []
     for rel in sorted(managed):
         p = dest / rel
         if p.is_symlink() or p.is_file():
+            expected = baselines.get(rel)
+            if expected and p.is_file() and _hash_file(p) != expected:
+                _archive_drift(plugin_id, dest, rel)
+                drifted.append(rel)
+                if drifted_out is not None:
+                    drifted_out.append(rel)
+                continue
             p.unlink(missing_ok=True)
         elif p.is_dir():
             shutil.rmtree(p, ignore_errors=True)
     _prune_empty_dirs(dest)
-    if not any(dest.iterdir()):
+    if dest.is_dir() and not any(dest.iterdir()):
         remove_path(dest)  # white paper: no empty skeleton left behind
     return sorted(remaining - managed)
 
@@ -605,6 +665,11 @@ def plugin_on(
     enabled = _enabled_set()
     if plugin_id in enabled and form is None:
         return [Step(plugin_id, True, "already-enabled")]
+    if form is not None:
+        from nyxuri.system.env import is_safe_leaf_name
+
+        if not is_safe_leaf_name(form):
+            return [Step(plugin_id, False, "invalid-form: " + str(form))]
     results: List[Step] = []
     for uid in plan:
         if uid in enabled and uid != plugin_id:
@@ -632,6 +697,12 @@ def plugin_on(
             # the whole activation.
             pass
         else:
+            if form is not None and uid == plugin_id and not manifest.merge and not declaration_only:
+                from nyxuri.deploy.forms import _find_form_src
+
+                if _find_form_src(uid, form) is None:
+                    results.append(Step(uid, False, "form-not-found: " + str(form)))
+                    return results
             if not manifest.target and not manifest.merge:
                 # Vault in/out is a directory-plugin affordance; a single-file
                 # plugin's living area is one blueprint-managed file with no
@@ -646,7 +717,9 @@ def plugin_on(
                     results.append(Step(uid, False, "deploy-failed"))
                     return results
                 _phase_render_templates(only_app=uid)
-                files = {rel: _hash_file(dest / rel) for rel in laid}
+                previous = (store.get_plugin(uid) or {}).get("files")
+                files = dict(previous) if isinstance(previous, dict) else {}
+                files.update({rel: _hash_file(dest / rel) for rel in laid})
             else:
                 # `on` is adoption: the engine claims its payload names
                 # (carry_unknown=False), user-placed extras are carried and
@@ -729,12 +802,16 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
         # archive, nothing to wipe — disabling is recording state in state.json
         # and firing the event the running host reacts to (§6).
         archived = [] if (manifest.merge or runtime or declaration_only) else _vault_archive(uid, dest, manifest)
-        foreign = [] if (runtime or declaration_only) else _wipe_plugin(uid, dest, rec, manifest)
+        drifted: List[str] = []
+        foreign = [] if (runtime or declaration_only) else _wipe_plugin(uid, dest, rec, manifest,
+                                                                        drifted_out=drifted)
         detail = "disabled"
         if manifest.post_remove and not _run_plugin_hook(uid, manifest, manifest.post_remove):
             detail += f"; hook-failed: {manifest.post_remove}"
         if archived:
             detail += f"; archived: {len(archived)}"
+        if drifted:
+            detail += f"; drift-archived: {len(drifted)}"
         if foreign:
             detail += "; foreign-left: " + ", ".join(foreign)
         pkgs = (
@@ -751,7 +828,7 @@ def plugin_off(plugin_id: str, *, cascade: bool = False) -> List[Step]:
             files={},
             # the archive path is named only when something was actually
             # archived (R0-2 amended rule: no phantom vault pointers)
-            vault=str(vault_dir(uid)) if archived else None,
+            vault=str(vault_dir(uid)) if (archived or drifted) else None,
         )
         _emit(uid, "disabled")
         results.append(Step(uid, True, detail))
@@ -782,7 +859,12 @@ def audit_plugins(plugin_id: Optional[str] = None) -> Dict[str, str]:
             # nothing to reconcile — the record itself is the ghost.
             report[uid] = STATE_GHOST
             continue
-        manifest = catalog.load_plugin(uid)
+        try:
+            manifest = catalog.load_plugin(uid)
+        except (KeyError, ValueError, OSError) as exc:
+            log_msg("WARN", f"audit: skipping unloadable plugin {uid}: {exc}")
+            report[uid] = STATE_GHOST
+            continue
         rec = store.get_plugin(uid)
         if _is_runtime(manifest) or _is_declaration_only(manifest):
             # Nothing on disk belongs to a runtime or declaration-only unit —

@@ -254,8 +254,14 @@ def _show_plugin_detail(plugin: str) -> int:
         print(msg("cli_unknown_plugin", plugin), file=sys.stderr)
         return 2
     print(f"{Colors.BOLD}{plugin}{Colors.RESET}")
+    declaration = None
     if known:
-        m = catalog.load_plugin(plugin)
+        try:
+            declaration = catalog.load_plugin(plugin)
+        except (KeyError, ValueError, OSError) as exc:
+            print(f"  {msg('cli_detail_manifest_unreadable', str(exc))}", file=sys.stderr)
+    if declaration is not None:
+        m = declaration
         if m.label:
             print(f"  {msg('cli_detail_label')}: {m.label}")
         if m.category:
@@ -703,6 +709,12 @@ def main() -> None:
     acquire_lock()
     init_logger()
     get_env()
+    try:
+        from nyxuri.deploy.atomic import recover_interrupted_swaps
+
+        recover_interrupted_swaps()
+    except Exception:
+        pass
     # The event delivery is the outer layer's job (plugin-model.md §6): wire
     # the Shell bridge once so every verb (CLI, TUI, installer menus) that
     # lands a plugin update notifies the running shell over its own IPC.

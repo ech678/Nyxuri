@@ -13,6 +13,7 @@ Singleton {
     property var islandHost: null
     property var launcherHost: null
     property var wallpaperHost: null
+    property var sceneHost: null
     property var dockHost: null
     property bool externalDragActive: false
 
@@ -109,7 +110,8 @@ Singleton {
     function requestSidebarOpenOnScreen(target, view, screenName) {
         if (!root.sidebarHost)
             return false;
-        return root.sidebarHost.openOnScreen(target, view, screenName) !== "INVALID_SIDE";
+        const result = String(root.sidebarHost.openOnScreen(target, view, screenName) || "");
+        return result !== "INVALID_SIDE" && result !== "INVALID_VIEW" && result !== "SCREEN_UNAVAILABLE";
     }
 
     // Cross-domain desktop intents route here (unit-model.md §6). Covers

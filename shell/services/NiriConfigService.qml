@@ -242,6 +242,10 @@ Singleton {
                 root.error = String(e);
             }
         }
+        onLoadFailed: error => {
+            root.error = "cannot read niri-actions.json: " + error;
+            console.warn("[NiriConfigService] " + root.error);
+        }
     }
 
     Instantiator {
