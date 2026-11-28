@@ -1337,36 +1337,38 @@ class FormSwitcher:
 
 # --- Component: Plugin Workshop (KM3 dual-pane parts bench) --------------------
 
-def format_steps(steps) -> List[str]:
-    """Execution Steps → bilingual prose lines (shared by CLI and TUI)."""
-    out: List[str] = []
+def describe_steps(steps) -> List[Tuple[str, str]]:
+    """Execution Steps → (kind, prose) pairs; kind is ok / skip / fail.
+
+    The one wording source for every surface: format_steps colors it for the
+    line-mode CLI, the Textual TUI draws its own marks from `kind`.
+    """
+    out: List[Tuple[str, str]] = []
     for step in steps:
         head, *extra = step.detail.split("; ")
-        color, mark = Colors.BOLD_GREEN, "[✓]"
+        kind = "ok"
         key = ""
         arg = ""
         if head == "enabled":
             key = "cli_step_enabled"
         elif head == "already-enabled":
-            key, color, mark = "cli_step_already_enabled", Colors.DIM, "[•]"
+            key, kind = "cli_step_already_enabled", "skip"
         elif head == "disabled":
             key = "cli_step_disabled"
         elif head == "already-disabled":
-            key, color, mark = "cli_step_already_disabled", Colors.DIM, "[•]"
+            key, kind = "cli_step_already_disabled", "skip"
         elif head == "deploy-failed":
-            key, color, mark = "cli_step_deploy_failed", Colors.BOLD_RED, "[✗]"
+            key, kind = "cli_step_deploy_failed", "fail"
         elif head.startswith("missing-packages: "):
             key, arg = "cli_step_missing_packages", head.split(": ", 1)[1]
         elif head.startswith("blocked-by-enabled-dependents: "):
             key, arg = "cli_step_blocked", head.split(": ", 1)[1]
         elif head.startswith("invalid-form: "):
-            key, arg = "cli_step_invalid_form", head.split(": ", 1)[1]
-            color, mark = Colors.BOLD_RED, "[✗]"
+            key, arg, kind = "cli_step_invalid_form", head.split(": ", 1)[1], "fail"
         elif head.startswith("form-not-found: "):
-            key, arg = "cli_step_form_not_found", head.split(": ", 1)[1]
-            color, mark = Colors.BOLD_RED, "[✗]"
+            key, arg, kind = "cli_step_form_not_found", head.split(": ", 1)[1], "fail"
         else:
-            key, color, mark = "cli_step_failed", Colors.BOLD_RED, "[✗]"
+            key, kind = "cli_step_failed", "fail"
         notes = []
         for part in extra:
             if part.startswith("archived: "):
@@ -1380,6 +1382,22 @@ def format_steps(steps) -> List[str]:
         line = msg(key, step.plugin, arg) if arg else msg(key, step.plugin)
         if notes:
             line += " (" + "; ".join(notes) + ")"
+        out.append((kind, line))
+    return out
+
+
+_STEP_MARKS = {
+    "ok": (Colors.BOLD_GREEN, "[✓]"),
+    "skip": (Colors.DIM, "[•]"),
+    "fail": (Colors.BOLD_RED, "[✗]"),
+}
+
+
+def format_steps(steps) -> List[str]:
+    """Execution Steps → colored bilingual prose lines for line mode."""
+    out: List[str] = []
+    for kind, line in describe_steps(steps):
+        color, mark = _STEP_MARKS[kind]
         out.append(f"{color}{mark}{Colors.RESET} {line}")
     return out
 

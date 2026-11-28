@@ -401,7 +401,9 @@ class TestAISpecs(unittest.TestCase):
                          "pkg.catalog", "install_optional_apps",
                          "run_optional_apps_menu_loop", "deploy_declared",
                          "nyxuri.kernel", "nyxuri.sysdoctor", "nyxuri.compositors",
-                         "nyxuri.sources", "nyxuri.tui", "nyxuri.core",
+                         # nyxuri.tui is reborn as the T2 Textual package;
+                         # the dead single-file nyxuri/tui.py stays asserted absent above.
+                         "nyxuri.sources", "nyxuri.core",
                          "nyxuri.desktop", "nyxuri.installer", "nyxuri.pkg"):
                 self.assertNotIn(dead, text, f"{py.relative_to(root)} still references {dead}")
             # R0-2 步 5 追加：退役字段可能只剩「属性访问」消费者（字符串扫描

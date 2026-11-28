@@ -1518,3 +1518,79 @@ en = "Press any key to return to the bench"
 [workshop_confirm_off]
 zh = "停用该插件?（自定义文件收存，实机抹白）[y/N] "
 en = "Disable this plugin? (customs to Archive, living area wiped) [y/N] "
+
+[tui_needs_tty]
+zh = "TUI 需要交互终端；脚本里请直接用 nyxuri <动词>。"
+en = "The TUI needs an interactive terminal; in scripts use nyxuri <verb>."
+
+[tui_textual_missing]
+zh = "TUI 起不来：缺少 python-textual（{0}）。sudo pacman -S python-textual 后重试。"
+en = "TUI can't start: python-textual is missing ({0}). Install it with sudo pacman -S python-textual."
+
+[tui_cancelled]
+zh = "已取消"
+en = "cancelled"
+
+[tui_skipped]
+zh = "没动"
+en = "left as is"
+
+[tui_confirm_hint]
+zh = "↑↓ 选择 · ⏎ 确认 · esc 返回"
+en = "↑↓ select · ⏎ confirm · esc back"
+
+[tui_choice_cancel]
+zh = "取消"
+en = "Cancel"
+
+[tui_choice_install]
+zh = "安装并启用"
+en = "Install and enable"
+
+[tui_choice_off]
+zh = "停用"
+en = "Disable"
+
+[tui_workshop_title]
+zh = "插件工坊"
+en = "Plugin workshop"
+
+[tui_workshop_summary]
+zh = "{0} 个插件，{1} 个偏离"
+en = "{0} plugins, {1} off baseline"
+
+[tui_workshop_hint]
+zh = "↑↓ 选择 · ⏎ 切换 · o 启用 · f 停用 · esc 返回"
+en = "↑↓ select · ⏎ toggle · o on · f off · esc back"
+
+[tui_detail_packages]
+zh = "包 {0}"
+en = "pkg {0}"
+
+[tui_detail_depends]
+zh = "依赖 {0}"
+en = "needs {0}"
+
+[tui_step_on]
+zh = "启用 {0}"
+en = "Enable {0}"
+
+[tui_step_off]
+zh = "停用 {0}"
+en = "Disable {0}"
+
+[tui_on_closure]
+zh = "连带启用：{0}"
+en = "Also enables: {0}"
+
+[tui_on_packages]
+zh = "要先装这些包：{0}"
+en = "These packages get installed first: {0}"
+
+[tui_off_body]
+zh = "配置收进存档，实机目录抹白（__custom__ 文件保留）"
+en = "Config goes to the archive, the live dir is wiped (__custom__ files stay)"
+
+[tui_off_cascade]
+zh = "连带停用：{0}"
+en = "Also disables: {0}"

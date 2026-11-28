@@ -100,12 +100,29 @@ S0 的 niri 适配层（`CompositorDriver` + `NiriDriver` 单文件方言）已�
 
 任一项不过，回到 [tui-design-system](llms-wiki/tui-design-system.md) 改设计，不在代码里打补丁。
 
+**M1 实测结论（2026-11-28，kitty + tmux，`feat/t2-textual-inline`）**
+
+1. 通过。同进程连跑 3 次 inline，光标衔接无错位，记录紧跟；每次 ready 25–40ms，
+   冷启动（`python3 -I` 到可交互）约 150 + 40ms。
+2. 不符设计。`inline_no_clear=True` 把最后一帧整块（框 + 详情 + 提示行）原样留进历史，
+   无残边、无空行，但与 §1/§9“历史里只剩记录”冲突。M1 实现改用默认清除，
+   决定后由记录写一行结果。作者接受，§1 已改。
+3. 不过。`LinuxInlineDriver` 收到 SIGWINCH 先写 `\x1b[2J` 清整屏（源码
+   `linux_inline_driver.py` `on_terminal_resize`）：活动区按新宽度重新居中正确，
+   但运行期间视口内已写的记录被抹空（kitty 实见两次，退出后是否复原不稳定）；
+   tmux 缩窄时旧帧被重排成两份残影。作者接受，§4 已登记。
+4. 通过。中文、全角字母与全角标点在 `OptionList` 里按显示宽度同列对齐。
+5. 通过。100 列左边线均为第 14 列，124 列均为第 26 列；< 60 列断点去框、边距 1。
+6. 通过。Ctrl+C 覆盖了 Textual 默认的 `help_quit`：活动区收净，记录写 `└ 已取消`，退出码 130。
+
+换主题：输出只含 SGR 35 / 39 / 90（无 truecolor），`kitty @ set-colors` 改 color5 后强调色跟随。
+
 | 期 | 交付 | 门禁 | 状态 |
 | --- | --- | --- | --- |
-| M0 美学定稿 | [tui-design-system](llms-wiki/tui-design-system.md)：记录 + 活动区、Omarchy 式居中栏、跟随终端 16 色（强调 = ANSI magenta）、符号、空间、交互、线框 | 作者确认后冻结，冻结前不写 TUI 代码 | 待验收 |
-| M1 inline 实测 | `nyxuri/tui/` 骨架 + `nyxuri.tcss` + 自有 ANSI 主题 + 插件工坊一屏接真实数据；逐条回答上面 6 项待实测 | kitty 实机：单次 inline 运行启动 < 300ms、6 项待实测全部有结论并回写本节、换主题颜色跟随；**作者看过点头，否则停** | 待开始 |
+| M0 美学定稿 | [tui-design-system](llms-wiki/tui-design-system.md)：记录 + 活动区、Omarchy 式居中栏、跟随终端 16 色（强调 = ANSI magenta）、符号、空间、交互、线框 | 作者确认后冻结，冻结前不写 TUI 代码 | 已完成 |
+| M1 inline 实测 | `nyxuri/tui/` 骨架 + `nyxuri.tcss` + 自有 ANSI 主题 + 插件工坊一屏接真实数据；逐条回答上面 6 项待实测 | kitty 实机：单次 inline 运行启动 < 300ms、6 项待实测全部有结论并回写本节、换主题颜色跟随；**作者看过点头，否则停** | 已完成 |
 | M2 接缝 | `deploy` / `backup` / `uninstall` / `pkg` / `net` / `clean` 不再 import `nyxuri.ui.tui`；引擎交互点抽成“提问”接口（确认 / 单选 / 多选 / 输入 / 进度），行式和 TUI 各给一份实现；`textual` 隔离断言入库 | `python3 -I -S` 导入引擎绿；路由表对应定向单测绿；TUI 实现下引擎零 `input()` 调用 | 待开始 |
-| M3 全动词 | 主菜单覆盖全部动词：插件（list / on / off / use / add / remove / update / doctor）、整装与自更新、主题、外壳、依赖、包管理、清理、快照 / 回滚、卸载、诊断导出、语言 | 动词对等测试（`COMMANDS` ⊆ TUI 入口 − 例外）绿；各流程 pilot 测试；transaction / forms 现有测试零退化 | 待开始 |
+| M3 全动词 | 无参数启动切到 TUI，同时 launcher 去 `-S`、PKGBUILD `depends` 加 `python-textual`（M1 合入 main 时刻意不带，免得用户先装上用不到的依赖）；主菜单覆盖全部动词：插件（list / on / off / use / add / remove / update / doctor）、整装与自更新、主题、外壳、依赖、包管理、清理、快照 / 回滚、卸载、诊断导出、语言 | 动词对等测试（`COMMANDS` ⊆ TUI 入口 − 例外）绿；各流程 pilot 测试；transaction / forms 现有测试零退化 | 待开始 |
 | M4 退役 | 删 `nyxuri/ui/tui.py`、`menus.py`，清 i18n 孤儿键；同步 AGENTS 不变量 3、overview、operation-map、tui-charter、PKGBUILD、CHANGELOG | 全量回归 + 沙箱部署 | 待开始 |
 | M5 验收 | 80 / 120 / 200 列逐屏过目，清过渡代码 | 作者实机确认 | 待开始 |
 

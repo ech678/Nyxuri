@@ -1,0 +1,104 @@
+/* Nyxuri TUI — the only stylesheet. Contract: llms-wiki/tui-design-system.md
+   Column math mirrors nyxuri/tui/record.py: padding 0 1, width 72. */
+
+Screen {
+    align: center top;
+    background: $background;
+    padding: 0 1;
+}
+
+Screen:inline {
+    border: none;
+    height: auto;
+}
+
+#column {
+    width: 72;
+    max-width: 100%;
+    height: auto;
+}
+
+Wordmark {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#wordmark-art,
+#wordmark-line {
+    width: 100%;
+    text-align: center;
+}
+
+#wordmark-art {
+    color: $accent;
+}
+
+#wordmark-line {
+    color: $nyx-dim;
+}
+
+Screen.-narrow #wordmark-art,
+Screen.-short #wordmark-art {
+    display: none;
+}
+
+#box {
+    height: auto;
+    border: round $nyx-dim;
+    padding: 0 1;
+}
+
+Screen.-narrow #box {
+    border: none;
+    padding: 0;
+}
+
+.body {
+    width: 100%;
+    height: auto;
+}
+
+PointerList {
+    height: auto;
+    max-height: 12;
+    border: none;
+    padding: 0;
+    background: $background;
+    scrollbar-size: 0 0;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+}
+
+PointerList:focus {
+    border: none;
+    background-tint: $foreground 0%;
+}
+
+PointerList > .option-list--option,
+PointerList > .option-list--option-highlighted,
+PointerList:focus > .option-list--option-highlighted {
+    padding: 0;
+    background: $background;
+}
+
+PointerList > .option-list--option-highlighted,
+PointerList:focus > .option-list--option-highlighted {
+    color: $accent;
+    text-style: none;
+}
+
+.lead {
+    height: auto;
+    padding: 0 2;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+}
+
+.detail,
+.hint {
+    height: auto;
+    padding: 0 2;
+    color: $nyx-dim;
+    text-wrap: nowrap;
+    text-overflow: ellipsis;
+}
