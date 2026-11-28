@@ -1671,3 +1671,116 @@ qml-lint 629 条 advisory 警告为既有 qs.* 成员解析噪声）。`probe-ba
   test_weather_lifecycle（STAMP 5）、test_i18n（zh_CN 22 键，含 TOML 表头序修复）。
 - **未验证（作者）**：见 ROADMAP 验收积压表 D4c 行（三几何轴/% 长度/flat/缩放/
   效果分组/融合角重排/v5 零感知）。
+
+## D4d 行为与溢出（2026-11-22 实现落地，补录自 54c621a）
+
+- **溢出系统**：`OverflowLayout.js` + `CenterLayout.js` dux verbatim 整抄（契约
+  钉死）；BarContent/VerticalBarContent 双宿主各挂一引擎（活跃分支 Repeater
+  测量、1ms Timer 防抖——禁 Qt.callLater（孵化期触发崩溃，probe 实证）、迟滞
+  恢复）；`LaneOverflowHost` 溢出按钮（BarGroup 胶囊 + StyledPopup
+  `pinnedOpen` 宿主）；BarGroup 迁居协议——widgetLoader 完成期一次性捕获，
+  部件实例 lane↔弹层 re-parent 永不销毁；Media flexible 协议
+  （natural/min/allotted）；spacer/separator/island 按 dux pinned 永不离开。
+- **行为轴**（默认全部 = 现行，无版本迁移）：`autoHideDelay`(0) /
+  `autoHideStrict`（只解弹层类锚定，D4d-2 拍板）/ `hideOnFullscreen`
+  （NiriDriver `is_fullscreen` 透传 + CompositorDriver 门面，抬 Overlay）/
+  `clickThrough`（掩码缩三条 lane 矩形 + dux 边缘条揭示与 settle 防抖）/
+  `hoverPopouts`（吸收退役 tooltips 硬编码）+ `hoverPopoutDelay`（150ms，
+  D4d-1 拍板）。
+- **设置面**：Bar 页 Behavior 组七行；BarWidgetPage 共享 Overflow 组（四档
+  overflowMode + 优先级，pinned id 不渲染）；zh_CN 词典 12 新键。
+- **验证**：probe `d4d` 节（行为轴往返/解算器单跑——词表/priority 让位/always/
+  迟滞恢复/300px 挤压实况/弹层迁居双程）+ `test_d4d_bar_config.py`（30 例）；
+  全量 767 例绿。
+
+## D4e 多 bar 与编辑体验（2026-11-22 / 11-28 实现落地，补录自 dc11133 + a14a358）
+
+- **e1 存储**（dc11133）：`normalizeBarConfigs` 多条保留（id 去重/确定性生成、
+  island 跨数组单例桶）、uid 带 bar 域、条目根 `enabled` 键、per-entry 稀疏写
+  （多条目时纯净兄弟以 `{id}` 保留）、`selectedBarId` 会话态、
+  `withBarConfig(barId)` 核心、add/delete/setEnabled/rename、单例守卫全链。
+- **e2 窗口**：`Item{Repeater}×Variants` 两级相乘（Repeater 需 Item 父级；
+  Component 须声明在 delegate 内），`barLayoutStateJson` 签名重建，横向先行
+  装载序（exclusiveZone 声明序），窗口根持 per-entry `barConfig`/`axes`。
+- **e3 轴穿线**：`barStyleContextOf(axes)` + `resolved*`/描边函数可选 axes
+  尾参；宿主与 BarGroup 注入自己的 axes；`widgetBar` 第二注入协议覆盖
+  hoverPopouts/hoverPopoutDelay/弹层锚定轴。顺修：Workspaces
+  elementMoveSmall 死令牌（end4 同名 = expressiveFastSpatial → elementMoveFast）、
+  DynamicIsland callLater 销毁竞态；新增动画令牌有效性门禁（test_d1）。
+- **e4 设置面**（a14a358）：`ui/` 新增 `PreferenceGroup` /
+  `PreferenceCollapsibleGroup` / `PreferenceControlledBy` /
+  `PreferenceVisualPicker`，Header + 输入原子补齐复位槽；`BarManagerCard`
+  多 bar 管理；`BarLaneSection` + `BarWidgetPickerPopup` +
+  `QuickSettingsListCard` 列表化取代退役 `BarComponentsCard` chip 卡（-250 行）；
+  `BarAppearanceSection`/`BarWidgetPage` 接四级复位与视觉选择器；13 页手写
+  `options/*.qml` 评估后保留（manifest 5 型 `controls` 词表无法表达节标题/
+  `visibleWhen`/hex 校验/`PreferenceAction`/argv/搜索锚点）。
+- **e5 岛接入**：`DEFAULTS.island` 五键迁入 `island` lane 条目；`ConfigMigrations`
+  v6（`MIGRATED_ISLAND_KEYS`）剥离平铺键与 `layoutMigrated`；
+  `DynamicIsland.option()` 与 `IslandOptions.qml`（保留 `horizontalClock` 与
+  `bar.island` 状态灯）。
+- **e6 密度与叶级收口**：`DensityPresets.js` Fork & Trim；`iconScale` 轴 +
+  `BarScale.fontFor/iconFor`；全部 bar 叶组件按 `widgetBar`/`barAxes` 与
+  `resolvedBarHeight`/`resolvedVerticalBarWidth` 渲染；zh_CN 39 键。
+- **验证**：probe `d4e` 节（store/signature/windows 三段：双 bar 存储往返、
+  uid 唯一、单例归属、签名只随路由变化、窗口 two/off/clean 场景）+
+  `test_d4e_bar_config.py`（16 例）；全量 784 例绿。
+
+## D4f 样式原子化（2026-11-28 实现落地，补录自 896cf9f）
+
+- **轴退役**：`cornerStyle`（6 档）× `borderless`（5 档）× `showBackground`
+  → 正交原子轴（D-7）：`backplate`/`lanePill`/`tint`、`widgetStyle`
+  （fused/separate/flat）、`capsuleRadius`（pill/rounded/px + `widgetRadius`）、
+  `groupColor` 增 `transparent`、`edgeMargin`（0 贴边 / >0 悬浮）+ `sideMargin`
+  （-1 Auto 推算）；六档旧观感逐档可由轴值复现（外形起点只写轴不落盘）。
+- **纯解析器**：`plugins/bar/BarStyle.js`（零行为改先行抽取）→
+  `services/BarDefaults.js` `deriveStyle`/`styleBoost`/`resolvedSideMargin`
+  驱动；`services/BarStylePresets.js` 六档「外形起点」配方
+  （applyBarStylePreset 写入、`currentPreset` 匹配失亮）。
+- **单一外边距真值 + D-8 暗加成清账**：`Bar.qml` `windowMargins` 收敛
+  （废 `layerGap`/`m3OuterGap`/`anchors.margins` 叠套）；`styleBoost` 仅保留
+  `isLaneHug` +4 贴角装饰；退役 Islands −6 exclusiveZone、Islands 8px 内角
+  （统一 6）、Panel +4。
+- **schema v7**：显式映射迁移历史样式键（跳默认/幂等/头戳 7/快路径 2–7）；
+  约 30 文件 57 处 `cornerStyle` 比较与 320 处派生旗标随解析器切换退役。
+- **设置面重排**：`BarAppearanceSection` 外形起点 → 布局/+Advanced → 屏幕 →
+  构成 → 材质/+Widget layer → 行为。
+- **验证**：`test_d4f_bar_style.py` + tests/shell 回归绿；probe `d4f` 节
+  （v7 迁移/预设写入/自定义失亮/D-8 退役校验/`capsuleRadius` + transparent
+  groupColor）与 Weston 运行态 probe 全绿；实机视觉过目归作者。
+
+## D4g 批一：单宿主并回（2026-11-28 实现落地）
+
+> 台账缺口已补：D4d/D4e/D4f 三条系 2026-11-28 依提交史实（54c621a / dc11133 /
+> a14a358 / 896cf9f）与 bar-config.md 证据节补录；当时未按追加式纪律即时入账，
+> 流程教训记此处。
+
+- **宿主侧**：`plugins/bar/AxisContext.qml`（新，dux `DBar/AxisContext.qml`
+  整抄剪裁——留 edge/isVertical/isHorizontal/primarySize/crossSize，剪信号面
+  与锚/位置变更 helper，宿主全程显式几何不吃它那套）；`VerticalBarContent.qml`
+  退役删除（-716 行），轨行为并回 `BarContent.qml`（+268 净行）：orientation
+  真相 = `axes.position`，`vertical` 为派生只读标记；三个 lane 的
+  RowLayout/ColumnLayout 合并为单 `GridLayout`（`columns: vertical ? 1 :
+  lane.length + 1`，子项 fill 轴翻转）；材质胶囊/融合角/中心胶囊圆角全部轴
+  条件化（行镜像 top/bottom、轨镜像 left/right，逐角与原件等价核对）；
+  `Bar.qml` 双 Component 切换退役（翻边不重建内容——`injectWidgetEntry` 增
+  `vertical` 绑定注入，部件活体换轴）；边缘滚动条轨上零延展（轨向滚动归 D4h）。
+- **probe 侧**：`probe-bar.qml` 装载轴驱动（双向 stage 同一文件，弃文件名选择）；
+  probe 面（layout/windowDump）不改读取名——宿主横竖并集导出
+  （laneCenterX/Width + laneCenterY/Height 等八几何 + 三 mask 面）。
+- **注释/文案**：BarGroup/PersonalizationConfig/BarWidgetFiles/SegmentRoles/
+  OverflowLayout 五处双宿主提法收敛为单宿主。
+- **契约测试迁移**：`test_bar_end4`（竖向文件钉改为单文件轴钉 + Bar.qml 单挂载
+  反向断言）、`test_d4a`（注入协议单文件）、`test_d4c/d4d`（双宿主元组改单宿主，
+  溢出按钮 12 处/6 id 归一，mask 面钉更新）。
+- **验证**：bar 相关 275 例绿（end4/d4a–f/runtime/manifests/architecture）；
+  会话 probe 两轮全绿零 logErrors（`vertical` 六例几何与并轨前一致：36/40 宽、
+  居中 678/84、岛过滤；`windowProbe` top→left→right→bottom→top 往返零残留）；
+  check.sh qml-format 绿（BarContent/Bar/probe/PersonalizationConfig 六文件
+  format 归一，其中 probe-bar 245 行与 PersonalizationConfig 24 行为 HEAD 既有
+  漂移随改动文件契约一并归一，如实在案）。
+- **环境阻断（如实报告）**：check.sh `qml-lint` 无法运行——Quickshell 针对
+  Qt 6.12.0 构建、系统 Qt 已升 6.12.1（包需重编），且实机会话已有 qs 实例
+  占用 tooling；lint 缺位由运行态 probe（零 logErrors）与 275 例契约测试覆盖，
+  不视为通过。
+- **未验证（作者）**：左右轨排布与融合角/材质胶囊角视觉（B9.4 验收项不变）。

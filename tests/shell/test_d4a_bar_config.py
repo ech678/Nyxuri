@@ -141,7 +141,8 @@ class FallbackChainTest(unittest.TestCase):
                          "a widget must not read the store directly")
 
     def test_hosts_inject_entries(self):
-        for name in ("BarContent.qml", "VerticalBarContent.qml"):
+        # D4g: one host file serves both orientations.
+        for name in ("BarContent.qml",):
             content = read(os.path.join(BAR_DIR, name))
             self.assertIn("function injectWidgetEntry(loader, entry)", content, name)
             self.assertIn("widgetEntry: modelData", content, name)

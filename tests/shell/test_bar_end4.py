@@ -336,7 +336,7 @@ class BarEnd4ContractTest(unittest.TestCase):
 
     def test_component_loader_registrations(self):
         # D4a: the id->file registry lives in BarWidgetFiles.js (the inline
-        # maps in BarContent/VerticalBarContent retired); unknown ids fail
+        # maps in the lane host retired); unknown ids fail
         # loud instead of falling back to a capitalized file name.
         content = read_bar_file("BarWidgetFiles.js")
         self.assertIn('separator: "Divisor.qml"', content)
@@ -345,9 +345,6 @@ class BarEnd4ContractTest(unittest.TestCase):
         bar_content = read_bar_file("BarContent.qml")
         self.assertIn("BarWidgetFiles.fileFor", bar_content)
         self.assertNotIn("charAt(0).toUpperCase()", bar_content, "capitalized-name fallback must stay retired")
-        vertical_content = read_bar_file("VerticalBarContent.qml")
-        self.assertIn("BarWidgetFiles.fileFor", vertical_content)
-        self.assertNotIn("charAt(0).toUpperCase()", vertical_content, "capitalized-name fallback must stay retired")
 
     def test_dynamic_island_is_material_binding(self):
         content = read_bar_file("DynamicIsland.qml")
@@ -425,16 +422,20 @@ class VerticalAndMarginContractTest(unittest.TestCase):
         self.assertIn('root.barAxes.position === "right"', style_popup)
 
     def test_vertical_content_is_the_end4_fork(self):
-        content = read_bar_file("VerticalBarContent.qml")
+        # D4g: the rail is the same host file — the end4 fork marker and the
+        # rail surfaces live in BarContent behind the axis branches.
+        content = read_bar_file("BarContent.qml")
         self.assertIn("Fork & Trim: end4-pC", content)
         self.assertIn("GPL-3", content)
-        self.assertIn("readonly property bool vertical: true", content)
+        self.assertIn("readonly property AxisContext axis: AxisContext {", content)
+        self.assertIn("readonly property bool vertical: root.axis.isVertical", content)
         self.assertIn("PersonalizationConfig.resolvedVerticalBarWidth(root.axes)", content)
         self.assertIn("laneTopHeight", content)
         self.assertIn("laneCenterY", content)
         # The island has no vertical shape yet (ROADMAP B9.4). D4a: the
-        # filter walks entry objects.
+        # filter walks entry objects; D4g gates the rail drop on the axis.
         self.assertIn('entry.widgetId !== "island"', content)
+        self.assertIn("if (root.vertical)", content)
         # Only the active capsule branch instantiates widgets.
         self.assertIn("active: root.isMaterial", content)
         self.assertIn("active: !root.isMaterial", content)
@@ -457,8 +458,10 @@ class VerticalAndMarginContractTest(unittest.TestCase):
     def test_bar_window_branches_on_orientation(self):
         content = read_bar_file("Bar.qml")
         self.assertIn("contentLoader", content)
-        self.assertIn("VerticalBarContent {", content)
+        # D4g: one host — a single BarContent mount, orientation via axes.
+        self.assertIn("sourceComponent: barContent", content)
         self.assertIn("BarContent {", content)
+        self.assertNotIn("VerticalBarContent", content)
         # D4e: the content instance receives its own bar entry.
         self.assertIn("barConfig: barRoot.barConfig", content)
         self.assertIn("BarGeometry.margins", content)

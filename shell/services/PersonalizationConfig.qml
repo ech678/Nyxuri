@@ -586,7 +586,7 @@ Singleton {
         return color;
     }
 
-    // The bar surface background (BarContent/VerticalBarContent
+    // The bar surface background (BarContent
     // barBackground): the style's colLayer0 with the surfaceColor override
     // and surfaceTransparency applied (sentinels keep the theme pipeline,
     // which already bakes the global [effects] opacity into the palette).
@@ -1736,9 +1736,7 @@ Singleton {
             Object.keys(defaults).forEach(key => {
                 if (key === "position" || key === "screenList")
                     return;
-                const same = Array.isArray(config.axes[key])
-                    ? JSON.stringify(config.axes[key]) === JSON.stringify(defaults[key])
-                    : config.axes[key] === defaults[key];
+                const same = Array.isArray(config.axes[key]) ? JSON.stringify(config.axes[key]) === JSON.stringify(defaults[key]) : config.axes[key] === defaults[key];
                 if (!same) {
                     config.axes[key] = Array.isArray(defaults[key]) ? defaults[key].slice() : defaults[key];
                     changed = true;
@@ -2271,9 +2269,7 @@ Singleton {
     }
 
     function withBarConfig(barId, mutator) {
-        const next = JSON.parse(JSON.stringify(Array.isArray(root.barConfigs) && root.barConfigs.length > 0 ? root.barConfigs : [
-            root.activeBarConfig()
-        ]));
+        const next = JSON.parse(JSON.stringify(Array.isArray(root.barConfigs) && root.barConfigs.length > 0 ? root.barConfigs : [root.activeBarConfig()]));
         let index = -1;
         for (let i = 0; i < next.length; i += 1) {
             if (next[i].id === barId) {
@@ -2572,9 +2568,9 @@ Singleton {
         const usedIds = source.map(config => config.id);
         const usedSingletons = [];
         source.forEach(config => ["left", "middle", "right"].forEach(zone => (config.lanes[zone] || []).forEach(entry => {
-            if (BarWidgetDefaults.SINGLETON_IDS.indexOf(entry.widgetId) !== -1)
-                usedSingletons.push(entry.widgetId);
-        })));
+                    if (BarWidgetDefaults.SINGLETON_IDS.indexOf(entry.widgetId) !== -1)
+                        usedSingletons.push(entry.widgetId);
+                })));
         let serial = source.length + 1;
         let id = "bar" + serial;
         while (usedIds.indexOf(id) !== -1) {
@@ -2635,11 +2631,11 @@ Singleton {
     function barLayoutStateJson() {
         const vertical = position => position === "left" || position === "right";
         const mapped = (Array.isArray(root.barConfigs) ? root.barConfigs : []).map(config => ({
-            id: config.id,
-            enabled: config.enabled !== false,
-            position: config.axes.position,
-            screens: config.axes.screenList
-        })).sort((a, b) => {
+                    id: config.id,
+                    enabled: config.enabled !== false,
+                    position: config.axes.position,
+                    screens: config.axes.screenList
+                })).sort((a, b) => {
             const aVertical = vertical(a.position) ? 1 : 0;
             const bVertical = vertical(b.position) ? 1 : 0;
             return aVertical - bVertical || String(a.id).localeCompare(String(b.id));

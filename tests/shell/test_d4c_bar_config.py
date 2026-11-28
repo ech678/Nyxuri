@@ -262,23 +262,24 @@ class ConsumptionTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # D4g: one host file serves both orientations.
         cls.content = read(os.path.join(BAR_DIR, "BarContent.qml"))
-        cls.vertical = read(os.path.join(BAR_DIR, "VerticalBarContent.qml"))
+        cls.hosts = (cls.content,)
         cls.group = read(os.path.join(BAR_DIR, "BarGroup.qml"))
 
     def test_lane_geometry_resolves_through_the_store(self):
-        # D4e: the hosts resolve through their OWN entry's axes (per-bar);
-        # the resolved* functions take the axes argument.
+        # D4e: the host resolves through its OWN entry's axes (per-bar);
+        # the resolved* functions take the axes argument. D4g: the rail
+        # keeps the vertical spacing ladder in the same file.
         self.assertIn("PersonalizationConfig.resolvedBarInnerPadding(root.axes)", self.content)
-        self.assertIn("PersonalizationConfig.resolvedBarInnerPadding(root.axes)", self.vertical)
         self.assertIn("PersonalizationConfig.resolvedBarSpacing(false, root.axes)", self.content)
-        self.assertIn("PersonalizationConfig.resolvedBarSpacing(true, root.axes)", self.vertical)
-        for host in (self.content, self.vertical):
+        self.assertIn("PersonalizationConfig.resolvedBarSpacing(true, root.axes)", self.content)
+        for host in self.hosts:
             self.assertIn("property var barConfig: PersonalizationConfig.activeBarConfig()", host)
             self.assertIn("readonly property var axes: root.barConfig ? root.barConfig.axes : BarDefaults.DEFAULTS", host)
             self.assertIn("filterLayout(root.barConfig ? root.barConfig.lanes.left : [])", host)
         self.assertNotIn('borderless === "transparent" ? -7', self.content)
-        self.assertNotIn("? -4 :", self.vertical)
+        self.assertNotIn("? -4 :", self.content)
 
     def test_segment_roles_fork_is_verbatim_dux(self):
         roles = read(os.path.join(BAR_DIR, "SegmentRoles.js"))
@@ -291,17 +292,17 @@ class ConsumptionTest(unittest.TestCase):
         self.assertIn('root.segmentRole === "first"', self.group)
         self.assertNotIn("property int currentIndex", self.group)
         self.assertNotIn("property int totalCount", self.group)
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertNotIn("totalCount:", host)
             self.assertRegex(host, r'segmentRole: root\.(left|middle|right)SegmentRoles\[index\] \?\? "solo"')
 
     def test_lane_roles_read_live_participation(self):
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertIn("function laneSegmentRoles(entries, plainRepeater, materialRepeater)", host)
             self.assertIn("participating.push(item === null ? true : item.hasContent);", host)
 
     def test_shell_radius_flows_through_one_alias(self):
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertIn("readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, root.axes)", host)
         bar = read(os.path.join(BAR_DIR, "Bar.qml"))
         self.assertIn("readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, barRoot.axes)", bar)

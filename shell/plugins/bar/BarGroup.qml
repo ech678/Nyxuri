@@ -28,7 +28,7 @@ Item {
     // the default keeps direct mounts on the settings-facing entry.
     property var barAxes: PersonalizationConfig.activeBarConfig().axes
     // SegmentRoles run role for this group: solo | first | middle | last.
-    // The lane hosts (BarContent/VerticalBarContent) resolve the run over
+    // The lane host (BarContent) resolves the run over
     // the whole lane, so a hidden neighbour re-shapes this group's corners
     // instead of leaving the fusion wrong.
     property string segmentRole: "solo"

@@ -6,7 +6,7 @@
 // runs exactly like dux, and participating[i] === false covers both
 // hidden widgets (Media with no track) and not-yet-loaded groups.
 // Trimmed: nothing — the algorithm is the whole file. Consumed by the
-// lane hosts (BarContent/VerticalBarContent); the per-group radii live
+// lane host (BarContent, both orientations); the per-group radii live
 // in BarGroup.
 
 function breaksRun(entry, state) {

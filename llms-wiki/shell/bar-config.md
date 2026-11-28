@@ -48,7 +48,7 @@ bar 级几何/样式轴已随 D4c 迁入 configs 条目（见「bar 级轴（D4c
 entry.overrides[key] → DEFAULTS[widgetId][key] → GLOBAL_DEFAULTS[key]
 ```
 
-**部件代码从不直接碰存储**：宿主（BarContent/VerticalBarContent）把 lane 条目经
+**部件代码从不直接碰存储**：宿主（BarContent 单宿主，D4g 起横竖两向共用）把 lane 条目经
 **属性注入协议**推进部件——声明 `property var widgetEntry` 的部件在 Loader
 `onLoaded` 时收到条目对象，自身轴经 `option()` 解析。首个消费者是 Spacer
 （`size` 轴）；D4b 随每部件实例配置逐个迁移存量扁平轴读取。
@@ -172,7 +172,7 @@ StyledPopup 硬编码，不是被认可的默认）。全部新键、无改名�
   `resolve(sections, options, previous)`：flexible 先收缩（shrink-to-fit）再按
   priority 让位、`always` 直接入溢出、pinned（spacer/separator/island）永不离开、
   迟滞恢复（restoreMargin + previous 状态）。lane 名 middle↔center 在宿主边界映射。
-- **引擎**（BarContent/VerticalBarContent 各一）：活跃分支 Repeater 测量 →
+- **引擎**（BarContent 单宿主，D4g 起横竖两向共用）：活跃分支 Repeater 测量 →
   `resolve()`（1ms Timer 防抖——**禁 Qt.callLater**：初始绑定求值排入的 callLater
   会在孵化完成前触发，引擎方法尚未挂载，probe 实证崩溃）→ 隐藏集回写
   `BarGroup.inOverflow`（融合角经 SegmentRoles 参与度自动重排）+ flexible 配给
@@ -339,7 +339,7 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
 - `PersonalizationConfig`：`barStyleContextOf(axes)` + `resolvedBar*` /
   `barStyleContext` / `barWidgetOutline*` / `barSurfaceBorder*` 全部接受可选
   `axes` 尾参（缺省 = settings-facing 条目）——宿主与 BarGroup 传自己的。
-- 内容宿主（BarContent/VerticalBarContent）：`barConfig` 注入（默认绑定
+- 内容宿主（BarContent 单宿主，D4g 起横竖两向共用）：`barConfig` 注入（默认绑定
   active 保证 probe/独立装载可用，窗口覆写）；`axes` 别名；lanes 视图直接读
   `barConfig.lanes.*`；`isMaterial/isMaterialHug/isPanel`、laneMargin、
   shellRadius、背景色、rowSpacing/laneSpacing、overflow 回退、`onRight` 全部走
@@ -384,6 +384,35 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   bar_end4/shell_architecture 的钉随形态升级；全量 784 例绿。
 - 实机待验：多 bar 排布手感、屏幕集合、双 bar 弹层锚定。
 
+## 单宿主与轨（D4g）
+
+> 竖置 = 轨（rail），不是转 90° 的横条（D-9）。同一组轴横竖同值；orientation
+> 真相是 `axes.position`（left/right → 轨），不再有第二份竖向宿主。
+
+- **单宿主**（2026-11-28 批一）：`VerticalBarContent.qml` 退役并回
+  `BarContent.qml`——一份 lane 树经 `AxisContext`（dux 原件整抄剪裁，61 行：
+  `edge`/`isVertical`/`primarySize`/`crossSize`）在行与轨两种方向下排版。
+  `Bar.qml` 单挂载（`sourceComponent: barContent`），翻边不再重建内容：
+  几何绑定轴条件化重算，部件经 `injectWidgetEntry` 注入的
+  `Qt.binding(() => root.axis.isVertical)` 活体换轴（widgetEntry/widgetBar
+  注入协议不变）。
+- **显式几何铁律**（承 Bar.qml 翻边回归）：所有随轴翻转的位置绑定用
+  x/y/width/height 显式表达式，禁止条件锚（QML 绑定产出 `undefined` 不清锚）。
+  三个 lane 的行/列布局合并为单个 `GridLayout`：`columns: vertical ? 1 :
+  lane.length + 1`，子项 `fillWidth`/`fillHeight` 轴翻转。
+- **zone 即真相**：lane 内部 id 与宿主引擎沿用 left/middle/right 存储区名——
+  轨上 left = 起点（top）、right = 终点（bottom）；溢出按钮六 id
+  （`left/middle/rightOverflowHost(Material)`）双方向共用。probe 面横竖并集
+  导出（`laneCenterX/Width` + `laneCenterY/Height`、`laneLeft/RightWidth` +
+  `laneTop/BottomHeight`、`centerPillX/Y/Width/Height`），各方向探针读自己那组。
+- **轨保留 end4 竖向行为**：middle lane 过滤 island（竖向岛形状归批三）、
+  竖向 spacing ladder（`resolvedBarSpacing(true, axes)`）、融合角/胶囊壳半径
+  按「镜像面朝屏幕附着边」逐角轴分支（行：top/bottom，轨：left/right）。
+  边缘滚动条在轨上零延展（轨向滚动动作归 D4h）。
+- 批次：批一单宿主并回（本节）→ 批二部件能力目录（`orientations` +
+  `verticalMode`）→ 批三 clock/systemMonitor 竖向语法 + 竖向岛 → 批四竖置
+  默认布局 + 避让审计（`shell.qml` 遗留全局 `bar.vertical` 消费一并收）。
+
 ## 证据
 
 - **D4a**：probe `d4a` 节——条目几何（禁用不实例化/lane 塌陷/spacer 注入 40 vs
@@ -415,6 +444,14 @@ e3 轴穿线）；设置面（WidgetsTab 列表式/barSelector/reset 感知）�
   - schema v7：`ConfigMigrations.CURRENT_VERSION = 7`（头标 `# nyxuri-config-schema: 7`，fast-path `2..7`），`version < 7` 通过显式映射表将历史 `cornerStyle`/`borderless`/`showBackground` 折叠为上述原子轴并剥离旧键与平铺遗留键。
   - 设置面重排：`BarAppearanceSection.qml` 顺序收敛为 `Appearance`（6 枚 `PreferenceVisualPicker` 预设卡）→ `Layout`（可折叠 `Advanced` 数值微调）→ `Screens` → `Structure` → `Surface`（可折叠 `Widget layer`）→ `Behavior`。
   - 机器证据：契约测试 `tests/shell/test_d4f_bar_style.py` + `tests/shell/` 回归绿；probe `d4f` 节（v7 迁移、预设写入/自定义失亮、D-8 退役校验、`capsuleRadius` + `groupColor: "transparent"`、`vertical` 仅 `materialHug` +4）与 Weston 运行态 probe 全绿；实机视觉过目（六档外观等价与设置页折叠体验）归作者。
+- **D4g 批一（单宿主并回）**：`AxisContext.qml` 整抄（dux 61 行剪裁）+
+  `VerticalBarContent` 并回 `BarContent` + `Bar.qml` 单挂载（翻边不重建）+
+  probe 装载轴驱动。机器证据：bar 相关契约测试 275 例绿（end4/d4a–f/runtime/
+  manifests/architecture）；会话 probe 全绿零 logErrors——`vertical` 六例
+  （左右 × floating/materialHug/centerOnly，轨宽 36/40、居中 678/84、岛过滤）、
+  `windowProbe` top→left→right→bottom→top 往返零残留（条件锚回归门）、
+  d4a–d4f/b96/b97 回归节全 OK。`VerticalBarContent.qml` 删除（-716 行）。
+  实机项归作者：左右轨排布与融合角视觉（B9.4 验收项不变）。
 
 
 

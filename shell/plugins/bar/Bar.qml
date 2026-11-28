@@ -251,7 +251,7 @@ Scope {
                                     // below). Edge-scroll areas and scroll hints go dead in this
                                     // mode — registered boundary, they live in the gaps.
                                     readonly property bool clickThroughEnabled: barRoot.axes.clickThrough === true
-                                    // D4d lane mask surfaces (BarContent/VerticalBarContent).
+                                    // D4d lane mask surfaces (the single BarContent host).
                                     readonly property var laneMaskLeft: barRoot.barContent ? barRoot.barContent.laneMaskLeft : null
                                     readonly property var laneMaskMiddle: barRoot.barContent ? barRoot.barContent.laneMaskMiddle : null
                                     readonly property var laneMaskRight: barRoot.barContent ? barRoot.barContent.laneMaskRight : null
@@ -633,9 +633,12 @@ Scope {
 
                                         Loader {
                                             id: contentLoader
-                                            // One content instance only: the orientation picks the
-                                            // component; geometry is explicit so switching edges
-                                            // cannot leave a stale anchor behind.
+                                            // One content instance only: geometry is explicit so
+                                            // switching edges cannot leave a stale anchor behind.
+                                            // D4g: a single host serves both orientations — the
+                                            // content survives a flip and every axis read re-binds
+                                            // (widgets receive the orientation through the binding
+                                            // injected in BarContent.injectWidgetEntry).
                                             // D4d: hideHold parks the slide-out through the
                                             // autoHideDelay grace.
                                             readonly property real slideOffset: barRoot.autoHideEnabled && !barRoot.mustShow && !barRoot.hideHold ? -barRoot.thickness : 0
@@ -653,18 +656,11 @@ Scope {
                                             Behavior on y {
                                                 animation: Appearance.animation.elementMoveFast.numberAnimation.createObject(this)
                                             }
-                                            sourceComponent: barRoot.vertical ? verticalContent : horizontalContent
+                                            sourceComponent: barContent
 
                                             Component {
-                                                id: horizontalContent
+                                                id: barContent
                                                 BarContent {
-                                                    barConfig: barRoot.barConfig
-                                                }
-                                            }
-
-                                            Component {
-                                                id: verticalContent
-                                                VerticalBarContent {
                                                     barConfig: barRoot.barConfig
                                                 }
                                             }
@@ -763,7 +759,7 @@ Scope {
                                             }
                                         }
                                     }
-                                    }
+                                }
                             }
                         }
                     }

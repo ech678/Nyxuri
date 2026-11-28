@@ -145,15 +145,16 @@ class ForkTest(unittest.TestCase):
 
 
 class EngineTest(unittest.TestCase):
-    """Both orientation hosts carry the engine and the lane buttons."""
+    """The single host carries the engine and the lane buttons (both axes)."""
 
     @classmethod
     def setUpClass(cls):
+        # D4g: one host file — the former VerticalBarContent merged back.
         cls.content = read(os.path.join(BAR_DIR, "BarContent.qml"))
-        cls.vertical = read(os.path.join(BAR_DIR, "VerticalBarContent.qml"))
+        cls.hosts = (cls.content,)
 
     def test_engine_lives_in_both_hosts(self):
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertIn('import "OverflowLayout.js" as OverflowLayout', host)
             self.assertIn("function overflowMeasure(entries, plainRepeater, materialRepeater, zone)", host)
             self.assertIn("function resolveOverflow()", host)
@@ -164,37 +165,32 @@ class EngineTest(unittest.TestCase):
     def test_measurement_flattens_overrides_for_dux_reads(self):
         # dux placement()/priority() read TOP-LEVEL entry keys; our storage
         # nests them in overrides — the flatten must stay at the boundary.
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertIn("Object.assign({", host)
             self.assertIn("widgetId: entries[i].widgetId", host)
             self.assertIn("}, entries[i].overrides || {});", host)
             self.assertIn("OverflowLayout.placement(flat, fallback)", host)
 
     def test_lane_default_resolves_through_the_axes(self):
-        # D4e: per-bar — the hosts resolve the lane default through their
+        # D4e: per-bar — the host resolves the lane default through its
         # own entry's axes (root.axes), never the settings-facing views.
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertIn('root.axes[zone + "OverflowMode"]', host)
 
     def test_buttons_mount_in_all_six_rows(self):
         # Left/middle lanes host the button at the END (inner edge = towards
-        # the screen centre), the right/bottom lane at index 0 — dux
-        # defaultPosition semantics.
+        # the screen centre), the right lane at index 0 — dux
+        # defaultPosition semantics. D4g: zone ids are storage truth, so the
+        # same six ids serve the rail (left/top, right/bottom).
         self.assertEqual(self.content.count("LaneOverflowHost {"), 6)
-        self.assertEqual(self.vertical.count("LaneOverflowHost {"), 6)
         for id_name in (
             "leftOverflowHost", "leftOverflowHostMaterial", "middleOverflowHost",
             "middleOverflowHostMaterial", "rightOverflowHost", "rightOverflowHostMaterial",
         ):
             self.assertIn(f"id: {id_name}", self.content)
-        for id_name in (
-            "topOverflowHost", "topOverflowHostMaterial", "middleOverflowHost",
-            "centerOverflowHostMaterial", "bottomOverflowHost", "bottomOverflowHostMaterial",
-        ):
-            self.assertIn(f"id: {id_name}", self.vertical)
 
     def test_hidden_groups_feed_the_buttons(self):
-        for host in (self.content, self.vertical):
+        for host in self.hosts:
             self.assertIn("overflowGroups: root.overflowHiddenGroups", host)
             self.assertIn("root.overflowHiddenGroupsLeft = hiddenGroups;", host)
             # Assignments are membership-guarded: a fresh array identity per
@@ -206,8 +202,6 @@ class EngineTest(unittest.TestCase):
         self.assertIn("readonly property Item laneMaskLeft: leftLane", self.content)
         self.assertIn("readonly property Item laneMaskMiddle: absoluteCenter", self.content)
         self.assertIn("readonly property Item laneMaskRight: rightLane", self.content)
-        self.assertIn("readonly property Item laneMaskLeft: topLane", self.vertical)
-        self.assertIn("readonly property Item laneMaskRight: bottomLane", self.vertical)
 
 
 class GroupProtocolTest(unittest.TestCase):

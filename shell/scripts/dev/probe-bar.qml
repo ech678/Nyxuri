@@ -53,8 +53,10 @@ ShellRoot {
             // Wait for the settings store before first load: BarContent reads
             // PersonalizationConfig and a later preset flip would leave
             // layout sizes stale in a windowless harness.
+            // D4g: one host file — the orientation follows the staged bar's
+            // axes.position (BarContent builds its AxisContext off it).
             active: !probeRoot.windowMode && PersonalizationConfig.ready && !probeRoot.reloading
-            source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/" + (probeRoot.probeVertical ? "VerticalBarContent.qml" : "BarContent.qml") : ""
+            source: probeRoot.probeShell !== "" ? "file://" + probeRoot.probeShell + "/plugins/bar/BarContent.qml" : ""
         }
 
         // D1 B-10: the island media face probed with a stub host — the real
@@ -1175,15 +1177,17 @@ ShellRoot {
                     "dateFormat": "ddd, dd/MM"
                 },
                 "bar": {
-                    "configs": [{
-                        "id": "default",
-                        "name": "Bar",
-                        "lanes": {
-                            "left": ["launcherButton", "workspaces", "activeWindow", "separator"],
-                            "middle": ["island"],
-                            "right": ["tray", "quickSettings", "systemMonitor", "systemIcons", "powerButton"]
+                    "configs": [
+                        {
+                            "id": "default",
+                            "name": "Bar",
+                            "lanes": {
+                                "left": ["launcherButton", "workspaces", "activeWindow", "separator"],
+                                "middle": ["island"],
+                                "right": ["tray", "quickSettings", "systemMonitor", "systemIcons", "powerButton"]
+                            }
                         }
-                    }],
+                    ],
                     "showAppIcons": true,
                     "numberStyle": "han",
                     "dividerStyle": "space",
@@ -1221,15 +1225,17 @@ ShellRoot {
                     "dateFormat": "ddd, dd/MM"
                 },
                 "bar": {
-                    "configs": [{
-                        "id": "default",
-                        "name": "Bar",
-                        "lanes": {
-                            "left": ["clock"],
-                            "middle": [],
-                            "right": []
+                    "configs": [
+                        {
+                            "id": "default",
+                            "name": "Bar",
+                            "lanes": {
+                                "left": ["clock"],
+                                "middle": [],
+                                "right": []
+                            }
                         }
-                    }]
+                    ]
                 }
             };
             const clockRun = ConfigMigrations.migrateConfig(clockLegacy, seed);
@@ -1323,31 +1329,36 @@ ShellRoot {
             const legacy = {
                 "configVersion": 4,
                 "bar": {
-                    "configs": [{
-                        "id": "default",
-                        "name": "Bar",
-                        "lanes": {
-                            "left": ["launcherButton", "workspaces", "activeWindow"],
-                            "middle": ["island"],
-                            "right": ["tray", "quickSettings", "systemIcons", "powerButton"]
+                    "configs": [
+                        {
+                            "id": "default",
+                            "name": "Bar",
+                            "lanes": {
+                                "left": ["launcherButton", "workspaces", "activeWindow"],
+                                "middle": ["island"],
+                                "right": ["tray", "quickSettings", "systemIcons", "powerButton"]
+                            }
                         }
-                    }],
+                    ],
                     "position": "bottom",
                     "cornerStyle": 2,
                     "borderless": "segmented",
                     "barThickness": 44,
                     "edgeMargin": 12,
                     "showValues": true,
-                    "widgetStyles": [{
-                        "mode": "segmented",
-                        "widget": "workspaces",
-                        "color": "primary",
-                        "padding": 9
-                    }, {
-                        "mode": "pills",
-                        "widget": "clock",
-                        "color": "error"
-                    }],
+                    "widgetStyles": [
+                        {
+                            "mode": "segmented",
+                            "widget": "workspaces",
+                            "color": "primary",
+                            "padding": 9
+                        },
+                        {
+                            "mode": "pills",
+                            "widget": "clock",
+                            "color": "error"
+                        }
+                    ],
                     "tray": {
                         "pinnedItems": ["probe:keep"]
                     }
@@ -1501,39 +1512,48 @@ ShellRoot {
                 overflowMode: "always"
             });
             const sections = {
-                left: [{
-                    size: 100,
-                    min: 100,
-                    mode: "bar",
-                    priority: 0
-                }, {
-                    size: 200,
-                    min: 100,
-                    mode: "auto",
-                    priority: -5
-                }, {
-                    size: 120,
-                    min: 120,
-                    mode: "auto",
-                    priority: 5
-                }],
-                center: [{
-                    size: 80,
-                    min: 80,
-                    mode: "auto",
-                    priority: 0
-                }],
-                right: [{
-                    size: 90,
-                    min: 90,
-                    mode: "always",
-                    priority: 0
-                }, {
-                    size: 70,
-                    min: 70,
-                    mode: "auto",
-                    priority: 0
-                }]
+                left: [
+                    {
+                        size: 100,
+                        min: 100,
+                        mode: "bar",
+                        priority: 0
+                    },
+                    {
+                        size: 200,
+                        min: 100,
+                        mode: "auto",
+                        priority: -5
+                    },
+                    {
+                        size: 120,
+                        min: 120,
+                        mode: "auto",
+                        priority: 5
+                    }
+                ],
+                center: [
+                    {
+                        size: 80,
+                        min: 80,
+                        mode: "auto",
+                        priority: 0
+                    }
+                ],
+                right: [
+                    {
+                        size: 90,
+                        min: 90,
+                        mode: "always",
+                        priority: 0
+                    },
+                    {
+                        size: 70,
+                        min: 70,
+                        mode: "auto",
+                        priority: 0
+                    }
+                ]
             };
             const options = {
                 length: 400,
@@ -1702,14 +1722,16 @@ ShellRoot {
             const legacy = {
                 "configVersion": 5,
                 "bar": {
-                    "configs": [{
-                        "id": "default",
-                        "lanes": {
-                            "left": ["workspaces"],
-                            "middle": ["island"],
-                            "right": ["clock"]
+                    "configs": [
+                        {
+                            "id": "default",
+                            "lanes": {
+                                "left": ["workspaces"],
+                                "middle": ["island"],
+                                "right": ["clock"]
+                            }
                         }
-                    }]
+                    ]
                 },
                 "island": {
                     "satellite": "weather",
@@ -1751,13 +1773,15 @@ ShellRoot {
                 "configVersion": 6,
                 "bar": {
                     "cornerStyle": 1,
-                    "configs": [{
-                        "id": "default",
-                        "position": "bottom",
-                        "cornerStyle": 3,
-                        "borderless": "transparent",
-                        "showBackground": false
-                    }]
+                    "configs": [
+                        {
+                            "id": "default",
+                            "position": "bottom",
+                            "cornerStyle": 3,
+                            "borderless": "transparent",
+                            "showBackground": false
+                        }
+                    ]
                 }
             };
             const seed = {
@@ -1767,50 +1791,43 @@ ShellRoot {
             const first = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(legacy)), seed);
             const second = ConfigMigrations.migrateConfig(JSON.parse(JSON.stringify(first.config)), seed);
             const migratedEntry = first.config.bar.configs[0];
-            const v7Migrated = first.changed === true
-                && first.config.configVersion === 7
-                && migratedEntry.backplate === false
-                && migratedEntry.lanePill === true
-                && migratedEntry.tint === true
-                && migratedEntry.edgeMargin === undefined
-                && migratedEntry.widgetStyle === undefined
-                && migratedEntry.groupColor === "transparent"
-                && migratedEntry.widgetOutlineEnabled === undefined
-                && migratedEntry.cornerStyle === undefined
-                && migratedEntry.borderless === undefined
-                && migratedEntry.showBackground === undefined
-                && migratedEntry.position === "bottom"
-                && first.config.bar.cornerStyle === undefined
-                && second.changed === false;
+            const v7Migrated = first.changed === true && first.config.configVersion === 7 && migratedEntry.backplate === false && migratedEntry.lanePill === true && migratedEntry.tint === true && migratedEntry.edgeMargin === undefined && migratedEntry.widgetStyle === undefined && migratedEntry.groupColor === "transparent" && migratedEntry.widgetOutlineEnabled === undefined && migratedEntry.cornerStyle === undefined && migratedEntry.borderless === undefined && migratedEntry.showBackground === undefined && migratedEntry.position === "bottom" && first.config.bar.cornerStyle === undefined && second.changed === false;
 
             PersonalizationConfig.applyBarStylePreset("islands");
             const islandsPreset = BarStylePresets.currentPreset(PersonalizationConfig.barAxes);
-            const islandsAxes = PersonalizationConfig.barAxes.backplate === false
-                && PersonalizationConfig.barAxes.lanePill === false
-                && PersonalizationConfig.barAxes.edgeMargin === 0;
+            const islandsAxes = PersonalizationConfig.barAxes.backplate === false && PersonalizationConfig.barAxes.lanePill === false && PersonalizationConfig.barAxes.edgeMargin === 0;
             PersonalizationConfig.setBarTint(true);
             const customAfterTweak = BarStylePresets.currentPreset(PersonalizationConfig.barAxes) === "";
             PersonalizationConfig.setBarCapsuleRadius("rounded");
             PersonalizationConfig.setBarGroupColor("transparent");
-            const roundedAxis = PersonalizationConfig.barAxes.capsuleRadius === "rounded"
-                && PersonalizationConfig.barAxes.groupColor === "transparent";
+            const roundedAxis = PersonalizationConfig.barAxes.capsuleRadius === "rounded" && PersonalizationConfig.barAxes.groupColor === "transparent";
             PersonalizationConfig.applyBarStylePreset("floating");
 
             const d8BonusesRetired = BarDefaults.styleBoost(BarDefaults.deriveStyle({
-                backplate: false, lanePill: true, tint: false, edgeMargin: 0
-            }, 5)) === 4
-                && BarDefaults.styleBoost(BarDefaults.deriveStyle({
-                    backplate: false, lanePill: false, tint: false, edgeMargin: 5
-                }, 5)) === 0
-                && BarDefaults.styleBoost(BarDefaults.deriveStyle({
-                    backplate: true, lanePill: false, tint: false, edgeMargin: 0, squareCorners: true
-                }, 5)) === 0
-                && BarGeometry.exclusiveZone(false, 40, 44, 0, 5) === 45;
+                backplate: false,
+                lanePill: true,
+                tint: false,
+                edgeMargin: 0
+            }, 5)) === 4 && BarDefaults.styleBoost(BarDefaults.deriveStyle({
+                backplate: false,
+                lanePill: false,
+                tint: false,
+                edgeMargin: 5
+            }, 5)) === 0 && BarDefaults.styleBoost(BarDefaults.deriveStyle({
+                backplate: true,
+                lanePill: false,
+                tint: false,
+                edgeMargin: 0,
+                squareCorners: true
+            }, 5)) === 0 && BarGeometry.exclusiveZone(false, 40, 44, 0, 5) === 45;
 
-            const radiusVocabulary = BarDefaults.capsuleFullRadius({capsuleRadius: "pill"}, 26, 8, 12) === 13
-                && BarDefaults.capsuleFullRadius({capsuleRadius: "rounded"}, 26, 8, 12) === 8
-                && BarDefaults.capsuleFullRadius({capsuleRadius: "px"}, 26, 8, 12) === 12
-                && BarDefaults.GROUP_COLORS.indexOf("transparent") !== -1;
+            const radiusVocabulary = BarDefaults.capsuleFullRadius({
+                capsuleRadius: "pill"
+            }, 26, 8, 12) === 13 && BarDefaults.capsuleFullRadius({
+                capsuleRadius: "rounded"
+            }, 26, 8, 12) === 8 && BarDefaults.capsuleFullRadius({
+                capsuleRadius: "px"
+            }, 26, 8, 12) === 12 && BarDefaults.GROUP_COLORS.indexOf("transparent") !== -1;
 
             return JSON.stringify({
                 "v7Migrated": v7Migrated,

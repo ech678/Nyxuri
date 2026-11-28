@@ -8,7 +8,7 @@
 // interval collision (section() is consumed by measure(); the inline
 // positions it returns are not used by our RowLayout lanes, but its
 // totalSize math is). Lane names stay dux's left/center/right; the hosts
-// (BarContent/VerticalBarContent) map our "middle" lane at the boundary.
+// (BarContent) maps our "middle" lane at the boundary.
 // Trimmed: nothing.
 
 function pinned(widgetId) {

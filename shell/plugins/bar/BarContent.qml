@@ -9,6 +9,14 @@
 //     copies inside the upstream file are trimmed here.
 //   - lane widths collapse to 0 when the lane has no widgets (no phantom host).
 //   - background spectrum (CavaProcess/SurfaceSpectrum) retired with B8.1.
+//
+// D4g single host: the former VerticalBarContent (end4's vertical twin) is
+// merged back — one host lays the same lane tree out as a row or a rail,
+// through the AxisContext built off the bar's own axes.position. The rail
+// keeps end4's rail-specific behaviour verbatim (island filtered out, the
+// vertical spacing ladder, no edge scroll strips yet — D4h); every geometry
+// binding below is axis-branch explicit, because a binding that yields
+// `undefined` never clears a QML anchor (see Bar.qml's flip regression note).
 
 import QtQuick
 import QtQuick.Layouts
@@ -25,14 +33,34 @@ import "BarStyle.js" as BarStyle
 
 Item {
     id: root
-    implicitHeight: PersonalizationConfig.resolvedBarHeight(root.axes)
-    width: parent.width
+
     // D4e per-bar host: the window injects its entry's config; standalone
     // mounts (the probe harness, direct file:// loads) fall back to the
     // settings-facing entry. Every bar-level read below resolves through
     // this, never the global views.
     property var barConfig: PersonalizationConfig.activeBarConfig()
     readonly property var axes: root.barConfig ? root.barConfig.axes : BarDefaults.DEFAULTS
+    // Orientation truth is the bar's own position (D-9: the rail is the
+    // same axes, not a second config); `vertical` is the marker the probe
+    // and Bar.qml read instead of guessing from the screen edge.
+    readonly property AxisContext axis: AxisContext {
+        edge: root.axes.position
+    }
+    readonly property bool vertical: root.axis.isVertical
+    readonly property bool onRight: root.axes.position === "right"
+
+    // Implicit thickness on both axes (a row's height, a rail's width);
+    // the cross axis fills the window.
+    implicitHeight: PersonalizationConfig.resolvedBarHeight(root.axes)
+    implicitWidth: PersonalizationConfig.resolvedVerticalBarWidth(root.axes)
+    width: root.vertical ? implicitWidth : parent.width
+    height: root.vertical ? (parent ? parent.height : 0) : implicitHeight
+
+    // Implicit extent of a lane layout along the flow axis.
+    function primaryImplicit(layout) {
+        return root.vertical ? layout.implicitHeight : layout.implicitWidth;
+    }
+
     readonly property real barPadding: 0
     readonly property var styleContext: BarStyle.resolve(root.axes, {
         gapsOut: Config.options.bar.m3.gapsOut,
@@ -55,15 +83,22 @@ Item {
     readonly property real shellRadius: PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.screenRounding, root.axes)
     readonly property real centerPillX: centerPill.x
     readonly property real centerPillWidth: centerPill.width
+    readonly property real centerPillY: centerPill.y
+    readonly property real centerPillHeight: centerPill.height
     // Probe surface (scripts/dev/probe-bar.sh): the optical centre lane and its
     // evaluated geometry, so a runtime probe can catch NaN / left-edge collapse
-    // without duplicating the layout math.
+    // without duplicating the layout math. The horizontal and rail surfaces
+    // are both exported; each probe branch reads its own axis.
     readonly property real laneCenterX: absoluteCenter.x + contentContainer.x
     readonly property real laneCenterWidth: absoluteCenter.width
+    readonly property real laneCenterY: absoluteCenter.y + contentContainer.y
+    readonly property real laneCenterHeight: absoluteCenter.height
     // A lane whose only widgets hide themselves (Media with no track) must
     // evaluate to 0, not to its capsule padding. The probe asserts this.
     readonly property real laneLeftWidth: leftLane.width
     readonly property real laneRightWidth: rightLane.width
+    readonly property real laneTopHeight: leftLane.height
+    readonly property real laneBottomHeight: rightLane.height
     // D4d click-through mask surfaces: the three lane items (an empty lane
     // collapses to zero width, so its region vanishes) — Bar.qml's input
     // mask unions exactly these when the clickThrough axis is on.
@@ -104,13 +139,13 @@ Item {
     // groups. Debounced on a zero timer like dux; the measurement binding
     // re-evaluates when widget implicit sizes, entries or the branch flip.
     // Lane names map middle -> dux "center" at this boundary only.
-    readonly property real overflowLength: contentContainer.width
-    readonly property real overflowTriggerSize: root.isMaterial ? leftOverflowHostMaterial.implicitWidth : leftOverflowHost.implicitWidth
+    readonly property real overflowLength: root.vertical ? contentContainer.height : contentContainer.width
+    readonly property real overflowTriggerSize: root.axis.primarySize(root.isMaterial ? leftOverflowHostMaterial : leftOverflowHost)
     readonly property var overflowPlan: ({
-        left: root.overflowMeasure(root.effectiveLeftLayout, leftGroups, leftMaterialGroups, "left"),
-        center: root.overflowMeasure(root.effectiveMiddleLayout, middleGroups, middleMaterialGroups, "middle"),
-        right: root.overflowMeasure(root.effectiveRightLayout, rightGroups, rightMaterialGroups, "right")
-    })
+            left: root.overflowMeasure(root.effectiveLeftLayout, leftGroups, leftMaterialGroups, "left"),
+            center: root.overflowMeasure(root.effectiveMiddleLayout, middleGroups, middleMaterialGroups, "middle"),
+            right: root.overflowMeasure(root.effectiveRightLayout, rightGroups, rightMaterialGroups, "right")
+        })
     // Debounce on a 1ms timer (LIFE007's allowed non-zero interval; NOT
     // Qt.callLater — a callLater scheduled by the initial binding evaluation
     // fires mid-incubation, before the engine methods are installed on the
@@ -118,12 +153,13 @@ Item {
     onOverflowPlanChanged: overflowTimer.restart()
     onOverflowLengthChanged: overflowTimer.restart()
     onRowSpacingChanged: overflowTimer.restart()
+    onLaneSpacingChanged: overflowTimer.restart()
     onIsMaterialChanged: overflowTimer.restart()
     property var overflowPrevious: ({
-        left: [],
-        center: [],
-        right: []
-    })
+            left: [],
+            center: [],
+            right: []
+        })
     // Resolver outputs for the lane hosts (active-branch hidden groups, lane
     // order) and the probe.
     property var overflowHiddenGroupsLeft: []
@@ -170,7 +206,7 @@ Item {
             length: length,
             start: root.laneMargin,
             end: root.laneMargin,
-            spacing: root.isMaterial ? 3 : root.rowSpacing,
+            spacing: root.isMaterial ? 3 : root.laneLayoutSpacing,
             triggerSize: root.overflowTriggerSize,
             positions: {
                 left: root.effectiveLeftLayout.length,
@@ -233,12 +269,12 @@ Item {
         onTriggered: root.resolveOverflow()
     }
 
-
     // D4a: the lane model is normalized entry objects off the barConfigs
     // truth. filterLayout keeps the system gates (no tray host without
     // items, no battery widget without a battery) and now also drops
     // entries the user disabled — a disabled widget is not instantiated,
-    // so its lane collapses like any other hidden widget.
+    // so its lane collapses like any other hidden widget. The rail has no
+    // island shape yet (D4g batch 3), so the island stays a row-only member.
     function filterLayout(entries) {
         let filtered = Array.from(entries ?? []).filter(entry => entry && entry.enabled !== false);
         // B9.3: the island is a layout member, not a second config gate.
@@ -246,6 +282,8 @@ Item {
             filtered = filtered.filter(entry => entry.widgetId !== "tray");
         if (!root.batteryAvailable)
             filtered = filtered.filter(entry => entry.widgetId !== "battery");
+        if (root.vertical)
+            filtered = filtered.filter(entry => entry.widgetId !== "island");
         return filtered;
     }
 
@@ -269,12 +307,16 @@ Item {
 
     // D4a property-injection protocol: hosts push the lane entry into
     // widgets that declare `widgetEntry`; the widget resolves its own axes
-    // through BarWidgetDefaults.option() and never touches storage.
+    // through BarWidgetDefaults.option() and never touches storage. The
+    // orientation rides a binding so an edge flip re-lays the widgets live
+    // (the single host is no longer recreated on a flip).
     function injectWidgetEntry(loader, entry) {
         if (loader.item && loader.item.widgetEntry !== undefined)
             loader.item.widgetEntry = entry;
         if (loader.item && loader.item.widgetBar !== undefined)
             loader.item.widgetBar = Qt.binding(() => root.barConfig);
+        if (loader.item && loader.item.vertical !== undefined)
+            loader.item.vertical = Qt.binding(() => root.axis.isVertical);
     }
 
     function shouldPaintMaterialPill(name) {
@@ -294,6 +336,8 @@ Item {
     // Edge scroll (iNiR behaviour kept through the B8.1 re-fork): the bare bar
     // on either side of the middle lane steps brightness / volume. Widgets sit
     // above these areas, so a scroll over a widget still belongs to the widget.
+    // The strips bind zero-extent geometry on the rail (they have no rail
+    // counterpart yet — D4h adds the vertical scroll actions).
     readonly property string leftAction: Config.options?.bar?.leftScrollAction ?? "brightness"
     readonly property string rightAction: Config.options?.bar?.rightScrollAction ?? "volume"
 
@@ -366,22 +410,28 @@ Item {
     Rectangle {
         id: centerPill
         visible: root.styleContext.showCenterPill
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.horizontalCenter: parent.horizontalCenter
+        // Fully centred on both axes (unconditional anchors — the pill is
+        // centred in the row and in the rail alike).
+        anchors.centerIn: parent
         // end4: when the island occupies the middle lane the frame hugs it
-        // (-4/+8) at full height instead of the +10 padding.
+        // (-4/+8) at full height instead of the +10 padding. The rail has
+        // no island (filtered), so it keeps the plain +10 depth.
         readonly property bool islandInMiddle: PersonalizationConfig.islandInLayout && root.effectiveMiddleLayout.some(entry => entry.widgetId === "island")
-        width: absoluteCenter.hasContent ? (centerPill.islandInMiddle ? (root.styleContext.isFloating ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4) : middleRow.implicitWidth + 10) : 0
-        height: parent.height
+        width: root.vertical ? parent.width : (absoluteCenter.hasContent ? (centerPill.islandInMiddle ? (root.styleContext.isFloating ? middleRow.implicitWidth + 8 : middleRow.implicitWidth - 4) : middleRow.implicitWidth + 10) : 0)
+        height: root.vertical ? (absoluteCenter.hasContent ? middleRow.implicitHeight + 10 : 0) : parent.height
         color: root.styleContext.lanePill ? "transparent" : PersonalizationConfig.resolvedBarSurfaceColor(Appearance.colors.colLayer0, root.axes)
         radius: root.styleContext.isFloating || root.styleContext.lanePill ? PersonalizationConfig.resolvedBarShellRadius(Appearance.rounding.windowRounding, root.axes) : 0
         border.width: PersonalizationConfig.barSurfaceBorderWidth(root.styleContext.isFloating ? 1 : 0, root.axes)
         border.color: PersonalizationConfig.barSurfaceBorderColor(Appearance.colors.colLayer0Border, root.axes)
 
-        bottomLeftRadius: root.styleContext.showCenterPillCorners && root.axes.position !== "bottom" ? root.shellRadius : radius
-        bottomRightRadius: root.styleContext.showCenterPillCorners && root.axes.position !== "bottom" ? root.shellRadius : radius
-        topLeftRadius: root.styleContext.showCenterPillCorners && root.axes.position === "bottom" ? root.shellRadius : radius
-        topRightRadius: root.styleContext.showCenterPillCorners && root.axes.position === "bottom" ? root.shellRadius : radius
+        // Fusion corners face the screen edge the bar attaches to (end4
+        // verbatim per orientation): a row mirrors on top/bottom, a rail
+        // mirrors on left/right.
+        readonly property bool mirrorCorners: root.vertical ? root.onRight : root.axes.position === "bottom"
+        topLeftRadius: root.styleContext.showCenterPillCorners && centerPill.mirrorCorners ? root.shellRadius : radius
+        topRightRadius: root.styleContext.showCenterPillCorners && (centerPill.mirrorCorners !== root.vertical) ? root.shellRadius : radius
+        bottomLeftRadius: root.vertical ? (root.styleContext.showCenterPillCorners && root.onRight ? root.shellRadius : 0) : (root.styleContext.showCenterPillCorners && root.axes.position !== "bottom" ? root.shellRadius : radius)
+        bottomRightRadius: root.vertical ? (root.styleContext.showCenterPillCorners && !root.onRight ? root.shellRadius : 0) : (root.styleContext.showCenterPillCorners && root.axes.position !== "bottom" ? root.shellRadius : radius)
     }
 
     Item {
@@ -390,7 +440,7 @@ Item {
         anchors.margins: root.barPadding
 
         // Declared before the lanes so a widget always wins the click; only the
-        // bare bar around them feeds these.
+        // bare bar around them feeds these. Zero-extent on the rail.
         FocusedScrollMouseArea {
             id: barLeftScrollArea
             anchors.top: parent.top
@@ -437,43 +487,54 @@ Item {
             }
         }
 
-        // Left
+        // Left zone (the rail's start)
         Item {
             id: leftLane
 
             // A lane capsule belongs to the lane, not the widgets, so a lane
             // whose widgets have all hidden themselves (Media with no track)
             // must collapse too instead of leaving its padding behind.
-            readonly property bool hasContent: root.leftLaneFilled && (root.isMaterial ? leftMaterialRow.implicitWidth > 0 : leftRow.implicitWidth > 0)
-            anchors.left: parent.left
-            anchors.leftMargin: root.laneMargin
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            width: !leftLane.hasContent ? 0 : root.isMaterial ? (leftMaterialPill.width + (root.isMaterialHug ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth
+            readonly property bool hasContent: root.leftLaneFilled && (root.isMaterial ? root.primaryImplicit(leftMaterialRow) > 0 : root.primaryImplicit(leftRow) > 0)
+            // Explicit geometry (conditional anchors never clear). Row: the
+            // lane insets from the left edge; rail: it pins under the top
+            // edge, un-insetted when hugging (end4 rail verbatim).
+            x: root.vertical ? 0 : root.laneMargin
+            y: root.vertical ? (root.isMaterialHug ? 0 : root.laneMargin) : 0
+            width: root.vertical ? parent.width : (!leftLane.hasContent ? 0 : root.isMaterial ? (leftMaterialPill.width + (root.isMaterialHug ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitWidth)
+            height: root.vertical ? (!leftLane.hasContent ? 0 : root.isMaterial ? (leftMaterialPill.height + (root.isMaterialHug ? leftRightOutwardCorner.implicitSize : 0)) : leftRow.implicitHeight) : parent.height
 
             // Material pill wrapper
             Rectangle {
                 id: leftMaterialPill
                 visible: root.isMaterial && root.leftLaneFilled
-                // Explicit geometry on purpose: conditional anchors bound to
-                // `undefined` are never cleared, so a top<->bottom switch would
-                // leave the pill pinned to both edges.
-                x: root.isMaterialHug ? 0 : (parent.width - width) / 2
-                y: root.isMaterialHug ? 0 : (parent.height - height) / 2
-                width: leftLane.hasContent ? leftMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0
-                height: root.isMaterialHug ? parent.height : leftMaterialRow.implicitHeight
+                // Explicit geometry on purpose. A row floats the capsule
+                // centred in the lane; the rail pins it to the start edge
+                // and stretches it across the rail width.
+                x: root.vertical ? 0 : (root.isMaterialHug ? 0 : (parent.width - width) / 2)
+                y: root.vertical ? 0 : (root.isMaterialHug ? 0 : (parent.height - height) / 2)
+                width: root.vertical ? parent.width : (leftLane.hasContent ? leftMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0)
+                height: root.vertical ? (leftLane.hasContent ? leftMaterialRow.implicitHeight + (root.isMaterialHug ? 16 : 10) : 0) : (root.isMaterialHug ? parent.height : leftMaterialRow.implicitHeight)
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topLeftRadius: root.isMaterialHug ? 0 : radius
-                bottomLeftRadius: root.isMaterialHug ? 0 : radius
-                topRightRadius: (root.isMaterialHug && root.axes.position === "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && root.axes.position !== "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                // Hug fusion corners (end4 verbatim per orientation): the
+                // corner(s) facing the screen edge take the shell radius.
+                readonly property bool shellTL: false
+                readonly property bool shellTR: root.axis.isHorizontal && root.axes.position === "bottom"
+                readonly property bool shellBL: root.axis.isVertical && root.onRight
+                readonly property bool shellBR: root.axis.isHorizontal ? root.axes.position !== "bottom" : !root.onRight
 
-                RowLayout {
+                topLeftRadius: root.isMaterialHug ? (leftMaterialPill.shellTL ? root.shellRadius : 0) : radius
+                topRightRadius: root.isMaterialHug ? (leftMaterialPill.shellTR ? root.shellRadius : 0) : radius
+                bottomLeftRadius: root.isMaterialHug ? (leftMaterialPill.shellBL ? root.shellRadius : 0) : radius
+                bottomRightRadius: root.isMaterialHug ? (leftMaterialPill.shellBR ? root.shellRadius : 0) : radius
+
+                GridLayout {
                     id: leftMaterialRow
                     anchors.centerIn: parent
-                    spacing: root.rowSpacing
+                    columns: root.vertical ? 1 : root.effectiveLeftLayout.length + 1
+                    columnSpacing: root.laneLayoutSpacing
+                    rowSpacing: root.laneLayoutSpacing
 
                     Repeater {
                         id: leftMaterialGroups
@@ -482,9 +543,11 @@ Item {
                     }
 
                     LaneOverflowHost {
-                        widgetBar: root.barConfig
                         id: leftOverflowHostMaterial
-                        Layout.fillHeight: true
+                        widgetBar: root.barConfig
+                        vertical: root.vertical
+                        Layout.fillWidth: root.vertical
+                        Layout.fillHeight: !root.vertical
                         visible: root.overflowHiddenGroupsLeft.length > 0
                         overflowGroups: root.overflowHiddenGroupsLeft
                     }
@@ -493,16 +556,19 @@ Item {
                         id: leftMaterialGroupDelegate
                         BarGroup {
                             barAxes: root.axes
-                            Layout.fillHeight: true
+                            vertical: root.vertical
+                            Layout.fillWidth: root.vertical
+                            Layout.fillHeight: !root.vertical
                             segmentRole: root.leftSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
-                                Layout.fillHeight: true
+                                Layout.fillWidth: root.vertical
+                                Layout.fillHeight: !root.vertical
                                 // The hidden branch keeps its (empty) groups so
-                                // RowLayout implicit sizes stay live, but must
+                                // layout implicit sizes stay live, but must
                                 // not instantiate widgets: a second island stole
                                 // islandHost and doubled service consumers.
                                 active: root.isMaterial
@@ -517,19 +583,23 @@ Item {
             RoundCorner {
                 id: leftRightOutwardCorner
                 visible: root.isMaterialHug && leftLane.hasContent
-                x: leftMaterialPill.x + leftMaterialPill.width
-                y: root.axes.position === "bottom" ? parent.height - implicitSize : 0
+                // Flow-relative: after the start pill; the cross side hugs
+                // the screen edge the bar attaches to.
+                x: root.vertical ? (root.onRight ? parent.width - implicitSize : 0) : leftMaterialPill.x + leftMaterialPill.width
+                y: root.vertical ? leftMaterialPill.y + leftMaterialPill.height : (root.axes.position === "bottom" ? parent.height - implicitSize : 0)
                 implicitSize: root.shellRadius
                 color: root.materialPillBgColor
-                corner: root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
+                corner: root.vertical ? (root.onRight ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.TopLeft) : (root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft)
             }
 
             // Non-material layout
-            RowLayout {
+            GridLayout {
                 id: leftRow
                 visible: !root.isMaterial
                 anchors.fill: parent
-                spacing: root.rowSpacing
+                columns: root.vertical ? 1 : root.effectiveLeftLayout.length + 1
+                columnSpacing: root.laneLayoutSpacing
+                rowSpacing: root.laneLayoutSpacing
 
                 Repeater {
                     id: leftGroups
@@ -538,9 +608,11 @@ Item {
                 }
 
                 LaneOverflowHost {
-                    widgetBar: root.barConfig
                     id: leftOverflowHost
-                    Layout.fillHeight: true
+                    widgetBar: root.barConfig
+                    vertical: root.vertical
+                    Layout.fillWidth: root.vertical
+                    Layout.fillHeight: !root.vertical
                     visible: root.overflowHiddenGroupsLeft.length > 0
                     overflowGroups: root.overflowHiddenGroupsLeft
                 }
@@ -549,14 +621,17 @@ Item {
                     id: leftBarGroupDelegate
                     BarGroup {
                         barAxes: root.axes
-                        Layout.fillHeight: true
+                        vertical: root.vertical
+                        Layout.fillWidth: root.vertical
+                        Layout.fillHeight: !root.vertical
                         segmentRole: root.leftSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
                         paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                         bgColor: root.getMaterialPillColor(modelData.widgetId)
                         Loader {
-                            Layout.fillHeight: true
+                            Layout.fillWidth: root.vertical
+                            Layout.fillHeight: !root.vertical
                             active: !root.isMaterial
                             source: root.getWidgetUrl(modelData.widgetId)
                             onLoaded: root.injectWidgetEntry(this, modelData)
@@ -566,27 +641,30 @@ Item {
             }
         }
 
-        // Center
+        // Center zone
         Item {
             id: absoluteCenter
             // Same lane rule as the sides: hiding the last widget collapses the
             // capsule instead of leaving its padding behind.
-            readonly property bool hasContent: root.centerLaneFilled && (root.isMaterial ? centerMaterialRow.implicitWidth > 0 : middleRow.implicitWidth > 0)
+            readonly property bool hasContent: root.centerLaneFilled && (root.isMaterial ? root.primaryImplicit(centerMaterialRow) > 0 : root.primaryImplicit(middleRow) > 0)
             // Explicit x instead of anchors.centerIn: the lane width is fed by
             // dynamically loaded widget implicit sizes, and anchors did not
             // re-centre after the idle island narrowed (startup 164 -> 154).
             x: (parent.width - width) / 2
-            width: !absoluteCenter.hasContent ? 0 : root.isMaterial ? (centerMaterialPill.width + (root.isMaterialHug ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth
-            height: parent.height
+            y: root.vertical ? (parent.height - height) / 2 : 0
+            width: root.vertical ? parent.width : (!absoluteCenter.hasContent ? 0 : root.isMaterial ? (centerMaterialPill.width + (root.isMaterialHug ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitWidth)
+            height: root.vertical ? (!absoluteCenter.hasContent ? 0 : root.isMaterial ? (centerMaterialPill.height + (root.isMaterialHug ? (centerLeftOutwardCorner.implicitSize + centerRightOutwardCorner.implicitSize) : 0)) : middleRow.implicitHeight) : parent.height
 
             RoundCorner {
                 id: centerLeftOutwardCorner
                 visible: root.isMaterialHug && absoluteCenter.hasContent
-                x: centerMaterialPill.x - implicitSize
-                y: root.axes.position === "bottom" ? parent.height - implicitSize : 0
+                // Before the centre pill along the flow; the cross side
+                // hugs the bar's screen edge.
+                x: root.vertical ? (root.onRight ? parent.width - implicitSize : 0) : centerMaterialPill.x - implicitSize
+                y: root.vertical ? centerMaterialPill.y - implicitSize : (root.axes.position === "bottom" ? parent.height - implicitSize : 0)
                 implicitSize: root.shellRadius
                 color: root.materialPillBgColor
-                corner: root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
+                corner: root.vertical ? (root.onRight ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.BottomLeft) : (root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight)
             }
 
             // Material pill wrapper
@@ -594,20 +672,30 @@ Item {
                 id: centerMaterialPill
                 visible: root.isMaterial && root.centerLaneFilled
                 anchors.centerIn: parent
-                width: absoluteCenter.hasContent ? centerMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0
-                height: root.isMaterialHug ? parent.height : centerMaterialRow.implicitHeight
+                width: root.vertical ? parent.width : (absoluteCenter.hasContent ? centerMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0)
+                height: root.vertical ? (absoluteCenter.hasContent ? centerMaterialRow.implicitHeight + (root.isMaterialHug ? 16 : 10) : 0) : (root.isMaterialHug ? parent.height : centerMaterialRow.implicitHeight)
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topLeftRadius: (root.isMaterialHug && root.axes.position === "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                topRightRadius: (root.isMaterialHug && root.axes.position === "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && root.axes.position !== "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                bottomRightRadius: (root.isMaterialHug && root.axes.position !== "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                // Hug fusion corners: the flow-facing pair mirrors on the
+                // bar's screen edge (row: top/bottom, rail: left/right).
+                readonly property bool mirror: root.axis.isHorizontal ? root.axes.position === "bottom" : root.onRight
+                readonly property bool shellTL: centerMaterialPill.mirror
+                readonly property bool shellTR: centerMaterialPill.mirror !== root.vertical
+                readonly property bool shellBL: root.axis.isHorizontal ? !centerMaterialPill.mirror : centerMaterialPill.mirror
+                readonly property bool shellBR: !centerMaterialPill.mirror
 
-                RowLayout {
+                topLeftRadius: root.isMaterialHug ? (centerMaterialPill.shellTL ? root.shellRadius : 0) : radius
+                topRightRadius: root.isMaterialHug ? (centerMaterialPill.shellTR ? root.shellRadius : 0) : radius
+                bottomLeftRadius: root.isMaterialHug ? (centerMaterialPill.shellBL ? root.shellRadius : 0) : radius
+                bottomRightRadius: root.isMaterialHug ? (centerMaterialPill.shellBR ? root.shellRadius : 0) : radius
+
+                GridLayout {
                     id: centerMaterialRow
                     anchors.centerIn: parent
-                    spacing: root.rowSpacing
+                    columns: root.vertical ? 1 : root.effectiveMiddleLayout.length + 1
+                    columnSpacing: root.laneLayoutSpacing
+                    rowSpacing: root.laneLayoutSpacing
 
                     Repeater {
                         id: middleMaterialGroups
@@ -616,9 +704,11 @@ Item {
                     }
 
                     LaneOverflowHost {
-                        widgetBar: root.barConfig
                         id: middleOverflowHostMaterial
-                        Layout.fillHeight: true
+                        widgetBar: root.barConfig
+                        vertical: root.vertical
+                        Layout.fillWidth: root.vertical
+                        Layout.fillHeight: !root.vertical
                         visible: root.overflowHiddenGroupsMiddle.length > 0
                         overflowGroups: root.overflowHiddenGroupsMiddle
                     }
@@ -627,7 +717,9 @@ Item {
                         id: middleMaterialGroupDelegate
                         BarGroup {
                             barAxes: root.axes
-                            Layout.fillHeight: true
+                            vertical: root.vertical
+                            Layout.fillWidth: root.vertical
+                            Layout.fillHeight: !root.vertical
                             segmentRole: root.middleSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
@@ -635,9 +727,10 @@ Item {
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
-                                Layout.fillHeight: true
+                                Layout.fillWidth: root.vertical
+                                Layout.fillHeight: !root.vertical
                                 // The hidden branch keeps its (empty) groups so
-                                // RowLayout implicit sizes stay live, but must
+                                // layout implicit sizes stay live, but must
                                 // not instantiate widgets: a second island stole
                                 // islandHost and doubled service consumers.
                                 active: root.isMaterial
@@ -652,19 +745,23 @@ Item {
             RoundCorner {
                 id: centerRightOutwardCorner
                 visible: root.isMaterialHug && absoluteCenter.hasContent
-                x: centerMaterialPill.x + centerMaterialPill.width
-                y: root.axes.position === "bottom" ? parent.height - implicitSize : 0
+                // After the centre pill along the flow; cross side on the
+                // bar's screen edge.
+                x: root.vertical ? (root.onRight ? parent.width - implicitSize : 0) : centerMaterialPill.x + centerMaterialPill.width
+                y: root.vertical ? centerMaterialPill.y + centerMaterialPill.height : (root.axes.position === "bottom" ? parent.height - implicitSize : 0)
                 implicitSize: root.shellRadius
                 color: root.materialPillBgColor
-                corner: root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft
+                corner: root.vertical ? (root.onRight ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.TopLeft) : (root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopLeft : RoundCorner.CornerEnum.BottomLeft)
             }
 
             // Non-material layout
-            RowLayout {
+            GridLayout {
                 id: middleRow
                 visible: !root.isMaterial
                 anchors.fill: parent
-                spacing: root.rowSpacing
+                columns: root.vertical ? 1 : root.effectiveMiddleLayout.length + 1
+                columnSpacing: root.laneLayoutSpacing
+                rowSpacing: root.laneLayoutSpacing
 
                 Repeater {
                     id: middleGroups
@@ -673,9 +770,11 @@ Item {
                 }
 
                 LaneOverflowHost {
-                    widgetBar: root.barConfig
                     id: middleOverflowHost
-                    Layout.fillHeight: true
+                    widgetBar: root.barConfig
+                    vertical: root.vertical
+                    Layout.fillWidth: root.vertical
+                    Layout.fillHeight: !root.vertical
                     visible: root.overflowHiddenGroupsMiddle.length > 0
                     overflowGroups: root.overflowHiddenGroupsMiddle
                 }
@@ -684,7 +783,9 @@ Item {
                     id: middleBarGroupDelegate
                     BarGroup {
                         barAxes: root.axes
-                        Layout.fillHeight: true
+                        vertical: root.vertical
+                        Layout.fillWidth: root.vertical
+                        Layout.fillHeight: !root.vertical
                         segmentRole: root.middleSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
@@ -692,7 +793,8 @@ Item {
                         paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                         bgColor: root.getMaterialPillColor(modelData.widgetId)
                         Loader {
-                            Layout.fillHeight: true
+                            Layout.fillWidth: root.vertical
+                            Layout.fillHeight: !root.vertical
                             active: !root.isMaterial
                             source: root.getWidgetUrl(modelData.widgetId)
                             onLoaded: root.injectWidgetEntry(this, modelData)
@@ -702,51 +804,66 @@ Item {
             }
         }
 
-        // Right
+        // Right zone (the rail's end)
         Item {
             id: rightLane
-            readonly property bool hasContent: root.rightLaneFilled && (root.isMaterial ? rightMaterialRow.implicitWidth > 0 : rightRow.implicitWidth > 0)
-            anchors.right: parent.right
-            anchors.rightMargin: root.laneMargin
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            width: !rightLane.hasContent ? 0 : root.isMaterial ? (rightMaterialPill.width + (root.isMaterialHug ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth
+            readonly property bool hasContent: root.rightLaneFilled && (root.isMaterial ? root.primaryImplicit(rightMaterialRow) > 0 : root.primaryImplicit(rightRow) > 0)
+            // Row: insets from the right edge; rail: pins above the bottom
+            // edge, un-insetted when hugging.
+            x: root.vertical ? 0 : parent.width - width - root.laneMargin
+            y: root.vertical ? parent.height - height - (root.isMaterialHug ? 0 : root.laneMargin) : 0
+            width: root.vertical ? parent.width : (!rightLane.hasContent ? 0 : root.isMaterial ? (rightMaterialPill.width + (root.isMaterialHug ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitWidth)
+            height: root.vertical ? (!rightLane.hasContent ? 0 : root.isMaterial ? (rightMaterialPill.height + (root.isMaterialHug ? rightLeftOutwardCorner.implicitSize : 0)) : rightRow.implicitHeight) : parent.height
 
             RoundCorner {
                 id: rightLeftOutwardCorner
                 visible: root.isMaterialHug && rightLane.hasContent
-                x: rightMaterialPill.x - implicitSize
-                y: root.axes.position === "bottom" ? parent.height - implicitSize : 0
+                // Before the end pill along the flow; cross side on the
+                // bar's screen edge.
+                x: root.vertical ? (root.onRight ? parent.width - implicitSize : 0) : rightMaterialPill.x - implicitSize
+                y: root.vertical ? rightMaterialPill.y - implicitSize : (root.axes.position === "bottom" ? parent.height - implicitSize : 0)
                 implicitSize: root.shellRadius
                 color: root.materialPillBgColor
-                corner: root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight
+                corner: root.vertical ? (root.onRight ? RoundCorner.CornerEnum.BottomRight : RoundCorner.CornerEnum.BottomLeft) : (root.axes.position !== "bottom" ? RoundCorner.CornerEnum.TopRight : RoundCorner.CornerEnum.BottomRight)
             }
 
             // Material pill wrapper
             Rectangle {
                 id: rightMaterialPill
                 visible: root.isMaterial && root.rightLaneFilled
-                x: root.isMaterialHug ? parent.width - width : (parent.width - width) / 2
-                y: root.isMaterialHug ? 0 : (parent.height - height) / 2
-                width: rightLane.hasContent ? rightMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0
-                height: root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight
+                // Row: floats centred, hugs to the right edge; rail: pins
+                // to the end edge, stretched across the rail width.
+                x: root.vertical ? 0 : (root.isMaterialHug ? parent.width - width : (parent.width - width) / 2)
+                y: root.vertical ? parent.height - height : (root.isMaterialHug ? 0 : (parent.height - height) / 2)
+                width: root.vertical ? parent.width : (rightLane.hasContent ? rightMaterialRow.implicitWidth + (root.isMaterialHug ? 16 : 10) : 0)
+                height: root.vertical ? (rightLane.hasContent ? rightMaterialRow.implicitHeight + (root.isMaterialHug ? 16 : 10) : 0) : (root.isMaterialHug ? parent.height : rightMaterialRow.implicitHeight)
                 radius: root.isMaterialHug ? 0 : Appearance.rounding.full
                 color: root.materialPillBgColor
 
-                topRightRadius: root.isMaterialHug ? 0 : radius
-                bottomRightRadius: root.isMaterialHug ? 0 : radius
-                topLeftRadius: (root.isMaterialHug && root.axes.position === "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
-                bottomLeftRadius: (root.isMaterialHug && root.axes.position !== "bottom") ? root.shellRadius : (root.isMaterialHug ? 0 : radius)
+                // Hug fusion corners (end4 verbatim per orientation).
+                readonly property bool shellTL: root.axis.isHorizontal ? root.axes.position === "bottom" : root.onRight
+                readonly property bool shellTR: false
+                readonly property bool shellBL: root.axis.isHorizontal && root.axes.position !== "bottom"
+                readonly property bool shellBR: false
 
-                RowLayout {
+                topLeftRadius: root.isMaterialHug ? (rightMaterialPill.shellTL ? root.shellRadius : 0) : radius
+                topRightRadius: root.isMaterialHug ? (rightMaterialPill.shellTR ? root.shellRadius : 0) : radius
+                bottomLeftRadius: root.isMaterialHug ? (rightMaterialPill.shellBL ? root.shellRadius : 0) : radius
+                bottomRightRadius: root.isMaterialHug ? (rightMaterialPill.shellBR ? root.shellRadius : 0) : radius
+
+                GridLayout {
                     id: rightMaterialRow
                     anchors.centerIn: parent
-                    spacing: root.rowSpacing
+                    columns: root.vertical ? 1 : root.effectiveRightLayout.length + 1
+                    columnSpacing: root.laneLayoutSpacing
+                    rowSpacing: root.laneLayoutSpacing
 
                     LaneOverflowHost {
-                        widgetBar: root.barConfig
                         id: rightOverflowHostMaterial
-                        Layout.fillHeight: true
+                        widgetBar: root.barConfig
+                        vertical: root.vertical
+                        Layout.fillWidth: root.vertical
+                        Layout.fillHeight: !root.vertical
                         visible: root.overflowHiddenGroupsRight.length > 0
                         overflowGroups: root.overflowHiddenGroupsRight
                     }
@@ -761,16 +878,19 @@ Item {
                         id: rightMaterialGroupDelegate
                         BarGroup {
                             barAxes: root.axes
-                            Layout.fillHeight: true
+                            vertical: root.vertical
+                            Layout.fillWidth: root.vertical
+                            Layout.fillHeight: !root.vertical
                             segmentRole: root.rightSegmentRoles[index] ?? "solo"
                             widgetName: modelData.widgetId
                             widgetEntry: modelData
                             paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                             bgColor: root.getMaterialPillColor(modelData.widgetId)
                             Loader {
-                                Layout.fillHeight: true
+                                Layout.fillWidth: root.vertical
+                                Layout.fillHeight: !root.vertical
                                 // The hidden branch keeps its (empty) groups so
-                                // RowLayout implicit sizes stay live, but must
+                                // layout implicit sizes stay live, but must
                                 // not instantiate widgets: a second island stole
                                 // islandHost and doubled service consumers.
                                 active: root.isMaterial
@@ -783,16 +903,20 @@ Item {
             }
 
             // Non-material layout
-            RowLayout {
+            GridLayout {
                 id: rightRow
                 visible: !root.isMaterial
                 anchors.fill: parent
-                spacing: root.rowSpacing
+                columns: root.vertical ? 1 : root.effectiveRightLayout.length + 1
+                columnSpacing: root.laneLayoutSpacing
+                rowSpacing: root.laneLayoutSpacing
 
                 LaneOverflowHost {
-                    widgetBar: root.barConfig
                     id: rightOverflowHost
-                    Layout.fillHeight: true
+                    widgetBar: root.barConfig
+                    vertical: root.vertical
+                    Layout.fillWidth: root.vertical
+                    Layout.fillHeight: !root.vertical
                     visible: root.overflowHiddenGroupsRight.length > 0
                     overflowGroups: root.overflowHiddenGroupsRight
                 }
@@ -807,14 +931,17 @@ Item {
                     id: rightBarGroupDelegate
                     BarGroup {
                         barAxes: root.axes
-                        Layout.fillHeight: true
+                        vertical: root.vertical
+                        Layout.fillWidth: root.vertical
+                        Layout.fillHeight: !root.vertical
                         segmentRole: root.rightSegmentRoles[index] ?? "solo"
                         widgetName: modelData.widgetId
                         widgetEntry: modelData
                         paintMaterialPill: root.shouldPaintMaterialPill(modelData.widgetId)
                         bgColor: root.getMaterialPillColor(modelData.widgetId)
                         Loader {
-                            Layout.fillHeight: true
+                            Layout.fillWidth: root.vertical
+                            Layout.fillHeight: !root.vertical
                             active: !root.isMaterial
                             source: root.getWidgetUrl(modelData.widgetId)
                             onLoaded: root.injectWidgetEntry(this, modelData)
@@ -829,4 +956,10 @@ Item {
     // together, segmented separates them, panel keeps a wider gap); the
     // D4c spacing axis overrides it (sentinel -1 = these values).
     readonly property real rowSpacing: PersonalizationConfig.resolvedBarSpacing(false, root.axes)
+    // end4's vertical spacing ladder — stacked groups need more air on the
+    // transparent mode and less on the segmented one; the D4c spacing axis
+    // overrides it (sentinel -1 = the per-mode values below).
+    readonly property real laneSpacing: PersonalizationConfig.resolvedBarSpacing(true, root.axes)
+    // The spacing a lane layout consumes, per orientation.
+    readonly property real laneLayoutSpacing: root.vertical ? root.laneSpacing : root.rowSpacing
 }
