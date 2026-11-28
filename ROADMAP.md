@@ -151,6 +151,9 @@ S0 的 niri 适配层（`CompositorDriver` + `NiriDriver` 单文件方言）已�
 ## 储备（不承诺）
 
 - 第三方目录站、信任分级与签名——git URL 即源成立后再议。
+- README 视觉素材：截图画廊（Monet 多壁纸对比 / NyxMellow / Fastfetch / Orbit）、
+  SVG 字标（深浅两版，字形转路径）、特点卡片 Material Symbols 图标（入库
+  `.github/assets/`，不引外链）——作者备好素材时接入。
 - 安全 Downdate 体系：现场快照优先还原 + Git 逆向检出的安全版本回退。
 - i18n 三处（引擎 translations.toml / shell i18n / humans-wiki 双语页）受众不同，
   低优登记不动；humans-wiki 与 operation-map 的受众重叠同理。

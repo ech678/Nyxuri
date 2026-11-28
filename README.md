@@ -9,7 +9,7 @@
 <h1>Nyxuri</h1>
 
 <p><strong>A plugin-based desktop setup system for Arch-based distros</strong><br />
-<sub>Material Design & take it easy, build your own clean daily setup (ゆっくりしていってね！)</sub></p>
+<sub>Take it easy, build your own clean daily setup. ゆっくりしていってね！</sub></p>
 
 <p>
 <a href="https://github.com/ech678/Nyxuri/stargazers"><img height="22" src="https://m3-markdown-badges.vercel.app/stars/3/3/ech678/Nyxuri" alt="Stars" /></a>
@@ -24,50 +24,64 @@
 </a>
 
 <p>
-<sub><em><a href="https://nyxniri.com">Website</a> · Watch <a href="https://www.bilibili.com/video/BV1c63n6dEEG">Bilibili Demo</a> · Join <a href="https://www.reddit.com/r/niri/comments/1vf53le/nyxniri_a_material_you_desktop_config_for_niri/">Reddit Discussion</a> · Read the <a href="https://github.com/ech678/Nyxuri/wiki/Home">Wiki</a></em></sub>
+<a href="https://nyxniri.com">Website</a> · <a href="https://www.bilibili.com/video/BV1c63n6dEEG">Demo</a> · <a href="https://www.reddit.com/r/niri/comments/1vf53le/nyxniri_a_material_you_desktop_config_for_niri/">Reddit</a> · <a href="https://github.com/ech678/Nyxuri/wiki/Home">Wiki</a>
 </p>
-<br />
 
 </div>
 
-> **Things to note**: The `main` branch is under heavy, fast-moving development right now. If you want something stable — please stick to the latest Release~ (Also, our own Shell is nowhere near finished yet; both its look and structure will change a lot, so it's not recommended for daily use yet)
+Nyxuri manages the pile of configs that make up a desktop: WM, shell, input method skin, terminal… Each one is a plugin you turn on or off on its own, and turning it off takes its files with it. I want it to be transparent: it tells you what it'll change before it does, and `nyxuri doctor` shows you where things drifted.
 
-### The Little Secret Behind the Name
+## Features
 
-Pronounced `/nɪkˈsuːri/`, the name is a mashup of a few things I really like:
-
-- **Nyx**: Goddess of the night, keeping you company through quiet nights (and a nod to the old name, NyxNiri).
-- **Yukkuri** (ゆっくり / にゅっくり): **Take it easy, take your time tinkering**.
-- **Yuri** (百合 / ゆり): Pure, sweet everyday life and the bonds between girls (a little personal bias from the author).
-- **…As for URI?**: Earlier on, I made up a fancy-sounding backronym in the architecture docs called "Unified Runtime Interface"... just forget about it~! QWQ
-
-## What is Nyxuri
-
-Simply put, **Nyxuri is a plugin-based desktop config system for Arch-based distros**.
-Our philosophy is to be as transparent as possible and give users full control and choice. And since I love tinkering, I packed in a bunch of fun features while keeping things as clean and simple as I could:
-
-- **Multi-WM Support**: Right now we support Niri and MangoWM (and maybe Hyprland later!?). We built a small bridge for keybind actions between different WMs and Shells, making it super easy to switch between them!
-- **Multi-Shell Support**: Currently we actively maintain configs for Noctalia V5 alongside our own custom Shell.
-- **Nyxuri Shell**: Our own Shell (built on Quickshell), currently in development. It uses a plugin-based design, so it definitely won't get bloated like other Quickshell setups.
-- **Global Monet Color Generation**: Generates Monet (Material You) color schemes from both static and live video wallpapers across almost your whole system (Shell, GTK themes, kitty, fcitx5... and lots more). Plus, Nyxuri Shell can directly use Noctalia V5's third-party app color templates!
-- **Rich Plugins (Dotfiles)**: NyxMellow (fcitx5 input method theme), Fastfetch dashboard, Kitty, Starship, Noctalia Greeter login screen, Zed editor, wallpaper packs... When disabled, nothing runs in the background — zero overhead.
-- **Good User Experience**
-  - **Never overwrites your custom changes**: Any file with `__custom__` in its name (like `__custom__.kdl`, `__custom__.conf`) or your display config `monitor.kdl` is automatically kept safe across updates and preset switches!
-  - **Easy preset switching**: Switch between presets (like Kitty transparency levels) in one command, or write your own presets to play around with.
-  - **Clean with no leftover junk**: The management tool is written purely with Python's standard library — no need to install a pile of pip dependencies. Turning off a plugin cleans up its configs neatly, plus you get 30 rolling backup snapshots and a `nyxuri doctor` checkup tool.
+<table>
+<tr>
+<td width="50%" valign="top">
+<strong>Multi-WM</strong><br />
+Niri and MangoWM for now. Keybinds go through one action bridge, so switching WM or shell doesn't mean relearning your keys.
+</td>
+<td width="50%" valign="top">
+<strong>Multi-Shell</strong><br />
+Noctalia V5, plus Nyxuri Shell: our own, built on Quickshell, plugin-based, still early.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<strong>Monet everywhere</strong><br />
+Colors pulled from static or video wallpapers and applied to the shell, GTK, kitty, fcitx5 and more. Nyxuri Shell can use Noctalia V5's app templates too.
+</td>
+<td width="50%" valign="top">
+<strong>Plugins all the way</strong><br />
+NyxMellow skin, Fastfetch, Kitty, Starship, Greeter, Zed, wallpapers… A plugin you haven't turned on doesn't run.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<strong>Your edits stay</strong><br />
+Files named <code>__custom__</code> and <code>monitor.kdl</code> survive updates. Forms, like Kitty's transparency levels, switch in one command.
+</td>
+<td width="50%" valign="top">
+<strong>Clean exit</strong><br />
+Pure Python standard library, no pip. Turning a plugin off cleans up after it, and snapshots let you roll back.
+</td>
+</tr>
+</table>
 
 <details>
-<summary>Also made some extra little tools for Noctalia~</summary>
+<summary>Extra tools for Noctalia</summary>
 
-- **Orbit Launcher**: Vector ring menu with quick access to favorite apps, web links, and an AI/search wheel (fully customizable via TOML).
-- **Wallpaper Picker**: Unified search and live preview for both static images and live video wallpapers.
-- **Pop-up Translator**: Select any text to get a quick, lightweight translation pop-up.
-- **Night Light** & **Scratchpad** (`Super+~` floating Kitty terminal).
+- **Orbit Launcher**: a vector ring menu for favorite apps, web links, and an AI/search wheel, all configurable in TOML.
+- **Wallpaper Picker**: search and live preview for both static images and video wallpapers.
+- **Pop-up Translator**: select any text and get a quick translation.
+- **Night Light** and **Scratchpad**: <kbd>Super</kbd> + <kbd>~</kbd> drops down a floating Kitty terminal.
+
 </details>
 
 ## Installation
 
-### From Git Repo (Recommended)
+> [!WARNING]
+> `main` moves fast right now. If you want something stable, use the latest [Release](https://github.com/ech678/Nyxuri/releases). Nyxuri Shell is far from finished, and both its look and structure will still change a lot, so don't daily-drive it yet.
+
+**From the Git repo (recommended)**
 
 ```bash
 # Shallow clone: grabs only the latest snapshot; drop --depth 1 if you want full git history
@@ -75,22 +89,23 @@ git clone --depth 1 https://github.com/ech678/Nyxuri.git ~/Nyxuri
 cd ~/Nyxuri && ./install.sh
 ```
 
-### Standalone Online Install
+**Standalone online install**
 
 ```bash
 curl -fsSL --connect-timeout 10 https://raw.githubusercontent.com/ech678/Nyxuri/main/install.sh | bash
 ```
 
 > [!TIP]
-> Works out of the box with Shelly, paru, and yay; if none are installed, `nyxuri install full` will automatically set up `paru` for you.
+> Works out of the box with Shelly, paru, and yay. If none are installed, `nyxuri install full` sets up `paru` for you.
 
-### From AUR
+**From the AUR**
 
 ```bash
 paru -S nyxuri-git
 ```
 
-If you don't have an AUR helper installed yet, you can build and install `nyxuri-git` manually:
+<details>
+<summary>No AUR helper yet? Build it by hand</summary>
 
 ```bash
 # Clone the PKGBUILD repo
@@ -100,78 +115,76 @@ git clone https://aur.archlinux.org/nyxuri-git.git
 cd nyxuri-git && makepkg -si
 ```
 
-## Directory Structure
+</details>
 
-```text
-Nyxuri
-├── install.sh                  # Bootstrap install script
-├── nyxuri/                     # Core Python management scripts (zero pip dependencies)
-├── shell/                      # Nyxuri Shell (in-house QML/Qt6 desktop shell, experimental)
-└── plugins/                    # Standalone plugin configs
-    ├── fastfetch/              # System info display
-    ├── fcitx5-rime/            # Dynamic color input method theme & config
-    ├── fish/                   # Shell aliases & handy helper functions
-    ├── greeter/                # Noctalia Greeter login screen
-    ├── kitty/                  # Terminal config & transparency presets
-    ├── mango/                  # MangoWM window manager config
-    ├── niri/                   # Niri window manager config
-    ├── noctalia/               # Noctalia shell, theme sync & extra tools
-    ├── starship/               # Shell prompt
-    ├── theme/                  # Shared matugen color templates
-    ├── wallpapers/             # Companion wallpapers & video download scripts
-    ├── xdg-desktop-portal/     # Portal config files
-    └── zed/                    # Code editor config
+## Usage
+
+Everything goes through one command:
+
+```bash
+nyxuri list                    # every plugin and its state
+nyxuri on <plugin>             # turn a plugin on
+nyxuri off <plugin>            # turn it off and clean up
+nyxuri use <plugin> <form>     # switch forms
+nyxuri doctor                  # check what's off
+nyxhelp                        # cheat sheet (nyxhelp keys for keybinds)
 ```
 
-As long as you put your personal tweaks inside files or folders with `__custom__` in the name (like `__custom__.kdl` or `__custom__.conf`), or in `monitor.kdl`, they'll stay untouched when updating and won't get overwritten.
+> [!NOTE]
+> Put your own tweaks in files or folders with `__custom__` in the name (like `__custom__.kdl` or `__custom__.conf`), or in `monitor.kdl`. Updates and form switches never touch them.
 
-For more details on custom rules, check out [Configuration & Customization (Wiki)](https://github.com/ech678/Nyxuri/wiki/Configuration).
+## Documentation
 
-## Presets
-
-Presets sit right between the default configs and your `__custom__` files, so switching presets won't mess up your own edits. You can also mix and match different parts like building blocks.
-
-For the preset list and how to make your own, see the [Presets Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/Forms).
-
-## Keybindings
-
-Common keybinds are routed through the `shell-action.sh` script, so you don't have to relearn a whole new set of keys when switching WMs or Shells. If you forget a keybind, just run `nyxhelp keys` in the terminal.
-
-For the full list of keybinds, see the [Keybindings Overview (Wiki)](https://github.com/ech678/Nyxuri/wiki/Keybindings).
-
-## Toggling Plugins & CLI Tool
-
-Every desktop component is an independent plugin — like the Fcitx5 theme (`fcitx5-rime`), wallpaper pack (`wallpapers`), login screen (`greeter`), and so on. To turn any of them on or off, just run `nyxuri on <plugin>` or `nyxuri off <plugin>`.
-
-Installing, updating, rolling back backups, and checking for issues are all handled by the `nyxuri` command. Type `nyxhelp` in your terminal for a quick cheat sheet. For all commands and details, check the [CLI Reference (Wiki)](https://github.com/ech678/Nyxuri/wiki/CLI-Reference).
-
-## Troubleshooting
-
-If you can't get into the desktop, run into dual-GPU display glitches, or themes aren't applying properly, try running `nyxuri doctor` first to see what's up.
-
-For common issues and fixes, check the [Troubleshooting Guide (Wiki)](https://github.com/ech678/Nyxuri/wiki/Troubleshooting).
+| Topic | What's in it |
+| :--- | :--- |
+| [Configuration](https://github.com/ech678/Nyxuri/wiki/Configuration) | How plugins are laid out, and how your edits are kept |
+| [Forms](https://github.com/ech678/Nyxuri/wiki/Forms) | Built-in forms, slot axes, making your own |
+| [Keybindings](https://github.com/ech678/Nyxuri/wiki/Keybindings) | Every key, and how the action bridge works |
+| [CLI Reference](https://github.com/ech678/Nyxuri/wiki/CLI-Reference) | All commands |
+| [Troubleshooting](https://github.com/ech678/Nyxuri/wiki/Troubleshooting) | Can't reach the desktop, dual-GPU glitches, themes not applying |
 
 ## Community
 
-**Chat & Feedback:**
+**Chat**: Telegram [@linux_ricing](https://t.me/linux_ricing) · QQ group `631425889` · Author's QQ `2040244628`<br />
+**Feedback & support**: [GitHub Issues](https://github.com/ech678/Nyxuri/issues) · [Afdian](https://afdian.com/a/Echoes678)
 
-* TG Channel: [@linux_ricing](https://t.me/linux_ricing)
-* QQ: `2040244628` · Linux Ricing Group: `631425889`
-* Sponsor: [Afdian](https://afdian.com/a/Echoes678) · Bug Reports: [GitHub Issues](https://github.com/ech678/Nyxuri/issues)
+## Thanks
 
-**Thanks:**
+Special thanks to these folks for helping me out with so much odd work~❤️
 
-* [@zhuhuaian](https://github.com/zhuhuaian) · [@Krits03](https://github.com/Krits03) · [@TyhLxxxhLrqTq](https://github.com/TyhLxxxhLrqTq) · [@Yulljie](https://github.com/Yulljie) · [@StarWhiteIsBusy](https://github.com/StarWhiteIsBusy) — Helped me out with so much odd work~❤️
-* [RanXOM/glassy-niri](https://github.com/RanXOM/glassy-niri) — Reference for blur effects
-* [SHORiN-KiWATA/shorin-niri](https://github.com/SHORiN-KiWATA/shorin-niri) — Copied a ton from here!
-* [sanweiya/fcitx5-mellow-themes](https://github.com/sanweiya/fcitx5-mellow-themes) — Rounded corner shapes for the NyxMellow skin
-* [StarWhiteIsBusy/Round-Simple-Fcitx5-Skin](https://github.com/StarWhiteIsBusy/Round-Simple-Fcitx5-Skin) — NyxMellow reference
-* [doctorlogix](https://github.com/doctorlogix) — Website design inspiration
+<p>
+<a href="https://github.com/zhuhuaian"><img src="https://images.weserv.nl/?url=github.com/zhuhuaian.png&w=128&h=128&fit=cover&mask=circle" width="64" height="64" alt="@zhuhuaian" title="@zhuhuaian" /></a>
+<a href="https://github.com/Krits03"><img src="https://images.weserv.nl/?url=github.com/Krits03.png&w=128&h=128&fit=cover&mask=circle" width="64" height="64" alt="@Krits03" title="@Krits03" /></a>
+<a href="https://github.com/TyhLxxxhLrqTq"><img src="https://images.weserv.nl/?url=github.com/TyhLxxxhLrqTq.png&w=128&h=128&fit=cover&mask=circle" width="64" height="64" alt="@TyhLxxxhLrqTq" title="@TyhLxxxhLrqTq" /></a>
+<a href="https://github.com/Yulliil"><img src="https://images.weserv.nl/?url=avatars.githubusercontent.com/u/78137234&w=128&h=128&fit=cover&mask=circle" width="64" height="64" alt="@Yulliil" title="@Yulliil" /></a>
+<a href="https://github.com/StarWhiteIsBusy"><img src="https://images.weserv.nl/?url=github.com/StarWhiteIsBusy.png&w=128&h=128&fit=cover&mask=circle" width="64" height="64" alt="@StarWhiteIsBusy" title="@StarWhiteIsBusy" /></a>
+</p>
 
-**Recommended Projects:**
+And everyone who has contributed:
 
-* [h465855hgg/noctalia-lyrics](https://github.com/h465855hgg/noctalia-lyrics) — Status bar lyrics widget
-* [Ocfeather/chrome-niri-opacity](https://github.com/Ocfeather/chrome-niri-opacity) — Browser transparency script
+<p>
+<a href="https://github.com/ech678/Nyxuri/graphs/contributors"><img src="https://contrib.rocks/image?repo=ech678/Nyxuri" alt="Contributors" /></a>
+</p>
+
+**Borrowed from**
+
+- [RanXOM/glassy-niri](https://github.com/RanXOM/glassy-niri): blur effects
+- [SHORiN-KiWATA/shorin-niri](https://github.com/SHORiN-KiWATA/shorin-niri): copied a ton from here!
+- [sanweiya/fcitx5-mellow-themes](https://github.com/sanweiya/fcitx5-mellow-themes): NyxMellow's rounded corners
+- [StarWhiteIsBusy/Round-Simple-Fcitx5-Skin](https://github.com/StarWhiteIsBusy/Round-Simple-Fcitx5-Skin): NyxMellow reference
+- [doctorlogix](https://github.com/doctorlogix): website design inspiration
+
+<details>
+<summary>The little secret behind the name</summary>
+
+Pronounced `/nɪkˈsuːri/`, it's a mashup of a few things I really like:
+
+- **Nyx**: goddess of the night, company for quiet nights (and a nod to the old name, NyxNiri).
+- **Yukkuri** (ゆっくり / にゅっくり): take it easy, take your time tinkering.
+- **Yuri** (百合 / ゆり): sweet everyday life and the bonds between girls (a little personal bias from the author).
+- **…URI?** Early on I made up a fancy backronym in the architecture docs, "Unified Runtime Interface". Just forget about it~ QWQ
+
+</details>
 
 ---
 
