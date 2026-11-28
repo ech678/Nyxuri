@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Dict, List
+import shutil
+from typing import Dict, List, Tuple
 
 from . import theme as t
 
 WIDTH = 98
 HEIGHT = 28
-MARGIN = 4
-EDGE = WIDTH - MARGIN
-LABEL = 22
-BODY_TOP = 6
-BODY_ROWS = 18
+BODY_OFFSET = 5
 
-PAGES = [
+PAGES: List[Tuple[str, str]] = [
     ("Overview", "overview"),
     ("Plugins", "plugins"),
     ("Doctor", "doctor"),
@@ -29,75 +26,97 @@ STATUS = {
 }
 
 
-def _blank() -> str:
-    return " " * WIDTH
+def terminal_size() -> Tuple[int, int]:
+    size = shutil.get_terminal_size(fallback=(WIDTH + 2, HEIGHT + 2))
+    width = max(44, min(WIDTH, size.columns - 2))
+    height = max(14, min(HEIGHT, size.lines - 2))
+    return width, height
 
 
-def _section(title: str) -> str:
-    return t.columns((MARGIN, t.fg(t.DIM, title.upper())), total=WIDTH)
+class Frame:
+    def __init__(self, width: int, height: int) -> None:
+        self.width = width
+        self.height = height
+        self.margin = 4 if width >= 64 else 2
+        self.body_rows = max(4, height - (BODY_OFFSET + 2))
+
+    def blank(self) -> str:
+        return " " * self.width
+
+    def row(self, *segments) -> str:
+        return t.columns(*segments, total=self.width)
+
+    def fit(self, text: str) -> str:
+        return t.pad(text, self.width)
+
+    def section(self, title: str) -> str:
+        return self.row((self.margin, t.fg(t.DIM, title.upper())))
+
+    def field(self, label: str, value: str, value_color: str = t.TEXT,
+              label_width: int = 0) -> str:
+        width = label_width or self.label_width()
+        return self.row((self.margin, t.fg(t.MUTED, t.pad(label, width))),
+                        (self.margin + width, t.fg(value_color, value)))
+
+    def label_width(self) -> int:
+        return max(12, min(22, self.width // 4))
+
+    def header(self, version: str, mode: str) -> str:
+        brand = t.bold(t.fg(t.TEXT, "nyxuri"))
+        meta = t.fg(t.DIM, version) + t.fg(t.FAINT, "   ·   ") + t.fg(t.MUTED, mode)
+        if t.visible_width(meta) + self.margin * 2 + 12 > self.width:
+            meta = t.fg(t.DIM, version)
+        right = self.width - self.margin - t.visible_width(meta)
+        return self.row((self.margin, brand), (right, meta))
+
+    def navigation(self, active: str) -> str:
+        labels = [(label, key) for label, key in PAGES]
+        position = self.margin
+        segments = []
+        for label, key in labels:
+            styled = t.bold(t.fg(t.ACCENT, label)) if key == active else t.fg(t.MUTED, label)
+            if position + len(label) > self.width - self.margin:
+                break
+            segments.append((position, styled))
+            position += len(label) + 3
+        total = t.visible_width("".join(label for label, _key in labels)) + 3 * (len(labels) - 1)
+        if total + self.margin * 2 > self.width:
+            current = dict((key, label) for label, key in PAGES)[active]
+            index = [key for _label, key in PAGES].index(active) + 1
+            text = t.bold(t.fg(t.ACCENT, current)) + t.fg(t.FAINT, f"   {index}/{len(PAGES)}")
+            return self.row((self.margin, text))
+        return self.row(*segments)
+
+    def hairline(self) -> str:
+        return self.row((self.margin, t.fg(t.FAINT, "─" * (self.width - self.margin * 2))))
+
+    def footer(self, active: str) -> str:
+        keys = [("1-6", "pages"), ("tab", "next"), ("jk", "move"), ("q", "quit")]
+        segments = []
+        position = self.margin
+        for key, label in keys:
+            if position + len(key) + len(label) + 4 > self.width - self.margin - 8:
+                break
+            segments.append((position, t.fg(t.MUTED, key) + t.fg(t.FAINT, " ") + t.fg(t.DIM, label)))
+            position += len(key) + len(label) + 4
+        index = [key for _label, key in PAGES].index(active) + 1
+        page = t.fg(t.DIM, f"{index:02d} / {len(PAGES):02d}")
+        segments.append((self.width - self.margin - t.visible_width(page), page))
+        return self.row(*segments)
 
 
-def _plain_section(title: str) -> str:
-    return t.fg(t.DIM, title.upper())
+def _recent(state: Dict, index: int) -> str:
+    activity = state["activity"]
+    if index >= len(activity):
+        return ""
+    item = activity[index]
+    return t.fg(t.DIM, item["stamp"]) + t.fg(t.FAINT, "   ") + t.fg(t.MUTED, item["detail"])
 
 
-def _plain_field(label: str, value: str, value_color: str = t.TEXT) -> str:
-    return t.fg(t.MUTED, t.pad(label, LABEL)) + t.fg(value_color, value)
-
-
-def _field(label: str, value: str, value_color: str = t.TEXT) -> str:
-    return t.columns(
-        (MARGIN, t.fg(t.MUTED, t.pad(label, LABEL))),
-        (MARGIN + LABEL, t.fg(value_color, value)),
-        total=WIDTH,
-    )
-
-
-def _body(rows: List[str]) -> List[str]:
-    lines = list(rows[:BODY_ROWS])
-    while len(lines) < BODY_ROWS:
-        lines.append(_blank())
-    return lines
-
-
-def header(version: str, mode: str) -> str:
-    brand = t.bold(t.fg(t.TEXT, "nyxuri"))
-    meta = t.fg(t.DIM, version) + t.fg(t.FAINT, "   ·   ") + t.fg(t.MUTED, mode)
-    return t.columns((MARGIN, brand), (EDGE - t.visible_width(meta), meta), total=WIDTH)
-
-
-def navigation(active: str) -> str:
-    segments = []
-    position = MARGIN
-    for label, key in PAGES:
-        styled = t.bold(t.fg(t.ACCENT, label)) if key == active else t.fg(t.MUTED, label)
-        segments.append((position, styled))
-        position += len(label) + 3
-    return t.columns(*segments, total=WIDTH)
-
-
-def hairline() -> str:
-    return t.columns((MARGIN, t.fg(t.FAINT, "─" * (EDGE - MARGIN))), total=WIDTH)
-
-
-def footer(active: str) -> str:
-    keys = [("1-6", "pages"), ("tab", "next"), ("jk", "move"), ("q", "quit")]
-    segments = []
-    position = MARGIN
-    for key, label in keys:
-        segments.append((position, t.fg(t.MUTED, key) + t.fg(t.FAINT, " ") + t.fg(t.DIM, label)))
-        position += len(key) + len(label) + 4
-    index = [key for _label, key in PAGES].index(active) + 1
-    page = t.fg(t.DIM, f"{index:02d} / {len(PAGES):02d}")
-    segments.append((EDGE - t.visible_width(page), page))
-    return t.columns(*segments, total=WIDTH)
-
-
-def overview(state: Dict) -> List[str]:
+def overview(frame: Frame, state: Dict) -> List[str]:
     shell = state["shell"]
     config = state["config"]
     plugins = state["plugins"]
-    activity = state["activity"]
     enabled = sum(1 for row in plugins if row["state"] == "enabled")
     compositor = shell.get("compositor") or {}
     running = compositor.get("running", "")
@@ -113,77 +132,96 @@ def overview(state: Dict) -> List[str]:
     if home and folder.startswith(home):
         folder = "~" + folder[len(home):]
 
-    def recent(index: int) -> str:
-        if index >= len(activity):
-            return ""
-        item = activity[index]
-        return t.fg(t.DIM, item["stamp"]) + t.fg(t.FAINT, "   ") + t.fg(t.MUTED, item["detail"])
+    show_recent = frame.width >= 88
+    recent_column = frame.width - frame.margin - 38
 
     left = [
-        _plain_section("session"),
-        _plain_field("Compositor", compositor_text),
-        _plain_field("Shell", shell["active"], t.ACCENT),
-        _plain_field("Instances", ", ".join(shell["running"]) if shell["running"] else "not running"),
+        frame.section("session"),
+        frame.field("Compositor", compositor_text),
+        frame.field("Shell", shell["active"], t.ACCENT),
+        frame.field("Instances", ", ".join(shell["running"]) if shell["running"] else "not running"),
     ]
-    right = [_plain_section("recent")] + [recent(index) for index in range(3)]
+    right = [frame.section("recent")] + [_recent(state, index) for index in range(3)]
 
     rows: List[str] = []
-    for index in range(max(len(left), len(right))):
-        left_text = left[index] if index < len(left) else ""
-        right_text = right[index] if index < len(right) else ""
+    for index in range(max(len(left), len(right)) if show_recent else len(left)):
         segments = []
-        if left_text:
-            segments.append((MARGIN, left_text))
-        if right_text:
-            segments.append((54, right_text))
-        rows.append(t.columns(*segments, total=WIDTH))
+        if index < len(left):
+            segments.append((frame.margin, left[index][frame.margin:]))
+        if show_recent and index < len(right) and right[index]:
+            segments.append((recent_column, right[index]))
+        rows.append(frame.row(*segments) if segments else frame.blank())
     rows.extend([
-        _blank(),
-        _section("units"),
-        _field("Enabled", f"{enabled} of {len(plugins)}"),
-        _field("Disabled", str(len(plugins) - enabled)),
-        _blank(),
-        _section("preferences"),
-        _field("Theme", config["theme"]),
-        _field("Language", config["language"]),
-        _field("Schema", f"{config['schema']} · {config['size']} bytes"),
-        _field("Wallpapers", folder, t.MUTED),
+        frame.blank(),
+        frame.section("units"),
+        frame.field("Enabled", f"{enabled} of {len(plugins)}"),
+        frame.field("Disabled", str(len(plugins) - enabled)),
+        frame.blank(),
+        frame.section("preferences"),
+        frame.field("Theme", config["theme"]),
+        frame.field("Language", config["language"]),
+        frame.field("Schema", f"{config['schema']} · {config['size']} bytes"),
+        frame.field("Wallpapers", folder, t.MUTED),
     ])
-    return _body(rows)
+    return rows
 
 
-def plugins(state: Dict, cursor: int) -> List[str]:
+def _window(cursor: int, total: int, visible: int) -> Tuple[int, int]:
+    if total <= visible:
+        return 0, total
+    offset = max(0, min(cursor - visible + 1, total - visible))
+    return offset, min(total, offset + visible)
+
+
+def plugins(frame: Frame, state: Dict, cursor: int) -> List[str]:
     entries = state["plugins"]
+    total = len(entries)
     enabled = sum(1 for entry in entries if entry["state"] == "enabled")
-    header_row = t.columns(
-        (MARGIN + 2, t.fg(t.DIM, t.pad("unit", 21))),
-        (MARGIN + 24, t.fg(t.DIM, t.pad("kind", 13))),
-        (MARGIN + 39, t.fg(t.DIM, t.pad("state", 11))),
-        (MARGIN + 52, t.fg(t.DIM, "target")),
-        total=WIDTH,
-    )
-    rows: List[str] = [header_row]
-    for index in range(14):
-        if index >= len(entries):
-            rows.append(_blank())
-            continue
+    show_kind = frame.width >= 76
+    show_target = frame.width >= 92
+    margin = frame.margin
+    name_width = 21 if frame.width >= 76 else 18
+    kind_column = margin + 2 + name_width + 2
+    state_column = kind_column + (13 + 2 if show_kind else 0)
+    target_column = state_column + 13
+
+    visible = max(3, frame.body_rows - 3)
+    offset, end = _window(cursor, total, visible)
+
+    header_segments = [(margin + 2, t.fg(t.DIM, t.pad("unit", name_width)))]
+    if show_kind:
+        header_segments.append((kind_column, t.fg(t.DIM, t.pad("kind", 13))))
+    header_segments.append((state_column, t.fg(t.DIM, t.pad("state", 11))))
+    if show_target:
+        header_segments.append((target_column, t.fg(t.DIM, "target")))
+    rows: List[str] = [frame.row(*header_segments)]
+
+    for index in range(offset, end):
         entry = entries[index]
         selected = index == cursor
         bar = t.fg(t.ACCENT, "▌") if selected else " "
-        name = t.fg(t.TEXT, t.pad(entry["id"], 21)) if selected else t.fg(t.MUTED, t.pad(entry["id"], 21))
-        raw_kind = entry["kinds"] or "-"
-        kind_label = raw_kind.split(":")[0]
-        kind = t.fg(t.MUTED if selected else t.DIM, t.pad(kind_label, 13))
-        state_word = t.fg(t.OK, t.pad("enabled", 11)) if entry["state"] == "enabled" else t.fg(t.DIM, t.pad("disabled", 11))
-        target = t.fg(t.DIM, "~/.config/" + entry["id"])
-        rows.append(t.columns((MARGIN, bar), (MARGIN + 2, name), (MARGIN + 24, kind),
-                              (MARGIN + 39, state_word), (MARGIN + 52, target), total=WIDTH))
-    rows.append(_blank())
-    rows.append(t.columns((MARGIN, t.fg(t.DIM, f"{enabled} of {len(entries)} enabled")), total=WIDTH))
-    return _body(rows)
+        name = t.fg(t.TEXT, t.pad(entry["id"], name_width)) if selected else t.fg(t.MUTED, t.pad(entry["id"], name_width))
+        segments = [(margin, bar), (margin + 2, name)]
+        if show_kind:
+            kind_label = (entry["kinds"] or "-").split(":")[0]
+            color = t.MUTED if selected else t.DIM
+            segments.append((kind_column, t.fg(color, t.pad(kind_label, 13))))
+        state_color = t.OK if entry["state"] == "enabled" else t.DIM
+        segments.append((state_column, t.fg(state_color, t.pad(entry["state"], 11))))
+        if show_target:
+            segments.append((target_column, t.fg(t.DIM, "~/.config/" + entry["id"])))
+        rows.append(frame.row(*segments))
+
+    rows.append(frame.blank())
+    if total > visible:
+        summary = f"{offset + 1}-{end} of {total} · {enabled} enabled"
+    else:
+        summary = f"{enabled} of {total} enabled"
+    rows.append(frame.row((margin, t.fg(t.DIM, summary))))
+    return rows
 
 
-def doctor(state: Dict) -> List[str]:
+def doctor(frame: Frame, state: Dict) -> List[str]:
     checks = state["doctor"]
     counts = {"ok": 0, "warn": 0, "bad": 0}
     for check in checks:
@@ -195,140 +233,149 @@ def doctor(state: Dict) -> List[str]:
         + t.fg(t.FAINT, "   ·   ")
         + t.fg(t.BAD, f"{counts['bad']} bad")
     )
+    margin = frame.margin
     rows: List[str] = [
-        t.columns((MARGIN, summary), total=WIDTH),
-        _blank(),
-        t.columns(
-            (MARGIN + 2, t.fg(t.DIM, t.pad("area", 14))),
-            (MARGIN + 16, t.fg(t.DIM, t.pad("check", 20))),
-            (MARGIN + 36, t.fg(t.DIM, "detail")),
-            total=WIDTH,
+        frame.row((margin, summary)),
+        frame.blank(),
+        frame.row(
+            (margin + 2, t.fg(t.DIM, t.pad("area", 14))),
+            (margin + 16, t.fg(t.DIM, t.pad("check", 20))),
+            (margin + 36, t.fg(t.DIM, "detail")),
         ),
     ]
-    for check in checks:
-        rows.append(t.columns(
-            (MARGIN, STATUS.get(check["status"], "•")),
-            (MARGIN + 2, t.fg(t.MUTED, t.pad(check["category"], 14))),
-            (MARGIN + 16, t.fg(t.TEXT, t.pad(check["name"], 20))),
-            (MARGIN + 36, t.fg(t.DIM, check["detail"])),
-            total=WIDTH,
+    for check in checks[: max(1, frame.body_rows - 4)]:
+        detail = check["detail"]
+        rows.append(frame.row(
+            (margin, STATUS.get(check["status"], "•")),
+            (margin + 2, t.fg(t.MUTED, t.pad(check["category"], 14))),
+            (margin + 16, t.fg(t.TEXT, t.pad(check["name"], 20))),
+            (margin + 36, t.fg(t.DIM, detail)),
         ))
-    return _body(rows)
+    return rows
 
 
-def config(state: Dict) -> List[str]:
+def config(frame: Frame, state: Dict) -> List[str]:
     conf = state["config"]
     home = str(pathlib.Path.home())
     folder = str(conf["wallpaper"] or "unset")
     if home and folder.startswith(home):
         folder = "~" + folder[len(home):]
-    rows: List[str] = [
-        _section("file"),
-        _field("Path", str(conf["path"]).replace(home, "~")),
-        _field("Schema", str(conf["schema"])),
-        _field("Size", f"{conf['size']} bytes"),
-        _blank(),
-        _section("appearance"),
-        _field("Theme", conf["theme"], t.ACCENT),
-        _field("Language", conf["language"]),
-        _blank(),
-        _section("wallpapers"),
-        _field("Folder", folder, t.MUTED),
-        _field("Files", str(conf["wallpapers"])),
+    return [
+        frame.section("file"),
+        frame.field("Path", str(conf["path"]).replace(home, "~")),
+        frame.field("Schema", str(conf["schema"])),
+        frame.field("Size", f"{conf['size']} bytes"),
+        frame.blank(),
+        frame.section("appearance"),
+        frame.field("Theme", conf["theme"], t.ACCENT),
+        frame.field("Language", conf["language"]),
+        frame.blank(),
+        frame.section("wallpapers"),
+        frame.field("Folder", folder, t.MUTED),
+        frame.field("Files", str(conf["wallpapers"])),
     ]
-    return _body(rows)
 
 
-def shell(state: Dict) -> List[str]:
+def shell(frame: Frame, state: Dict) -> List[str]:
     info = state["shell"]
+    margin = frame.margin
     rows: List[str] = [
-        _section("runtime"),
-        _field("Active", info["active"], t.ACCENT),
-        _field("Instances", ", ".join(info["running"]) if info["running"] else "not running"),
-        _blank(),
-        _section("targets"),
+        frame.section("runtime"),
+        frame.field("Active", info["active"], t.ACCENT),
+        frame.field("Instances", ", ".join(info["running"]) if info["running"] else "not running"),
+        frame.blank(),
+        frame.section("targets"),
     ]
     targets = [
         ("nyxuri-shell", info["binary_exists"], info["binary"] or "not resolvable"),
         ("noctalia", False, "not installed"),
     ]
     for name, ready, detail in targets:
-        rows.append(t.columns(
-            (MARGIN, STATUS["ok"] if ready else t.fg(t.DIM, "•")),
-            (MARGIN + 2, t.fg(t.TEXT if ready else t.MUTED, t.pad(name, 18))),
-            (MARGIN + 20, t.fg(t.OK if ready else t.DIM, t.pad("ready" if ready else "unavailable", 13))),
-            (MARGIN + 34, t.fg(t.DIM, detail)),
-            total=WIDTH,
+        rows.append(frame.row(
+            (margin, STATUS["ok"] if ready else t.fg(t.DIM, "•")),
+            (margin + 2, t.fg(t.TEXT if ready else t.MUTED, t.pad(name, 18))),
+            (margin + 20, t.fg(t.OK if ready else t.DIM, t.pad("ready" if ready else "unavailable", 13))),
+            (margin + 34, t.fg(t.DIM, detail)),
         ))
-    rows.append(_blank())
-    rows.append(_section("events"))
+    rows.append(frame.blank())
+    rows.append(frame.section("events"))
     for name, detail in (("unit reload", "ledger changes reach the running shell"),
                          ("theme sync", "mode changes follow the shell"),
                          ("readiness", "bounded probe with cold-start budget")):
-        rows.append(t.columns(
-            (MARGIN + 2, t.fg(t.MUTED, t.pad(name, 14))),
-            (MARGIN + 18, t.fg(t.DIM, detail)),
-            total=WIDTH,
+        rows.append(frame.row(
+            (margin + 2, t.fg(t.MUTED, t.pad(name, 14))),
+            (margin + 18, t.fg(t.DIM, detail)),
         ))
-    return _body(rows)
+    return rows
 
 
-def snapshots(state: Dict, cursor: int) -> List[str]:
+def snapshots(frame: Frame, state: Dict, cursor: int) -> List[str]:
     entries = state["snapshots"]
+    margin = frame.margin
     if not entries:
-        return _body([
-            t.columns((MARGIN, t.fg(t.MUTED, "no snapshots yet")), total=WIDTH),
-            t.columns((MARGIN, t.fg(t.DIM, "press s to save the current configuration")), total=WIDTH),
-            _blank(),
-            t.columns((MARGIN, t.fg(t.DIM, "backups live in ~/.config/nyxuri/backups")), total=WIDTH),
-        ])
-    rows: List[str] = [
-        t.columns(
-            (MARGIN + 2, t.fg(t.DIM, t.pad("snapshot", 24))),
-            (MARGIN + 26, t.fg(t.DIM, t.pad("note", 20))),
-            (MARGIN + 48, t.fg(t.DIM, "files")),
-            total=WIDTH,
-        )
-    ]
-    for index in range(14):
-        if index >= len(entries):
-            rows.append(_blank())
-            continue
+        return [
+            frame.row((margin, t.fg(t.MUTED, "no snapshots yet"))),
+            frame.row((margin, t.fg(t.DIM, "press s to save the current configuration"))),
+            frame.blank(),
+            frame.row((margin, t.fg(t.DIM, "backups live in ~/.config/nyxuri/backups"))),
+        ]
+    show_note = frame.width >= 72
+    show_files = frame.width >= 88
+    name_width = 24 if frame.width >= 72 else 18
+    note_column = margin + 2 + name_width
+    files_column = note_column + 20
+
+    visible = max(3, frame.body_rows - 2)
+    offset, end = _window(cursor, len(entries), visible)
+
+    header_segments = [(margin + 2, t.fg(t.DIM, t.pad("snapshot", name_width)))]
+    if show_note:
+        header_segments.append((note_column, t.fg(t.DIM, t.pad("note", 20))))
+    if show_files:
+        header_segments.append((files_column, t.fg(t.DIM, "files")))
+    rows: List[str] = [frame.row(*header_segments)]
+
+    for index in range(offset, end):
         entry = entries[index]
         selected = index == cursor
         bar = t.fg(t.ACCENT, "▌") if selected else " "
-        name = t.fg(t.TEXT, t.pad(entry["name"], 24)) if selected else t.fg(t.MUTED, t.pad(entry["name"], 24))
-        rows.append(t.columns(
-            (MARGIN, bar),
-            (MARGIN + 2, name),
-            (MARGIN + 26, t.fg(t.DIM, t.pad(entry["note"], 20))),
-            (MARGIN + 48, t.fg(t.MUTED, entry["files"])),
-            total=WIDTH,
-        ))
-    return _body(rows)
+        name = t.fg(t.TEXT, t.pad(entry["name"], name_width)) if selected else t.fg(t.MUTED, t.pad(entry["name"], name_width))
+        segments = [(margin, bar), (margin + 2, name)]
+        if show_note:
+            segments.append((note_column, t.fg(t.DIM, t.pad(entry["note"], 20))))
+        if show_files:
+            segments.append((files_column, t.fg(t.MUTED, entry["files"])))
+        rows.append(frame.row(*segments))
+    if len(entries) > visible:
+        rows.append(frame.blank())
+        rows.append(frame.row((margin, t.fg(t.DIM, f"{offset + 1}-{end} of {len(entries)}"))))
+    return rows
 
 
-def build(name: str, state: Dict, cursor: int, version: str) -> List[str]:
+def build(name: str, state: Dict, cursor: int, version: str,
+          width: int = WIDTH, height: int = HEIGHT) -> List[str]:
+    frame = Frame(width, height)
     root = pathlib.Path(__file__).resolve().parents[3]
     mode = "local" if root.joinpath("nyxuri").is_dir() else "installed"
     bodies = {
-        "overview": lambda: overview(state),
-        "plugins": lambda: plugins(state, cursor),
-        "doctor": lambda: doctor(state),
-        "config": lambda: config(state),
-        "shell": lambda: shell(state),
-        "snapshots": lambda: snapshots(state, cursor),
+        "overview": lambda: overview(frame, state),
+        "plugins": lambda: plugins(frame, state, cursor),
+        "doctor": lambda: doctor(frame, state),
+        "config": lambda: config(frame, state),
+        "shell": lambda: shell(frame, state),
+        "snapshots": lambda: snapshots(frame, state, cursor),
     }
+    body = bodies.get(name, lambda: overview(frame, state))()
     lines: List[str] = [
-        _blank(),
-        header(version, mode),
-        _blank(),
-        navigation(name),
-        _blank(),
+        frame.blank(),
+        frame.header(version, mode),
+        frame.blank(),
+        frame.navigation(name),
+        frame.blank(),
     ]
-    lines.extend(bodies.get(name, lambda: overview(state))())
-    while len(lines) < HEIGHT - 2:
-        lines.append(_blank())
-    lines.append(hairline())
-    lines.append(footer(name))
-    return [t.pad(line, WIDTH) for line in lines[:HEIGHT]]
+    lines.extend(body[: frame.body_rows])
+    while len(lines) < height - 2:
+        lines.append(frame.blank())
+    lines.append(frame.hairline())
+    lines.append(frame.footer(name))
+    return [frame.fit(line) for line in lines[:height]]

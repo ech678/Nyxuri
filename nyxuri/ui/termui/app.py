@@ -12,6 +12,16 @@ VERSION = "v4.0.0-alpha.2"
 NAMES = [key for _label, key in screens.PAGES]
 CURSOR_LIMITS = {"plugins": "plugins", "snapshots": "snapshots"}
 
+CSI_KEYS = {
+    "A": "up",
+    "B": "down",
+    "C": "right",
+    "D": "left",
+    "Z": "backtab",
+    "H": "home",
+    "F": "end",
+}
+
 
 def collect() -> Dict:
     state = data.snapshot_state()
@@ -19,21 +29,22 @@ def collect() -> Dict:
     return state
 
 
-def build_window(lines: List[str]) -> ptg.Window:
+def build_window(lines: List[str], width: int, height: int) -> ptg.Window:
     labels = [ptg.Label(line, parent_align=ptg.HorizontalAlignment.LEFT) for line in lines]
     window = ptg.Window(
         *labels,
         box=ptg.boxes.EMPTY,
         parent_align=ptg.HorizontalAlignment.LEFT,
     )
-    window.width = screens.WIDTH + 2
-    window.height = screens.HEIGHT + 2
+    window.width = width + 2
+    window.height = height + 2
     return window
 
 
-def render(name: str, state: Dict, cursor: int) -> str:
-    lines = screens.build(name, state, cursor, VERSION)
-    window = build_window(lines)
+def render(name: str, state: Dict, cursor: int, width: int = screens.WIDTH,
+           height: int = screens.HEIGHT) -> str:
+    lines = screens.build(name, state, cursor, VERSION, width=width, height=height)
+    window = build_window(lines, width, height)
     return "\n".join(window.get_lines())
 
 
@@ -47,11 +58,58 @@ def clamp(name: str, cursor: int, state: Dict) -> int:
     return max(0, min(cursor, total - 1))
 
 
+def parse_keys(chunk: str) -> List[str]:
+    keys: List[str] = []
+    index = 0
+    length = len(chunk)
+    while index < length:
+        char = chunk[index]
+        if char == "\x1b":
+            if index + 1 < length and chunk[index + 1] == "[":
+                end = index + 2
+                while end < length and not ("@" <= chunk[end] <= "~"):
+                    end += 1
+                if end < length:
+                    keys.append(CSI_KEYS.get(chunk[end], "unknown"))
+                    index = end + 1
+                    continue
+                keys.append("esc")
+                index = length
+                continue
+            if index + 1 < length and chunk[index + 1] == "O":
+                if index + 2 < length:
+                    keys.append(CSI_KEYS.get(chunk[index + 2], "unknown"))
+                    index += 3
+                    continue
+                keys.append("esc")
+                index = length
+                continue
+            keys.append("esc")
+            index += 1
+            continue
+        if char == "\t":
+            keys.append("tab")
+        elif char == "\x03":
+            keys.append("interrupt")
+        elif char in "\r\n":
+            keys.append("enter")
+        else:
+            keys.append("char:" + char)
+        index += 1
+    return keys
+
+
 def draw(name: str, state: Dict, cursor: int) -> None:
-    frame = render(name, state, cursor)
-    sys.stdout.write("\x1b[H\x1b[2J")
-    sys.stdout.write(frame)
-    sys.stdout.write("\n")
+    width, height = screens.terminal_size()
+    frame = render(name, state, cursor, width, height)
+    lines = frame.split("\n")
+    chunks = ["\x1b[H"]
+    for index, line in enumerate(lines):
+        chunks.append(line + "\x1b[K")
+        if index != len(lines) - 1:
+            chunks.append("\n")
+    chunks.append("\x1b[J")
+    sys.stdout.write("".join(chunks))
     sys.stdout.flush()
 
 
@@ -59,38 +117,40 @@ def interactive(start: str = "overview") -> int:
     state = collect()
     name = start if start in NAMES else "overview"
     cursor = 0
-    message = ""
-    draw(name, state, cursor)
-    while True:
-        key = ptg.getch()
-        if key is None:
-            continue
-        if key in ("q", "Q", "\x03", "\x1b"):
-            sys.stdout.write("\x1b[H\x1b[2J")
-            sys.stdout.flush()
-            return 0
-        if key in ("\x1b[C", "\t"):
-            index = (NAMES.index(name) + 1) % len(NAMES)
-            name = NAMES[index]
-            cursor = 0
-        elif key in ("\x1b[D",):
-            index = (NAMES.index(name) - 1) % len(NAMES)
-            name = NAMES[index]
-            cursor = 0
-        elif key in [str(number) for number in range(1, 7)]:
-            name = NAMES[int(key) - 1]
-            cursor = 0
-        elif key in ("\x1b[B", "j"):
-            cursor = clamp(name, cursor + 1, state)
-        elif key in ("\x1b[A", "k"):
-            cursor = clamp(name, cursor - 1, state)
-        elif key in ("\r", "\n"):
-            message = f"{name} · {cursor + 1} selected"
-        elif key == "/":
-            message = "search is not wired in this preview"
-        else:
-            message = ""
+    sys.stdout.write("\x1b[?25l\x1b[H\x1b[2J")
+    sys.stdout.flush()
+    try:
         draw(name, state, cursor)
+        while True:
+            chunk = ptg.getch()
+            if not chunk:
+                continue
+            for key in parse_keys(chunk):
+                if key in ("esc", "interrupt", "char:q", "char:Q"):
+                    return 0
+                if key in ("tab", "right"):
+                    name = NAMES[(NAMES.index(name) + 1) % len(NAMES)]
+                    cursor = 0
+                elif key in ("backtab", "left"):
+                    name = NAMES[(NAMES.index(name) - 1) % len(NAMES)]
+                    cursor = 0
+                elif key in ("char:1", "char:2", "char:3", "char:4", "char:5", "char:6"):
+                    name = NAMES[int(key[-1]) - 1]
+                    cursor = 0
+                elif key in ("down", "char:j"):
+                    cursor = clamp(name, cursor + 1, state)
+                elif key in ("up", "char:k"):
+                    cursor = clamp(name, cursor - 1, state)
+                elif key in ("home", "char:g"):
+                    cursor = 0
+                elif key in ("end", "char:G"):
+                    total = len(state.get(CURSOR_LIMITS.get(name, ""), []))
+                    cursor = max(0, total - 1)
+            draw(name, state, cursor)
+    finally:
+        sys.stdout.write("\x1b[0m\x1b[?25h\x1b[H\x1b[2J")
+        sys.stdout.flush()
+    return 0
 
 
 def dump(output_dir: pathlib.Path) -> int:

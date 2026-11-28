@@ -113,10 +113,10 @@ def activity_rows(limit: int = 5) -> List[Dict[str, str]]:
         state = str(record.get("state", ""))
         entries.append({
             "stamp": stamp[11:16] if len(stamp) >= 16 else stamp,
-            "action": "unit switch",
             "detail": f"{plugin_id.replace('shell.', '')} → {state}",
+            "_sort": stamp,
         })
-    entries.sort(key=lambda item: item["stamp"], reverse=True)
+    entries.sort(key=lambda item: item["_sort"], reverse=True)
     return entries[:limit]
 
 
